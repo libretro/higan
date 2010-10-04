@@ -73,6 +73,12 @@ namespace SNES {
     }
 
     inline Processor() : thread(0) {}
+
+    inline ~Processor() {
+      if (thread) {
+        co_delete(thread);
+      }
+    }
   };
 
   struct ChipDebugger {
