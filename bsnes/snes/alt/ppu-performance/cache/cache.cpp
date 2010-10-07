@@ -109,6 +109,8 @@ uint8* PPU::Cache::tile(unsigned bpp, unsigned tile) {
     case 1: return tile_4bpp(tile);
     case 2: return tile_8bpp(tile);
   }
+
+  return NULL;
 }
 
 PPU::Cache::Cache(PPU &self) : self(self) {
