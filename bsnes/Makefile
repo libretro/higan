@@ -48,33 +48,12 @@ all: build;
 include $(snes)/Makefile
 include $(ui)/Makefile
 
-objects := $(patsubst %,obj/%.o,$(objects))
-
 # targets
-build: ui_build $(objects)
-ifeq ($(platform),osx)
-	test -d ../bsnes.app || mkdir -p ../bsnes.app/Contents/MacOS
-	$(strip $(cpp) -o ../bsnes.app/Contents/MacOS/bsnes $(objects) $(link))
-else
-	$(strip $(cpp) -o out/bsnes $(objects) $(link))
-endif
+build: ui_build;
 
-install:
-ifeq ($(platform),x)
-	install -D -m 755 out/bsnes $(DESTDIR)$(prefix)/bin/bsnes
-	install -D -m 644 data/bsnes.png $(DESTDIR)$(prefix)/share/pixmaps/bsnes.png
-	install -D -m 644 data/bsnes.desktop $(DESTDIR)$(prefix)/share/applications/bsnes.desktop
-	test -d ~/.bsnes || mkdir ~/.bsnes
-	cp data/cheats.xml ~/.bsnes/cheats.xml
-	chmod 777 ~/.bsnes ~/.bsnes/cheats.xml
-endif
+install: ui_install;
 
-uninstall:
-ifeq ($(platform),x)
-	rm $(DESTDIR)$(prefix)/bin/bsnes
-	rm $(DESTDIR)$(prefix)/share/pixmaps/bsnes.png
-	rm $(DESTDIR)$(prefix)/share/applications/bsnes.desktop
-endif
+uninstall: ui_uninstall;
 
 clean: ui_clean
 	-@$(call delete,obj/*.o)

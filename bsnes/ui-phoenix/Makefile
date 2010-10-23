@@ -2,6 +2,8 @@ ui_objects := ui-main ui-general ui-settings ui-tools ui-input ui-utility ui-car
 ui_objects += ruby phoenix
 ui_objects += $(if $(call streq,$(platform),win),resource)
 
+ui_objects := $(patsubst %,obj/%.o,$(ui_objects))
+
 # platform
 ifeq ($(platform),x)
   phoenix_compile = $(call compile,-DPHOENIX_GTK `pkg-config --cflags gtk+-2.0`)
@@ -55,8 +57,6 @@ link += $(if $(findstring input.rawinput,$(ruby)),-ldinput8 -ldxguid)
 rubydef := $(foreach c,$(subst .,_,$(call strupper,$(ruby))),-D$c)
 
 # rules
-objects := $(ui_objects) $(objects)
-
 obj/ui-main.o: $(ui)/main.cpp $(call rwildcard,$(ui)/*.hpp) $(call rwildcard,$(ui)/*); $(phoenix_compile)
 obj/ui-general.o: $(ui)/general/general.cpp $(call rwildcard,$(ui)/*.hpp) $(call rwildcard,$(ui)/general/*); $(phoenix_compile)
 obj/ui-tools.o: $(ui)/tools/tools.cpp $(call rwildcard,$(ui)/*.hpp) $(call rwildcard,$(ui)/tools/*); $(phoenix_compile)
@@ -75,6 +75,29 @@ obj/resource.o: $(ui)/resource.rc
 	windres $(ui)/resource.rc obj/resource.o
 
 # targets
-ui_build:;
+ui_build: $(ui_objects) $(snes_objects)
+ifeq ($(platform),osx)
+	test -d ../bsnes.app || mkdir -p ../bsnes.app/Contents/MacOS
+	$(strip $(cpp) -o ../bsnes.app/Contents/MacOS/bsnes $(ui_objects) $(snes_objects) $(link))
+else
+	$(strip $(cpp) -o out/bsnes $(ui_objects) $(snes_objects) $(link))
+endif
 
 ui_clean:;
+
+ui_install:
+ifeq ($(platform),x)
+	install -D -m 755 out/bsnes $(DESTDIR)$(prefix)/bin/bsnes
+	install -D -m 644 data/bsnes.png $(DESTDIR)$(prefix)/share/pixmaps/bsnes.png
+	install -D -m 644 data/bsnes.desktop $(DESTDIR)$(prefix)/share/applications/bsnes.desktop
+	test -d ~/.bsnes || mkdir ~/.bsnes
+	cp data/cheats.xml ~/.bsnes/cheats.xml
+	chmod 777 ~/.bsnes ~/.bsnes/cheats.xml
+endif
+
+ui_uninstall:
+ifeq ($(platform),x)
+	rm $(DESTDIR)$(prefix)/bin/bsnes
+	rm $(DESTDIR)$(prefix)/share/pixmaps/bsnes.png
+	rm $(DESTDIR)$(prefix)/share/applications/bsnes.desktop
+endif

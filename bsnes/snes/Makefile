@@ -8,7 +8,8 @@ snes_objects += snes-bsx snes-srtc snes-sdd1 snes-spc7110
 snes_objects += snes-cx4 snes-dsp1 snes-dsp2 snes-dsp3 snes-dsp4
 snes_objects += snes-obc1 snes-st0010 snes-st0011 snes-st0018
 snes_objects += snes-msu1 snes-serial
-objects += $(snes_objects)
+
+snes_objects := $(patsubst %,obj/%.o,$(snes_objects))
 
 ifeq ($(profile),accuracy)
   flags += -DPROFILE_ACCURACY
@@ -66,8 +67,6 @@ obj/snes-serial.o      : $(snes)/chip/serial/serial.cpp $(snes)/chip/serial/*
 ###########
 # library #
 ###########
-
-snes_objects := $(patsubst %,obj/%.o,$(snes_objects))
 
 library: $(snes_objects) obj/libsnes.o
 ifeq ($(platform),x)
