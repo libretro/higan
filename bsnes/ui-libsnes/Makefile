@@ -4,6 +4,14 @@ obj/libsnes.o: ui-libsnes/libsnes.cpp ui-libsnes/libsnes.hpp
 
 ui_objects := $(patsubst %,obj/%.o,$(ui_objects))
 
+# We define the API version here, so it can be included in the code and passed
+# to the linker.
+libsnesRevisionMajor := 1
+libsnesRevisionMinor := 1
+
+flags += -DLIBSNES_REVISION_MAJOR=$(libsnesRevisionMajor)
+flags += -DLIBSNES_REVISION_MINOR=$(libsnesRevisionMinor)
+
 ifeq ($(findstring i386,$(arch)),i386)
 	# i386 does not need -fPIC
 else ifeq ($(findstring i686,$(arch)),i686)
@@ -19,7 +27,7 @@ ui_clean:
 ui_build: $(ui_objects) $(snes_objects)
 ifeq ($(platform),x)
 	ar rcs out/libsnes.a $^
-	$(cpp) -o out/libsnes.so -shared -Wl,-soname,libsnes.so.1 $^
+	$(cpp) -o out/libsnes.so -shared -Wl,-soname,libsnes.so.$(libsnesRevisionMajor) $^
 else ifeq ($(platform),osx)
 	ar rcs out/libsnes.a $^
 	$(cpp) -o out/libsnes.dylib -install_name @executable_path/../Libraries/libsnes.dylib -shared -dynamiclib $^

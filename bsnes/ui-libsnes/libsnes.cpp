@@ -34,11 +34,19 @@ struct Interface : public SNES::Interface {
 static Interface interface;
 
 unsigned snes_library_revision_major(void) {
-  return 1;
+#ifndef LIBSNES_REVISION_MAJOR
+#error "LIBSNES_REVISION_MAJOR not defined! Try compiling with the makefile."
+#else
+  return LIBSNES_REVISION_MAJOR;
+#endif
 }
 
 unsigned snes_library_revision_minor(void) {
-  return 1;
+#ifndef LIBSNES_REVISION_MINOR
+#error "LIBSNES_REVISION_MINOR not defined! Try compiling with the makefile."
+#else
+  return LIBSNES_REVISION_MINOR;
+#endif
 }
 
 void snes_set_video_refresh(snes_video_refresh_t video_refresh) {
