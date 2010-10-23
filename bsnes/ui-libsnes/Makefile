@@ -32,6 +32,7 @@ ifeq ($(platform),x)
 	install -D -m 755 out/libsnes.a $(DESTDIR)$(prefix)/lib/libsnes.a
 	install -D -m 755 out/libsnes.so $(DESTDIR)$(prefix)/lib/libsnes.so
 	ldconfig
+	install -D -m 644 ui-libsnes/libsnes.hpp $(DESTDIR)$(prefix)/include/libsnes.hpp
 else ifeq ($(platform),osx)
 	cp out/libsnes.dylib /usr/local/lib/libsnes.dylib
 endif
@@ -41,6 +42,7 @@ ifeq ($(platform),x)
 	-rm $(DESTDIR)$(prefix)/lib/libsnes.a
 	-rm $(DESTDIR)$(prefix)/lib/libsnes.so
 	ldconfig
+	-rm $(DESTDIR)$(prefix)/include/libsnes.hpp
 else ifeq ($(platform),osx)
 	rm /usr/local/lib/libsnes.dylib
 endif
