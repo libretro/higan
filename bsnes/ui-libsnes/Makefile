@@ -31,7 +31,7 @@ ui_install: ui_build
 ifeq ($(platform),x)
 	install -D -m 755 out/libsnes.a $(DESTDIR)$(prefix)/lib/libsnes.a
 	install -D -m 755 out/libsnes.so $(DESTDIR)$(prefix)/lib/libsnes.so
-	ldconfig -n $(DESTDIR)$(prefix)/lib
+	ldconfig
 else ifeq ($(platform),osx)
 	cp out/libsnes.dylib /usr/local/lib/libsnes.dylib
 endif
@@ -40,6 +40,7 @@ ui_uninstall:
 ifeq ($(platform),x)
 	rm $(DESTDIR)$(prefix)/lib/libsnes.a
 	rm $(DESTDIR)$(prefix)/lib/libsnes.so
+	ldconfig
 else ifeq ($(platform),osx)
 	rm /usr/local/lib/libsnes.dylib
 endif
