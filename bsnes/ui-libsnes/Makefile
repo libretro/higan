@@ -38,8 +38,8 @@ endif
 
 ui_uninstall:
 ifeq ($(platform),x)
-	rm $(DESTDIR)$(prefix)/lib/libsnes.a
-	rm $(DESTDIR)$(prefix)/lib/libsnes.so
+	-rm $(DESTDIR)$(prefix)/lib/libsnes.a
+	-rm $(DESTDIR)$(prefix)/lib/libsnes.so
 	ldconfig
 else ifeq ($(platform),osx)
 	rm /usr/local/lib/libsnes.dylib
