@@ -27,7 +27,7 @@ else ifeq ($(platform),win)
 	$(cpp) -o out/snes.dll -shared -Wl,--out-implib,libsnes.a $^
 endif
 
-ui_install:
+ui_install: ui_build
 ifeq ($(platform),x)
 	install -D -m 755 out/libsnes.a $(DESTDIR)$(prefix)/lib/libsnes.a
 	install -D -m 755 out/libsnes.so $(DESTDIR)$(prefix)/lib/libsnes.so

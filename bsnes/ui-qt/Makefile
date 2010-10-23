@@ -102,7 +102,7 @@ ui_clean:
 	-@$(call delete,obj/*.rcc)
 	-@$(call delete,obj/*.moc)
 
-ui_install:
+ui_install: ui_build
 ifeq ($(platform),x)
 	install -D -m 755 out/bsnes $(DESTDIR)$(prefix)/bin/bsnes
 	install -D -m 644 data/bsnes.png $(DESTDIR)$(prefix)/share/pixmaps/bsnes.png
