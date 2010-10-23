@@ -4,6 +4,15 @@ obj/libsnes.o: ui-libsnes/libsnes.cpp ui-libsnes/libsnes.hpp
 
 ui_objects := $(patsubst %,obj/%.o,$(ui_objects))
 
+ifeq ($(findstring i386,$(arch)),i386)
+	# i386 does not need -fPIC
+else ifeq ($(findstring i686,$(arch)),i686)
+	# i686 does not need -fPIC
+else
+	# Most architectures need -fPIC
+	flags += -fPIC
+endif
+
 ui_clean:
 	-@$(call delete,$(ui_objects))
 

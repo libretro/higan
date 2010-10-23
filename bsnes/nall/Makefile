@@ -38,6 +38,10 @@ ifeq ($(compiler),)
   endif
 endif
 
+ifeq ($(arch),)
+    arch := $(shell $(compiler) -dumpmachine)
+endif
+
 ifeq ($(prefix),)
   prefix := /usr/local
 endif
