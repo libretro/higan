@@ -9,8 +9,6 @@ namespace ruby {
 
 class pAudioAO {
 public:
-  int driver_id;
-  ao_sample_format driver_format;
   ao_device *audio_device;
 
   struct {
@@ -38,8 +36,11 @@ public:
   }
 
   void sample(uint16_t l_sample, uint16_t r_sample) {
-    uint32_t samp = (l_sample << 0) + (r_sample << 16);
-    ao_play(audio_device, (char*)&samp, 4); //This may need to be byte swapped for Big Endian
+    uint16_t samp[2];
+    samp[0] = l_sample;
+    samp[1] = r_sample;
+
+    ao_play(audio_device, (char *)samp, sizeof samp);
   }
 
   void clear() {
@@ -48,13 +49,16 @@ public:
   bool init() {
     term();
 
-    driver_id = ao_default_driver_id(); //ao_driver_id((const char*)driver)
+    int driver_id = ao_default_driver_id(); //ao_driver_id((const char*)driver)
     if(driver_id < 0) return false;
 
+    // libao >= 1.0.0 added a new field driver_format.matrix,
+    // need { 0 } to avoid a crash by bad pointer
+    ao_sample_format driver_format = { 0 };
     driver_format.bits = 16;
     driver_format.channels = 2;
     driver_format.rate = settings.frequency;
-    driver_format.byte_format = AO_FMT_LITTLE;
+    driver_format.byte_format = AO_FMT_NATIVE;
 
     ao_option *options = 0;
     ao_info *di = ao_driver_info(driver_id);
@@ -85,7 +89,7 @@ public:
 
   ~pAudioAO() {
     term();
-  //ao_shutdown(); //FIXME: this is causing a segfault for some reason when called ...
+    ao_shutdown();
   }
 };
 
