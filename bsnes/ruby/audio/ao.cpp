@@ -1,6 +1,7 @@
 /*
-  audio.ao (2008-06-01)
+  audio.ao (2010-11-13)
   authors: Nach, RedDwarf
+  contributor: Kernigh
 */
 
 #include <ao/ao.h>
