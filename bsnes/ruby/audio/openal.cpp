@@ -1,8 +1,10 @@
 /*
-  audio.openal (2007-12-26)
+  audio.openal (2010-11-13)
   author: Nach
-  contributors: byuu, wertigon, _willow_
+  contributors: byuu, wertigon, _willow_, Kernigh
 */
+
+#include <unistd.h> // usleep
 
 #if defined(PLATFORM_OSX)
   #include <OpenAL/al.h>
@@ -22,12 +24,17 @@ public:
     ALuint source;
     ALenum format;
     unsigned latency;
-    unsigned queue_length;
   } device;
 
   struct {
-    uint32_t *data;
-    unsigned length;
+    ALuint q_buffers[3];
+    unsigned q_next;
+    unsigned q_length;
+  } queue;
+
+  struct {
+    uint16_t *data;
+    unsigned index;
     unsigned size;
   } buffer;
 
@@ -74,33 +81,37 @@ public:
   }
 
   void sample(uint16_t sl, uint16_t sr) {
-    buffer.data[buffer.length++] = sl + (sr << 16);
-    if(buffer.length < buffer.size) return;
+    buffer.data[buffer.index++] = sl;
+    buffer.data[buffer.index++] = sr;
+    if(buffer.index < buffer.size) return;
 
     ALuint albuffer = 0;
-    int processed = 0;
+    ALint processed = 0;
     while(true) {
       alGetSourcei(device.source, AL_BUFFERS_PROCESSED, &processed);
       while(processed--) {
         alSourceUnqueueBuffers(device.source, 1, &albuffer);
-        alDeleteBuffers(1, &albuffer);
-        device.queue_length--;
+        queue.q_length--;
       }
-      //wait for buffer playback to catch up to sample generation if not synchronizing
-      if(settings.synchronize == false || device.queue_length < 3) break;
+
+      // wait for buffer playback to catch up to sample generation
+      if(settings.synchronize == false || queue.q_length < 3) break;
+      usleep(1000); // yield the cpu
     }
 
-    if(device.queue_length < 3) {
-      alGenBuffers(1, &albuffer);
-      alBufferData(albuffer, device.format, buffer.data, buffer.size * 4, settings.frequency);
+    if(queue.q_length < 3) {
+      albuffer = queue.q_buffers[queue.q_next];
+      queue.q_next = (queue.q_next + 1) % 3;
+
+      alBufferData(albuffer, device.format, buffer.data, 2 * buffer.size, settings.frequency);
       alSourceQueueBuffers(device.source, 1, &albuffer);
-      device.queue_length++;
+      queue.q_length++;
     }
 
     ALint playing;
     alGetSourcei(device.source, AL_SOURCE_STATE, &playing);
     if(playing != AL_PLAYING) alSourcePlay(device.source);
-    buffer.length = 0;
+    buffer.index = 0;
   }
 
   void clear() {
@@ -108,18 +119,25 @@ public:
 
   void update_latency() {
     if(buffer.data) delete[] buffer.data;
-    buffer.size = settings.frequency * settings.latency / 1000.0 + 0.5;
-    buffer.data = new uint32_t[buffer.size];
+
+    // (2 samples per stereo frame) * (frames per second) * (seconds of latency)
+    buffer.size = 2 * unsigned(settings.frequency * settings.latency / 1000.0 + 0.5);
+    buffer.data = new uint16_t[buffer.size];
+    buffer.index = 0;
   }
 
   bool init() {
     update_latency();
-    device.queue_length = 0;
 
     bool success = false;
     if(device.handle = alcOpenDevice(NULL)) {
       if(device.context = alcCreateContext(device.handle, NULL)) {
         alcMakeContextCurrent(device.context);
+
+        alGenBuffers(3, queue.q_buffers);
+        queue.q_next = 0;
+        queue.q_length = 0;
+
         alGenSources(1, &device.source);
 
         //alSourcef (device.source, AL_PITCH, 1.0);
@@ -149,22 +167,10 @@ public:
 
   void term() {
     if(alIsSource(device.source) == AL_TRUE) {
-      int playing = 0;
-      alGetSourcei(device.source, AL_SOURCE_STATE, &playing);
-      if(playing == AL_PLAYING) {
-        alSourceStop(device.source);
-        int queued = 0;
-        alGetSourcei(device.source, AL_BUFFERS_QUEUED, &queued);
-        while(queued--) {
-          ALuint albuffer = 0;
-          alSourceUnqueueBuffers(device.source, 1, &albuffer);
-          alDeleteBuffers(1, &albuffer);
-          device.queue_length--;
-        }
-      }
-
       alDeleteSources(1, &device.source);
       device.source = 0;
+
+      alDeleteBuffers(3, queue.q_buffers);
     }
 
     if(device.context) {
@@ -189,10 +195,12 @@ public:
     device.handle = 0;
     device.context = 0;
     device.format = AL_FORMAT_STEREO16;
-    device.queue_length = 0;
+
+    queue.q_next = 0;
+    queue.q_length = 0;
 
     buffer.data = 0;
-    buffer.length = 0;
+    buffer.index = 0;
     buffer.size = 0;
 
     settings.synchronize = true;
