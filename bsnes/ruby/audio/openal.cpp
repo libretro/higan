@@ -23,7 +23,6 @@ public:
     ALCcontext *context;
     ALuint source;
     ALenum format;
-    unsigned latency;
   } device;
 
   struct {
