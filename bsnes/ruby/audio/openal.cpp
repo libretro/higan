@@ -1,5 +1,5 @@
 /*
-  audio.openal (2010-11-13)
+  audio.openal (2010-11-15)
   author: Nach
   contributors: byuu, wertigon, _willow_, Kernigh
 */
@@ -32,7 +32,7 @@ public:
   } queue;
 
   struct {
-    uint16_t *data;
+    int16_t *data;  // signed 16-bit samples, native byte order
     unsigned index;
     unsigned size;
   } buffer;
@@ -102,7 +102,8 @@ public:
       albuffer = queue.q_buffers[queue.q_next];
       queue.q_next = (queue.q_next + 1) % 3;
 
-      alBufferData(albuffer, device.format, buffer.data, 2 * buffer.size, settings.frequency);
+      alBufferData(albuffer, device.format, buffer.data,
+                   buffer.size * sizeof(buffer.data[0]), settings.frequency);
       alSourceQueueBuffers(device.source, 1, &albuffer);
       queue.q_length++;
     }
@@ -121,7 +122,7 @@ public:
 
     // (2 samples per stereo frame) * (frames per second) * (seconds of latency)
     buffer.size = 2 * unsigned(settings.frequency * settings.latency / 1000.0 + 0.5);
-    buffer.data = new uint16_t[buffer.size];
+    buffer.data = new int16_t[buffer.size];
     buffer.index = 0;
   }
 
