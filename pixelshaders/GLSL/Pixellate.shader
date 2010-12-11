@@ -28,7 +28,7 @@
       vec4 bottomLeftColor  = texture2D(rubyTexture, (floor(vec2(left, bottom)  / texelSize) + 0.5) * texelSize);
       vec4 topRightColor    = texture2D(rubyTexture, (floor(vec2(right, top)    / texelSize) + 0.5) * texelSize);
 
-      vec2 border = clamp(round(gl_TexCoord[0] / texelSize) * texelSize, vec2(left, bottom), vec2(right, top));
+      vec2 border = clamp(round(gl_TexCoord[0].st / texelSize) * texelSize, vec2(left, bottom), vec2(right, top));
 
       float totalArea = 4.0 * range.x * range.y;
 
