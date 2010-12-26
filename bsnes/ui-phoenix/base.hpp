@@ -6,7 +6,7 @@
 #include <nall/filemap.hpp>
 #include <nall/input.hpp>
 #include <nall/ups.hpp>
-#include <nall/snes/info.hpp>
+#include <nall/snes/cartridge.hpp>
 using namespace nall;
 
 #include <ruby/ruby.hpp>
@@ -29,15 +29,21 @@ struct TopLevelWindow : Window {
 #include "utility/utility.hpp"
 #include "cartridge/cartridge.hpp"
 
+#if defined(DEBUGGER)
+  #include "debugger/debugger.hpp"
+#endif
+
 struct Application {
   Font proportionalFont;
   Font proportionalFontBold;
   Font monospaceFont;
 
+  bool pause;
   bool quit;
   void main(int argc, char **argv);
 
   void addWindow(TopLevelWindow *window, const string &name, const string &position);
+  Application();
 
 private:
   array<TopLevelWindow*> windows;

@@ -35,6 +35,18 @@ struct Canvas::Data {
   unsigned pitch;
 };
 
+struct HexEditor::Data {
+  GtkWidget *container;
+  GtkWidget *widget;
+  GtkWidget *scroll;
+
+  GtkTextMark *cursor;
+  unsigned size;
+  unsigned offset;
+  unsigned columns;
+  unsigned rows;
+};
+
 struct ListBox::Data {
   GtkListStore *store;
   struct GtkColumn {

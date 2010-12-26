@@ -16,6 +16,10 @@ void Utility::updateStatus() {
     text = statusMessage;
   } else if(SNES::cartridge.loaded() == false) {
     text = "No cartridge loaded";
+  } else if(application.pause) {
+    text = "Paused";
+  } else if(config.settings.focusPolicy == 0 && mainWindow.focused() == false) {
+    text = "Auto-paused";
   } else {
     text = statusText;
   }
@@ -71,6 +75,16 @@ void Utility::setScale(unsigned scale) {
   mainWindow.setGeometry(geom.x, geom.y, width, height);
 }
 
+void Utility::setFilter() {
+  if(filter.opened()) filter.close();
+  if(config.video.filter == "") return;
+  if(filter.open_absolute(config.video.filter)) {
+    filter.dl_size = filter.sym("filter_size");
+    filter.dl_render = filter.sym("filter_render");
+    if(!filter.dl_size || !filter.dl_render) filter.close();
+  }
+}
+
 void Utility::setShader() {
   string data;
   data.readfile(config.video.shader);
@@ -78,7 +92,6 @@ void Utility::setShader() {
 }
 
 void Utility::cartridgeLoaded() {
-  SNES::cartridge.basename = cartridge.baseName;
   SNES::system.power();
   cheatEditor.load(cartridge.baseName);
   stateManager.load();

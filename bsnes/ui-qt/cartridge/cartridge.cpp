@@ -45,8 +45,6 @@ bool Cartridge::information(const char *filename, Cartridge::Information &info) 
 bool Cartridge::saveStatesSupported() {
   if(SNES::cartridge.mode() == SNES::Cartridge::Mode::Bsx) return false;
 
-  if(SNES::cartridge.has_dsp3())   return false;
-  if(SNES::cartridge.has_dsp4())   return false;
   if(SNES::cartridge.has_st0011()) return false;
   if(SNES::cartridge.has_st0018()) return false;
   if(SNES::cartridge.has_serial()) return false;
@@ -248,7 +246,7 @@ bool Cartridge::loadCartridge(string &filename, string &xml, SNES::MappedRAM &me
     xml.readfile(name);
   } else {
     //generate XML mapping from data via heuristics
-    xml = snes_information(data, size).xml_memory_map;
+    xml = SNESCartridge(data, size).xmlMemoryMap;
   }
 
   memory.copy(data, size);

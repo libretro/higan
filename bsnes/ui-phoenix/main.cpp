@@ -46,6 +46,10 @@ void Application::main(int argc, char **argv) {
   advancedSettings.create();
   cheatEditor.create();
   stateManager.create();
+  #if defined(DEBUGGER)
+  debugger.create();
+  #endif
+
   loadGeometry();
   saveGeometry();
 
@@ -86,6 +90,7 @@ void Application::main(int argc, char **argv) {
   }
 
   utility.setControllers();
+  utility.setFilter();
   utility.setShader();
 
   if(argc == 2) cartridge.loadNormal(argv[1]);
@@ -96,14 +101,15 @@ void Application::main(int argc, char **argv) {
     utility.updateStatus();
 
     if(SNES::cartridge.loaded()) {
-      //pause emulator when main window is inactive?
-      if(config.settings.focusPolicy == 0) {
-        if(mainWindow.focused() == false) {
-          usleep(20 * 1000);
-          continue;
-        }
+      if(application.pause == true || (config.settings.focusPolicy == 0 && mainWindow.focused() == false)) {
+        usleep(20 * 1000);
+        continue;
       }
+      #if defined(DEBUGGER)
+      debugger.run();
+      #else
       SNES::system.run();
+      #endif
     } else {
       usleep(20 * 1000);
     }
@@ -129,6 +135,11 @@ void Application::addWindow(TopLevelWindow *window, const string &name, const st
   geometryConfig.attach(window->position, window->name);
 }
 
+Application::Application() {
+  pause = false;
+  quit = false;
+}
+
 int main(int argc, char **argv) {
   application.main(argc, argv);
   return 0;
@@ -140,7 +151,7 @@ void Application::loadGeometry() {
     lstring position;
     position.split(",", window->position);
     Geometry geom = window->geometry();
-    window->setGeometry(strunsigned(position[0]), strunsigned(position[1]), geom.width, geom.height);
+    window->setGeometry(decimal(position[0]), decimal(position[1]), geom.width, geom.height);
   }
 }
 
