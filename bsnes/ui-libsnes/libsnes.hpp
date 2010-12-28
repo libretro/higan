@@ -247,22 +247,24 @@ typedef void (*snes_audio_sample_t)(uint16_t left, uint16_t right);
 //    Each pixel contains a 15-bit RGB tuple: 0RRRRRGGGGGBBBBB (XRGB1555)
 //
 //    Example code:
-//    void process_frame(const uint16_t* data, int width, int height)
-//    {
-//       uint16_t frame[width * height];
-//       const uint16_t *src;
-//       uint16_t *dst;
 //
-//       for (int i = 0; i < height; i++ )
-//       {
-//          src = data + i * 1024;  // Not very intuitive, is it? :\
-//          dst = frame + i * width;
+//      void pack_frame (uint16_t * restrict out, const uint16_t * restrict in,
+//      	unsigned width, unsigned height)
+//      {
+//         // Normally our pitch is 2048 bytes.
+//         int pitch_pixels = 1024;
+//         // If we have an interlaced mode, pitch is 1024 bytes.
+//         if ( height == 448 || height == 478 )
+//            pitch_pixels = 512;
 //
-//          memcpy(dst, src, width * sizeof(uint16_t));
-//       }
-//       do_cool_stuff_with_frame(frame, width, height);
-//       output_frame(frame, width, height);
-//    }
+//         for ( int y = 0; y < height; y++ )
+//         {
+//            const uint16_t *src = in + y * pitch_pixels;
+//            uint16_t *dst = out + y * width;
+//
+//            memcpy(dst, src, width * sizeof(uint16_t));
+//         }
+//      }
 //
 //    Parameters:
 //
