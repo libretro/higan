@@ -14,7 +14,7 @@
     }
 
     void main(void) {
-      vec2 coord = barrelDistortion (gl_TexCoord[0] * rubyTextureSize / rubyInputSize) * rubyInputSize / rubyTextureSize;
+      vec2 coord = barrelDistortion (gl_TexCoord[0].xy * rubyTextureSize / rubyInputSize) * rubyInputSize / rubyTextureSize;
      
       gl_FragColor = texture2D(rubyTexture, coord);
     }
