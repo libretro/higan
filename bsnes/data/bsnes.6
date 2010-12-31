@@ -1,0 +1,107 @@
+.TH bsnes 6 "November 20, 2010"
+.SH NAME
+bsnes \- Accurate SNES/Super Famicom emulator
+.SH SYNOPSIS
+.B bsnes
+<ROM location>
+.SH OPTIONS
+<ROM location> -- from the command line, you can supply the name of a ROM file as
+an argument to start playing that ROM
+
+.SH DESCRIPTION
+
+bsnes is a Super Nintendo / Super Famicom emulator that strives to provide the
+most faithful hardware emulation possible. It focuses on accuracy and clean
+code, rather than speed and special features. It is meant as a reference
+emulator to document how the underlying hardware works. It is thus very useful
+for development and research. And while it can be used for general purpose
+gaming, it will require significantly more powerful hardware than a typical
+emulator.
+
+.SH Supported Filetypes
+
+.B SFC:
+SNES cartridge -- ROM image.
+
+.B BS:
+Satellaview BS-X flash cartridge -- EEPROM image.
+
+.B ST:
+Sufami Turbo cartridge -- ROM image.
+
+.B SRM, PSR:
+non-volatile memory, often used to save game data -- (P)SRAM image.
+
+.B RTC:
+real-time clock non-volatile memory.
+
+.B UPS:
+patch data, used to dynamically modify cartridge of same base filename upon load.
+
+.B CHT:
+plain-text list of "Game Genie" / "Pro Action Replay" codes.
+
+.SH Known Limitations
+
+.B Satellaview BS-X emulation:
+this hardware is only partially supported. This is mostly because the satellite
+network it used (St. GIGA) has been shut down. Access to this network would be
+required to properly reverse engineer much of the hardware. Working around this
+would require game-specific hacks, which are contrary to the design goals of
+this emulator. As a result, most BS-X software will not function correctly.
+
+.B Netplay:
+internet multiplay is not currently supported nor planned.
+
+.SH Contributors
+
+* Andreas Naive
+.br
+* anomie
+.br
+* _Demo_
+.br
+* Derrick Sobodash
+.br
+* DMV27
+.br
+* FirebrandX
+.br
+* FitzRoy
+.br
+* GIGO
+.br
+* Jonas Quinn
+.br
+* kode54
+.br
+* krom
+.br
+* Matthew Callis
+.br
+* Nach
+.br
+* neviksti
+.br
+* Overload
+.br
+* RedDwarf
+.br
+* Richard Bannister
+.br
+* Shay Green
+.br
+* tetsuo55
+.br
+* TRAC
+.br
+* zones
+
+.SH MORE INFO
+Website: http://byuu.org/bsnes/
+
+.SH BSNES AUTHOR
+byuu
+
+.SH MAN PAGE AUTHOR
+Brandon Barnes

@@ -107,6 +107,7 @@ ifeq ($(platform),x)
 	install -D -m 755 out/bsnes $(DESTDIR)$(prefix)/bin/bsnes
 	install -D -m 644 data/bsnes.png $(DESTDIR)$(prefix)/share/pixmaps/bsnes.png
 	install -D -m 644 data/bsnes.desktop $(DESTDIR)$(prefix)/share/applications/bsnes.desktop
+	install -D -m 644 data/bsnes.6 $(DESTDIR)$(prefix)/share/man/man6/bsnes.6
 	test -d ~/.bsnes || mkdir ~/.bsnes
 	cp data/cheats.xml ~/.bsnes/cheats.xml
 	chmod 777 ~/.bsnes ~/.bsnes/cheats.xml
@@ -117,4 +118,5 @@ ifeq ($(platform),x)
 	rm $(DESTDIR)$(prefix)/bin/bsnes
 	rm $(DESTDIR)$(prefix)/share/pixmaps/bsnes.png
 	rm $(DESTDIR)$(prefix)/share/applications/bsnes.desktop
+	rm $(DESTDIR)$(prefix)/share/man/man6/bsnes.6
 endif
