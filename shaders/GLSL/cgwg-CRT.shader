@@ -47,11 +47,12 @@
                 xy = xy + vec2(0.0 , -0.5 * (phase + (1.0-phase) * rubyInputSize.y/rubyOutputSize.y) * one.y);
 
                 vec2 uv_ratio     = fract(xy*rubyTextureSize);
+                xy.x = floor(xy.x/one.x)*one.x;
 
                 vec4 col, col2;
 
                 vec4 coeffs = vec4(1.0 + uv_ratio.x, uv_ratio.x, 1.0 - uv_ratio.x, 2.0 - uv_ratio.x);
-                coeffs = (sin(PI * coeffs) * sin(PI * coeffs / 2.0)) / (coeffs * coeffs);
+                coeffs = mix((sin(PI * coeffs) * sin(PI * coeffs / 2.0)) / (coeffs * coeffs), vec4(1.0), lessThan(abs(coeffs), vec4(0.01)));
                 coeffs = coeffs / (coeffs.x+coeffs.y+coeffs.z+coeffs.w);
 
                 col  = clamp(coeffs.x * TEX2D(xy + vec2(-one.x,0.0)) + coeffs.y * TEX2D(xy) + coeffs.z * TEX2D(xy + vec2(one.x, 0.0)) + coeffs.w * TEX2D(xy + vec2(2.0 * one.x, 0.0)),0.0,1.0);
