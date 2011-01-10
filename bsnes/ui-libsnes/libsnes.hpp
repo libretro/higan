@@ -979,8 +979,10 @@ bool snes_load_cartridge_sufami_turbo(
 //
 //    For more information, see: http://en.wikipedia.org/wiki/Super_Game_Boy
 //
-//    Up until (at least) bsnes v073, loading Super Game Boy cartridges only
-//    works if the libsupergameboy library from the bsnes release is installed.
+//    Up until bsnes v073, loading Super Game Boy cartridges only works if the
+//    libsupergameboy library from the bsnes release is installed. bsnes v074
+//    includes a custom Gameboy emulation core, and external code is no longer
+//    required.
 //
 //    Parameters:
 //
