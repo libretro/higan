@@ -1,5 +1,5 @@
 #include "libsnes.hpp"
-#include <snes.hpp>
+#include <snes/snes.hpp>
 
 #include <nall/snes/cartridge.hpp>
 using namespace nall;

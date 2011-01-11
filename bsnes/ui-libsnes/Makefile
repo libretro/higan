@@ -1,4 +1,4 @@
-ui_objects := libsnes
+ui_objects := libsnes libco
 
 obj/libsnes.o: ui-libsnes/libsnes.cpp ui-libsnes/libsnes.hpp
 
@@ -25,7 +25,7 @@ endif
 ui_clean:
 	-@$(call delete,$(ui_objects))
 
-ui_build: $(ui_objects) $(snes_objects)
+ui_build: $(ui_objects) $(snes_objects) $(gameboy_objects)
 ifeq ($(platform),x)
 	ar rcs out/libsnes.a $^
 	$(cpp) -o out/libsnes.so -shared -Wl,-soname,libsnes.so.$(libsnesRevisionMajor) $^

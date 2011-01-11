@@ -1,14 +1,14 @@
 include nall/Makefile
 snes := snes
+gameboy := gameboy
 profile := accuracy
-ui := ui-phoenix
+ui := ui
 
 # compiler
 c       := $(compiler) -std=gnu99
 cpp     := $(subst cc,++,$(compiler)) -std=gnu++0x
-flags   := -O3 -fomit-frame-pointer -I. -I$(snes)
+flags   := -O3 -fomit-frame-pointer -I.
 link    :=
-objects :=
 
 # profile-guided instrumentation
 # flags += -fprofile-generate
@@ -45,7 +45,10 @@ compile = \
 
 all: build;
 
+obj/libco.o: libco/libco.c libco/*
+
 include $(snes)/Makefile
+include $(gameboy)/Makefile
 include $(ui)/Makefile
 
 # targets
@@ -69,6 +72,6 @@ clean: ui_clean
 	-@$(call delete,*.manifest)
 
 archive-all:
-	tar -cjf bsnes.tar.bz2 data launcher libco nall obj out phoenix ruby snes ui-phoenix ui-qt Makefile cc.bat clean.bat sync.sh
+	tar -cjf bsnes.tar.bz2 data gameboy launcher libco nall obj out phoenix ruby snes ui ui-gameboy Makefile cc.bat clean.bat sync.sh
 
 help:;
