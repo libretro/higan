@@ -16,7 +16,7 @@ namespace GameBoy {
 #include "serialization.cpp"
 Cartridge cartridge;
 
-void Cartridge::load(const string &xml, uint8_t *data, unsigned size) {
+void Cartridge::load(const string &xml, const uint8_t *data, const unsigned size) {
 //uint32_t crc = crc32_calculate(data, size);
 //print("CRC32 = ", hex<4>(crc), "\n");
 
