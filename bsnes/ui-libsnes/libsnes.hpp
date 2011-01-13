@@ -339,9 +339,10 @@ typedef void (*snes_input_poll_t)(void);
 //      - If "id" is SNES_DEVICE_ID_MOUSE_X or SNES_DEVICE_ID_MOUSE_Y then
 //        return the relative movement of the mouse during the current frame;
 //        values outside the range -127 to +127 will be clamped.
-//      - If "id" represents any other analogue input (such as
+//      - If "id" is one of the light-gun axes (such as
 //        SNES_DEVICE_ID_JUSTIFIER_Y or SNES_DEVICE_ID_SUPER_SCOPE_X), you
-//        should return a value between -32768 and 32767.
+//        should return the relative movement of the pointing device during the
+//        current frame.
 
 typedef int16_t (*snes_input_state_t)(bool port, unsigned device,
         unsigned index, unsigned id);
