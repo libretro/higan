@@ -10,9 +10,10 @@ public:
 
   void init(Interface*);
   void term();
+  void load();
+  void unload();
   void power();
   void reset();
-  void unload();
 
   void frame();
   void scanline();

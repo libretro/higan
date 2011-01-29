@@ -1,7 +1,6 @@
-#include "bus/bus.hpp"
-
-class SA1 : public Coprocessor, public CPUcore, public MMIO {
+class SA1 : public Coprocessor, public CPUcore {
 public:
+  #include "bus/bus.hpp"
   #include "dma/dma.hpp"
   #include "memory/memory.hpp"
   #include "mmio/mmio.hpp"
@@ -27,7 +26,8 @@ public:
   alwaysinline bool interrupt_pending();
 
   void init();
-  void enable();
+  void load();
+  void unload();
   void power();
   void reset();
 
@@ -36,4 +36,3 @@ public:
 };
 
 extern SA1 sa1;
-extern SA1Bus sa1bus;

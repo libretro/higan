@@ -1,12 +1,12 @@
 Configuration config;
 
 void Configuration::load() {
-  configuration::load(string(path.user, "bsnes-phoenix.cfg"));
+  configuration::load(string(path.user, "bsnes.cfg"));
 }
 
 void Configuration::save() {
   mkdir(path.user, 0755);
-  configuration::save(string(path.user, "bsnes-phoenix.cfg"));
+  configuration::save(string(path.user, "bsnes.cfg"));
 }
 
 void Configuration::create() {
@@ -22,6 +22,7 @@ void Configuration::create() {
   attach(video.shader = "", "video.shader");
   attach(video.region = 0, "video.region");
   attach(video.scale = 2, "video.scale");
+  attach(video.fullscreenScale = 0, "video.fullscreenScale");
   attach(video.aspectRatioCorrection = true, "video.aspectRatioCorrection");
   attach(video.brightness = 100, "video.brightness");
   attach(video.contrast = 100, "video.contrast");

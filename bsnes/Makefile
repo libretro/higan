@@ -9,6 +9,7 @@ c       := $(compiler) -std=gnu99
 cpp     := $(subst cc,++,$(compiler)) -std=gnu++0x
 flags   := -O3 -fomit-frame-pointer -I.
 link    :=
+objects := libco
 
 # profile-guided instrumentation
 # flags += -fprofile-generate
@@ -47,18 +48,10 @@ all: build;
 
 obj/libco.o: libco/libco.c libco/*
 
-include $(snes)/Makefile
-include $(gameboy)/Makefile
 include $(ui)/Makefile
 
 # targets
-build: ui_build;
-
-install: ui_install;
-
-uninstall: ui_uninstall;
-
-clean: ui_clean
+clean:
 	-@$(call delete,obj/*.o)
 	-@$(call delete,obj/*.a)
 	-@$(call delete,obj/*.so)
@@ -72,6 +65,6 @@ clean: ui_clean
 	-@$(call delete,*.manifest)
 
 archive-all:
-	tar -cjf bsnes.tar.bz2 data gameboy launcher libco nall obj out phoenix ruby snes ui ui-gameboy Makefile cc.bat clean.bat sync.sh
+	tar -cjf bsnes.tar.bz2 data gameboy libco nall obj out phoenix ruby snes ui ui-gameboy Makefile cc.bat clean.bat sync.sh
 
 help:;

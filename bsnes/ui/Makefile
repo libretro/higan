@@ -1,8 +1,9 @@
-ui_objects := ui-main ui-general ui-settings ui-tools ui-input ui-utility ui-cartridge ui-debugger
-ui_objects += ruby phoenix libco
-ui_objects += $(if $(call streq,$(platform),win),resource)
+include $(snes)/Makefile
+include $(gameboy)/Makefile
 
-ui_objects := $(patsubst %,obj/%.o,$(ui_objects))
+ui_objects := ui-main ui-general ui-settings ui-tools ui-input ui-utility ui-cartridge ui-debugger
+ui_objects += ruby phoenix
+ui_objects += $(if $(call streq,$(platform),win),resource)
 
 # platform
 ifeq ($(platform),x)
@@ -57,6 +58,9 @@ link += $(if $(findstring input.rawinput,$(ruby)),-ldinput8 -ldxguid)
 rubydef := $(foreach c,$(subst .,_,$(call strupper,$(ruby))),-D$c)
 
 # rules
+objects := $(ui_objects) $(objects)
+objects := $(patsubst %,obj/%.o,$(objects))
+
 obj/ui-main.o: $(ui)/main.cpp $(call rwildcard,$(ui)/*.hpp) $(call rwildcard,$(ui)/*); $(phoenix_compile)
 obj/ui-general.o: $(ui)/general/general.cpp $(call rwildcard,$(ui)/*.hpp) $(call rwildcard,$(ui)/general/*); $(phoenix_compile)
 obj/ui-tools.o: $(ui)/tools/tools.cpp $(call rwildcard,$(ui)/*.hpp) $(call rwildcard,$(ui)/tools/*); $(phoenix_compile)
@@ -76,17 +80,15 @@ obj/resource.o: $(ui)/resource.rc
 	windres $(ui)/resource.rc obj/resource.o
 
 # targets
-ui_build: $(ui_objects) $(snes_objects) $(gameboy_objects)
+build: $(objects)
 ifeq ($(platform),osx)
 	test -d ../bsnes.app || mkdir -p ../bsnes.app/Contents/MacOS
-	$(strip $(cpp) -o ../bsnes.app/Contents/MacOS/bsnes $(ui_objects) $(snes_objects) $(link))
+	$(strip $(cpp) -o ../bsnes.app/Contents/MacOS/bsnes $^ $(link))
 else
-	$(strip $(cpp) -o out/bsnes $(ui_objects) $(snes_objects) $(gameboy_objects) $(link))
+	$(strip $(cpp) -o out/bsnes $^ $(link))
 endif
 
-ui_clean:;
-
-ui_install: ui_build
+install: build
 ifeq ($(platform),x)
 	install -D -m 755 out/bsnes $(DESTDIR)$(prefix)/bin/bsnes
 	install -D -m 644 data/bsnes.png $(DESTDIR)$(prefix)/share/pixmaps/bsnes.png
@@ -97,7 +99,7 @@ ifeq ($(platform),x)
 	chmod 777 ~/.bsnes ~/.bsnes/cheats.xml
 endif
 
-ui_uninstall:
+uninstall:
 ifeq ($(platform),x)
 	rm $(DESTDIR)$(prefix)/bin/bsnes
 	rm $(DESTDIR)$(prefix)/share/pixmaps/bsnes.png

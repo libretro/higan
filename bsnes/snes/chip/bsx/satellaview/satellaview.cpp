@@ -1,23 +1,27 @@
 #ifdef BSX_CPP
 
-BSXBase bsxbase;
+BSXSatellaview bsxsatellaview;
 
-void BSXBase::init() {
+void BSXSatellaview::init() {
 }
 
-void BSXBase::enable() {
-  for(uint16 i = 0x2188; i <= 0x219f; i++) memory::mmio.map(i, *this);
+void BSXSatellaview::load() {
+  bus.map(Bus::MapMode::Direct, 0x00, 0x3f, 0x2188, 0x219f, { &BSXSatellaview::mmio_read, &bsxsatellaview }, { &BSXSatellaview::mmio_write, &bsxsatellaview });
+  bus.map(Bus::MapMode::Direct, 0x80, 0xbf, 0x2188, 0x219f, { &BSXSatellaview::mmio_read, &bsxsatellaview }, { &BSXSatellaview::mmio_write, &bsxsatellaview });
 }
 
-void BSXBase::power() {
+void BSXSatellaview::unload() {
+}
+
+void BSXSatellaview::power() {
   reset();
 }
 
-void BSXBase::reset() {
+void BSXSatellaview::reset() {
   memset(&regs, 0x00, sizeof regs);
 }
 
-uint8 BSXBase::mmio_read(unsigned addr) {
+uint8 BSXSatellaview::mmio_read(unsigned addr) {
   addr &= 0xffff;
 
   switch(addr) {
@@ -75,7 +79,7 @@ uint8 BSXBase::mmio_read(unsigned addr) {
   return cpu.regs.mdr;
 }
 
-void BSXBase::mmio_write(unsigned addr, uint8 data) {
+void BSXSatellaview::mmio_write(unsigned addr, uint8 data) {
   addr &= 0xffff;
 
   switch(addr) {
@@ -137,4 +141,3 @@ void BSXBase::mmio_write(unsigned addr, uint8 data) {
 }
 
 #endif
-

@@ -72,8 +72,8 @@ void System::init(Interface *interface_) {
   superfx.init();
   sa1.init();
   necdsp.init();
-  bsxbase.init();
-  bsxcart.init();
+  bsxsatellaview.init();
+  bsxcartridge.init();
   bsxflash.init();
   srtc.init();
   sdd1.init();
@@ -95,6 +95,54 @@ void System::init(Interface *interface_) {
 void System::term() {
 }
 
+void System::load() {
+  audio.coprocessor_enable(false);
+
+  bus.map_reset();
+  bus.map_xml();
+
+  cpu.enable();
+  ppu.enable();
+
+  if(expansion() == ExpansionPortDevice::BSX) bsxsatellaview.load();
+  if(cartridge.mode() == Cartridge::Mode::Bsx) bsxcartridge.load();
+  if(cartridge.mode() == Cartridge::Mode::SufamiTurbo) sufamiturbo.load();
+  if(cartridge.mode() == Cartridge::Mode::SuperGameBoy) icd2.load();
+
+  if(cartridge.has_bsx_slot()) bsxflash.load();
+  if(cartridge.has_superfx()) superfx.load();
+  if(cartridge.has_sa1()) sa1.load();
+  if(cartridge.has_necdsp()) necdsp.load();
+  if(cartridge.has_srtc()) srtc.load();
+  if(cartridge.has_sdd1()) sdd1.load();
+  if(cartridge.has_spc7110()) spc7110.load();
+  if(cartridge.has_cx4()) cx4.load();
+  if(cartridge.has_obc1()) obc1.load();
+  if(cartridge.has_st0018()) st0018.load();
+  if(cartridge.has_msu1()) msu1.load();
+  if(cartridge.has_serial()) serial.load();
+}
+
+void System::unload() {
+  if(expansion() == ExpansionPortDevice::BSX) bsxsatellaview.unload();
+  if(cartridge.mode() == Cartridge::Mode::Bsx) bsxcartridge.unload();
+  if(cartridge.mode() == Cartridge::Mode::SufamiTurbo) sufamiturbo.unload();
+  if(cartridge.mode() == Cartridge::Mode::SuperGameBoy) icd2.unload();
+
+  if(cartridge.has_bsx_slot()) bsxflash.unload();
+  if(cartridge.has_superfx()) superfx.unload();
+  if(cartridge.has_sa1()) sa1.unload();
+  if(cartridge.has_necdsp()) necdsp.unload();
+  if(cartridge.has_srtc()) srtc.unload();
+  if(cartridge.has_sdd1()) sdd1.unload();
+  if(cartridge.has_spc7110()) spc7110.unload();
+  if(cartridge.has_cx4()) cx4.unload();
+  if(cartridge.has_obc1()) obc1.unload();
+  if(cartridge.has_st0018()) st0018.unload();
+  if(cartridge.has_msu1()) msu1.unload();
+  if(cartridge.has_serial()) serial.unload();
+}
+
 void System::power() {
   region = config.region;
   expansion = config.expansion_port;
@@ -105,42 +153,16 @@ void System::power() {
   cpu_frequency = region() == Region::NTSC ? config.cpu.ntsc_frequency : config.cpu.pal_frequency;
   apu_frequency = region() == Region::NTSC ? config.smp.ntsc_frequency : config.smp.pal_frequency;
 
-  bus.power();
-  for(unsigned i = 0x2100; i <= 0x213f; i++) memory::mmio.map(i, ppu);
-  for(unsigned i = 0x2140; i <= 0x217f; i++) memory::mmio.map(i, cpu);
-  for(unsigned i = 0x2180; i <= 0x2183; i++) memory::mmio.map(i, cpu);
-  for(unsigned i = 0x4016; i <= 0x4017; i++) memory::mmio.map(i, cpu);
-  for(unsigned i = 0x4200; i <= 0x421f; i++) memory::mmio.map(i, cpu);
-  for(unsigned i = 0x4300; i <= 0x437f; i++) memory::mmio.map(i, cpu);
-
-  audio.coprocessor_enable(false);
-  if(expansion() == ExpansionPortDevice::BSX) bsxbase.enable();
-  if(memory::bsxflash.data()) bsxflash.enable();
-  if(cartridge.mode() == Cartridge::Mode::Bsx) bsxcart.enable();
-  if(cartridge.mode() == Cartridge::Mode::SuperGameBoy) icd2.enable();
-
-  if(cartridge.has_superfx()) superfx.enable();
-  if(cartridge.has_sa1()) sa1.enable();
-  if(cartridge.has_necdsp()) necdsp.enable();
-  if(cartridge.has_srtc()) srtc.enable();
-  if(cartridge.has_sdd1()) sdd1.enable();
-  if(cartridge.has_spc7110()) spc7110.enable();
-  if(cartridge.has_cx4()) cx4.enable();
-  if(cartridge.has_obc1()) obc1.enable();
-  if(cartridge.has_st0018()) st0018.enable();
-  if(cartridge.has_msu1()) msu1.enable();
-  if(cartridge.has_serial()) serial.enable();
-
   cpu.power();
   smp.power();
   dsp.power();
   ppu.power();
 
-  if(expansion() == ExpansionPortDevice::BSX) bsxbase.power();
-  if(memory::bsxflash.data()) bsxflash.power();
-  if(cartridge.mode() == Cartridge::Mode::Bsx) bsxcart.power();
+  if(expansion() == ExpansionPortDevice::BSX) bsxsatellaview.power();
+  if(cartridge.mode() == Cartridge::Mode::Bsx) bsxcartridge.power();
   if(cartridge.mode() == Cartridge::Mode::SuperGameBoy) icd2.power();
 
+  if(cartridge.has_bsx_slot()) bsxflash.power();
   if(cartridge.has_superfx()) superfx.power();
   if(cartridge.has_sa1()) sa1.power();
   if(cartridge.has_necdsp()) necdsp.power();
@@ -162,23 +184,23 @@ void System::power() {
 
   scheduler.init();
   serialize_init();
+  cheat.init();
 
   input.update();
-//video.update();
 }
 
 void System::reset() {
-  bus.reset();
   cpu.reset();
   smp.reset();
   dsp.reset();
   ppu.reset();
 
-  if(expansion() == ExpansionPortDevice::BSX) bsxbase.reset();
-  if(memory::bsxflash.data()) bsxflash.reset();
-  if(cartridge.mode() == Cartridge::Mode::Bsx) bsxcart.reset();
+  if(expansion() == ExpansionPortDevice::BSX) bsxsatellaview.reset();
+
+  if(cartridge.mode() == Cartridge::Mode::Bsx) bsxcartridge.reset();
   if(cartridge.mode() == Cartridge::Mode::SuperGameBoy) icd2.reset();
 
+  if(cartridge.has_bsx_slot()) bsxflash.reset();
   if(cartridge.has_superfx()) superfx.reset();
   if(cartridge.has_sa1()) sa1.reset();
   if(cartridge.has_necdsp()) necdsp.reset();
@@ -200,14 +222,11 @@ void System::reset() {
 
   scheduler.init();
   serialize_init();
+  cheat.init();
 
   input.port_set_device(0, config.controller_port1);
   input.port_set_device(1, config.controller_port2);
   input.update();
-//video.update();
-}
-
-void System::unload() {
 }
 
 void System::scanline() {
@@ -220,7 +239,7 @@ void System::frame() {
 
 System::System() : interface(0) {
   region = Region::Autodetect;
-  expansion = ExpansionPortDevice::None;
+  expansion = ExpansionPortDevice::BSX;
 }
 
 }

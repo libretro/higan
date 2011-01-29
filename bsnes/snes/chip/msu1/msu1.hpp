@@ -1,9 +1,10 @@
-class MSU1 : public Coprocessor, public MMIO {
+class MSU1 : public Coprocessor {
 public:
   static void Enter();
   void enter();
   void init();
-  void enable();
+  void load();
+  void unload();
   void power();
   void reset();
 

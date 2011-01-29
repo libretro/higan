@@ -1,13 +1,10 @@
-ui_objects := libsnes libco
-
-obj/libsnes.o: ui-libsnes/libsnes.cpp ui-libsnes/libsnes.hpp
-
-ui_objects := $(patsubst %,obj/%.o,$(ui_objects))
+include $(snes)/Makefile
+include $(gameboy)/Makefile
 
 # We define the API version here, so it can be included in the code and passed
 # to the linker.
 libsnesRevisionMajor := 1
-libsnesRevisionMinor := 1
+libsnesRevisionMinor := 2
 libsnesRevisionFull  := $(libsnesRevisionMajor).$(libsnesRevisionMinor)
 
 flags += -DLIBSNES_REVISION_MAJOR=$(libsnesRevisionMajor)
@@ -22,10 +19,14 @@ else
 	flags += -fPIC
 endif
 
-ui_clean:
-	-@$(call delete,$(ui_objects))
+#rules
+objects := $(objects) libsnes
+objects := $(patsubst %,obj/%.o,$(objects))
 
-ui_build: $(ui_objects) $(snes_objects) $(gameboy_objects)
+obj/libsnes.o: $(ui)/libsnes.cpp $(ui)/*
+
+#targets
+build: $(objects)
 ifeq ($(platform),x)
 	ar rcs out/libsnes.a $^
 	$(cpp) -o out/libsnes.so -shared -Wl,-soname,libsnes.so.$(libsnesRevisionMajor) $^
@@ -36,18 +37,18 @@ else ifeq ($(platform),win)
 	$(cpp) -o out/snes.dll -shared -Wl,--out-implib,libsnes.a $^
 endif
 
-ui_install: ui_build
+install: build
 ifeq ($(platform),x)
 	install -D -m 644 out/libsnes.a $(DESTDIR)$(prefix)/lib/libsnes.a
 	install -D -m 644 out/libsnes.so $(DESTDIR)$(prefix)/lib/libsnes.so.$(libsnesRevisionFull)
 	cd $(DESTDIR)$(prefix)/lib; ln -sf libsnes.so.$(libsnesRevisionFull) libsnes.so
-	ldconfig
+	ldconfig -n $(DESTDIR)$(prefix)/lib
 	install -D -m 644 ui-libsnes/libsnes.hpp $(DESTDIR)$(prefix)/include/libsnes.hpp
 else ifeq ($(platform),osx)
 	cp out/libsnes.dylib /usr/local/lib/libsnes.dylib
 endif
 
-ui_uninstall:
+uninstall:
 ifeq ($(platform),x)
 	-rm $(DESTDIR)$(prefix)/lib/libsnes.a
 	-rm $(DESTDIR)$(prefix)/lib/libsnes.so

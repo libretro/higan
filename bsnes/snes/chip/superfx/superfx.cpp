@@ -43,7 +43,10 @@ void SuperFX::init() {
   regs.r[15].on_modify = { &SuperFX::r15_modify, this };
 }
 
-void SuperFX::enable() {
+void SuperFX::load() {
+}
+
+void SuperFX::unload() {
 }
 
 void SuperFX::power() {
@@ -53,7 +56,6 @@ void SuperFX::power() {
 
 void SuperFX::reset() {
   create(SuperFX::Enter, system.cpu_frequency());
-  superfxbus.init();
   instruction_counter = 0;
 
   for(unsigned n = 0; n < 16; n++) regs.r[n] = 0x0000;

@@ -1,9 +1,10 @@
-class Serial : public Coprocessor, public MMIO, public library, public property<Serial> {
+class Serial : public Coprocessor, public library, public property<Serial> {
 public:
   static void Enter();
   void enter();
   void init();
-  void enable();
+  void load();
+  void unload();
   void power();
   void reset();
   void serialize(serializer&);
@@ -19,7 +20,6 @@ public:
   void mmio_write(unsigned addr, uint8 data);
 
 private:
-  MMIO *r4016, *r4017;
   function<unsigned ()> baudrate;
   function<bool ()> flowcontrol;
   function<void (void (*)(unsigned), uint8_t (*)(), void (*)(uint8_t))> main;

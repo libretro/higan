@@ -110,6 +110,16 @@ extern "C" {
 #define SNES_MEMORY_GAME_BOY_RAM        6
 #define SNES_MEMORY_GAME_BOY_RTC        7
 
+// These constants represent the various kinds of volatile storage the SNES
+// offers, to allow libsnes clients to implement things like cheat-searching
+// and certain kinds of debugging. They are for use with the snes_get_memory_*
+// functions.
+#define SNES_MEMORY_WRAM    100
+#define SNES_MEMORY_APURAM  101
+#define SNES_MEMORY_VRAM    102
+#define SNES_MEMORY_OAM     103
+#define SNES_MEMORY_CGRAM   104
+
 ////////////////////////////////////////////////////////////////////////////}}}
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -249,7 +259,7 @@ typedef void (*snes_audio_sample_t)(uint16_t left, uint16_t right);
 //    Example code:
 //
 //      void pack_frame (uint16_t * restrict out, const uint16_t * restrict in,
-//      	unsigned width, unsigned height)
+//              unsigned width, unsigned height)
 //      {
 //         // Normally our pitch is 2048 bytes.
 //         int pitch_pixels = 1024;
@@ -1071,12 +1081,13 @@ void snes_unload_cartridge(void);
 ////////////////////////////////////////////////////////////////////////////}}}
 
 ///////////////////////////////////////////////////////////////////////////////
-// Non-volatile storage                                                     {{{
+// Volatile and non-volatile storage                                        {{{
 //
 // Certain SNES cartridges include non-volatile storage or other kinds of data
 // that would persist after the SNES is turned off. libsnes exposes this
 // information via the snes_get_memory_data() and snes_get_memory_size()
-// functions.
+// functions. Since version 1.2 of the libsnes API, libsnes also exposes the
+// contents of volatile storage such as WRAM and VRAM.
 //
 // After a cartridge is loaded, call snes_get_memory_size() and
 // snes_get_memory_data() with the various SNES_MEMORY_* constants to determine
@@ -1093,14 +1104,15 @@ void snes_unload_cartridge(void);
 // relevant storage buffers into a file (or some non-volatile storage of your
 // own) so that you can load it the next time you load the same cartridge into
 // the emulated SNES. Do not call free() on the storage buffers; they will be
-// handled by libsnes.
+// handled by libsnes. Note: It is not necessary to store the contents of
+// volatile storage; the emulated SNES expects information in volatile storage
+// to be lost (hence the name 'volatile').
 //
-// Because this non-volatile storage is read and written by the software
-// running on the emulated SNES, it should be compatible between different
-// versions of different emulators running on different platforms, unlike save
-// states.
+// Because non-volatile storage is read and written by the software running on
+// the emulated SNES, it should be compatible between different versions of
+// different emulators running on different platforms, unlike save states.
 //
-// The various kinds of storage and their uses are:
+// The various kinds of non-volatile storage and their uses are:
 //
 //    SNES_MEMORY_CARTRIDGE_RAM:
 //      Standard battery-backed static RAM (SRAM). Traditionally, the SRAM for
@@ -1133,6 +1145,33 @@ void snes_unload_cartridge(void);
 //    SNES_MEMORY_GAME_BOY_RTC:
 //      Real-time clock data in the Gameboy cartridge inserted into the Super
 //      Game Boy base cartridge. Not all Gameboy games have an RTC.
+//
+// The various kinds of volatile storage are:
+//
+//    SNES_MEMORY_WRAM:
+//      Working RAM, accessible by the CPU. SNES software tends to keep runtime
+//      information in here; games' life-bars and inventory contents and so
+//      forth are in here somewhere.
+//
+//    SNES_MEMORY_APURAM:
+//      RAM accessible by the Audio Processing Unit. Contains audio samples,
+//      music data and the code responsible for feeding the right notes to the
+//      DSP at the right times.
+//
+//    SNES_MEMORY_VRAM:
+//      Video RAM. Stores almost everything related to video output, including
+//      the patterns used for each tile and sprite, tilemaps for each
+//      background. The exact format used depends on the current video mode of
+//      the emulated SNES.
+//
+//    SNES_MEMORY_OAM:
+//      Object Attribute Memory. Stores the location, orientation and priority
+//      of all the sprites the SNES displays.
+//
+//    SNES_MEMORY_CGRAM:
+//      Color Generator RAM. Contains the colour palettes used by tiles and
+//      sprites. Each palette entry is stored in a 16-bit int, in the standard
+//      XBGR1555 format.
 
 // snes_get_memory_data:
 //

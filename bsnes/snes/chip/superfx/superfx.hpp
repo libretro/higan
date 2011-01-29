@@ -1,7 +1,6 @@
-#include "bus/bus.hpp"
-
-class SuperFX : public Coprocessor, public MMIO {
+class SuperFX : public Coprocessor {
 public:
+  #include "bus/bus.hpp"
   #include "core/core.hpp"
   #include "memory/memory.hpp"
   #include "mmio/mmio.hpp"
@@ -11,7 +10,8 @@ public:
   static void Enter();
   void enter();
   void init();
-  void enable();
+  void load();
+  void unload();
   void power();
   void reset();
   void serialize(serializer&);
@@ -22,4 +22,3 @@ private:
 };
 
 extern SuperFX superfx;
-extern SuperFXBus superfxbus;
