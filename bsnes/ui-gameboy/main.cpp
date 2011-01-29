@@ -42,6 +42,8 @@ void Application::main(int argc, char **argv) {
 
   GameBoy::system.init(&interface);
 
+  if(argc == 2) utility.loadCartridge(argv[1]);
+
   while(quit == false) {
     OS::run();
 
