@@ -5,10 +5,11 @@ ui_objects += ruby phoenix
 
 # platform
 ifeq ($(platform),x)
-  phoenix_compile = $(call compile,-DPHOENIX_GTK `pkg-config --cflags gtk+-2.0`)
-  link += `pkg-config --libs gtk+-2.0`
-# phoenix_compile = $(call compile,-DPHOENIX_QT `pkg-config --cflags QtCore QtGui`)
-# link += `pkg-config --libs QtCore QtGui`
+# phoenix_compile = $(call compile,-DPHOENIX_GTK `pkg-config --cflags gtk+-2.0`)
+# link += `pkg-config --libs gtk+-2.0`
+
+  phoenix_compile = $(call compile,-DPHOENIX_QT `pkg-config --cflags QtCore QtGui`)
+  link += `pkg-config --libs QtCore QtGui`
 
   ruby := video.glx video.xv video.sdl
   ruby += audio.alsa audio.openal audio.oss audio.pulseaudio audio.pulseaudiosimple audio.ao
@@ -59,8 +60,8 @@ rubydef := $(foreach c,$(subst .,_,$(call strupper,$(ruby))),-D$c)
 objects := $(ui_objects) $(objects)
 objects := $(patsubst %,obj/%.o,$(objects))
 
-obj/ui-main.o: $(ui)/main.cpp $(call rwildcard,$(ui)/*.hpp) $(call rwildcard,$(ui)/*); $(phoenix_compile)
-obj/ui-utility.o: $(ui)/utility/utility.cpp $(call rwildcard,$(ui)/utility/*); $(phoenix_compile)
+obj/ui-main.o: $(ui)/main.cpp $(call rwildcard,$(ui)/*.hpp) $(call rwildcard,$(ui)/*)
+obj/ui-utility.o: $(ui)/utility/utility.cpp $(call rwildcard,$(ui)/utility/*)
 
 obj/ruby.o: ruby/ruby.cpp $(call rwildcard,ruby/*)
 	$(call compile,$(rubydef) $(rubyflags))

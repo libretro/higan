@@ -1,28 +1,34 @@
 Console console;
 
 void Console::create() {
-  Window::create(0, 0, 256, 256, "Console");
+  setTitle("Console");
   application.addWindow(this, "Debugger.Console", "192,192");
 
-  unsigned x = 5, y = 5;
-  output.create(*this, x, y, 580, 328); x += 580 + 5;
   output.setFont(application.monospaceFont);
   output.setEditable(false);
-
-  traceToConsole.create(*this, x, y, 120, Style::CheckBoxHeight, "Trace to console"); y += Style::CheckBoxHeight;
+  traceToConsole.setText("Trace to console");
+  traceToFile.setText("Trace to file");
+  traceCPU.setText("Trace CPU");
+  traceSMP.setText("Trace SMP");
   traceToConsole.setChecked(true);
-  traceToFile.create(*this, x, y, 120, Style::CheckBoxHeight, "Trace to file"); y += Style::CheckBoxHeight;
-  traceCPU.create(*this, x, y, 120, Style::CheckBoxHeight, "Trace S-CPU"); y += Style::CheckBoxHeight;
   traceCPU.setChecked(true);
-  traceSMP.create(*this, x, y, 120, Style::CheckBoxHeight, "Trace S-SMP"); y += Style::CheckBoxHeight;
+  clearConsole.setText("Clear console");
 
-  clearConsole.create(*this, x, 338 - Style::ButtonHeight - 5, 120, Style::ButtonHeight, "Clear console");
+  layout.setMargin(5);
+  layout.append(output, 0, 0, 5);
+  controlLayout.append(traceToConsole, 120, Style::CheckBoxHeight);
+  controlLayout.append(traceToFile, 120, Style::CheckBoxHeight);
+  controlLayout.append(traceCPU, 120, Style::CheckBoxHeight);
+  controlLayout.append(traceSMP, 120, Style::CheckBoxHeight);
+  controlLayout.append(spacer, 120, 0, Style::CheckBoxHeight);
+  controlLayout.append(clearConsole, 120, Style::ButtonHeight);
+  layout.append(controlLayout, 120, 0);
 
-  setGeometry(0, 0, 710, 338);
+  setGeometry({ 0, 0, layout.minimumWidth() + 580, 350 });
+  append(layout);
 
   onClose = []() {
     debugger.showConsole.setChecked(false);
-    return true;
   };
 
   traceToFile.onTick = []() { console.tracerEnable(console.traceToFile.checked()); };
@@ -39,7 +45,7 @@ void Console::write(const string &text, bool echo) {
     buffer.append(text);
     output.setText(buffer);
     output.setCursorPosition(~0);
-    OS::run();
+    OS::processEvents();
   }
   if(traceToFile.checked() && logfile.open()) {
     logfile.print(string(text, "\n"));

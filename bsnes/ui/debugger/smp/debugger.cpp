@@ -1,24 +1,28 @@
 SMPDebugger smpDebugger;
 
 void SMPDebugger::create() {
-  Window::create(0, 0, 256, 256, "SMP Debugger");
+  setTitle("SMP Debugger");
   application.addWindow(this, "Debugger.SMPDebugger", "192,192");
 
-  unsigned x = 5, y = 5;
-  output.create(*this, x, y, 400, 200); x += 400 + 5;
   output.setFont(application.monospaceFont);
   output.setEditable(false);
-
-  stepInto.create(*this, x, y, 80, Style::ButtonHeight, "Step Into"); y += Style::ButtonHeight;
-  stepOver.create(*this, x, y, 80, Style::ButtonHeight, "Step Over"); y += Style::ButtonHeight;
-  proceed.create(*this, x, y, 80, Style::ButtonHeight, "Proceed"); y += Style::ButtonHeight;
+  stepInto.setText("Step Into");
+  stepOver.setText("Step Over");
+  proceed.setText("Proceed");
   proceed.setEnabled(false);
 
-  setGeometry(0, 0, 490, 205);
+  layout.setMargin(5);
+  layout.append(output, 0, 0, 5);
+  controlLayout.append(stepInto, 80, Style::ButtonHeight);
+  controlLayout.append(stepOver, 80, Style::ButtonHeight);
+  controlLayout.append(proceed, 80, Style::ButtonHeight);
+  layout.append(controlLayout, 80, 0);
+
+  setGeometry({ 0, 0, layout.minimumWidth() + 300, 220 });
+  append(layout);
 
   onClose = []() {
     debugger.showSMPDebugger.setChecked(false);
-    return true;
   };
 
   stepInto.onTick = []() {

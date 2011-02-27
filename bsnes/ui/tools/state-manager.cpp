@@ -1,22 +1,30 @@
 StateManager stateManager;
 
 void StateManager::create() {
-  Window::create(0, 0, 256, 256, "State Manager");
+  setTitle("State Manager");
   application.addWindow(this, "StateManager", "160,160");
 
-  unsigned x = 5, y = 5;
-
-  stateList.create(*this, x, y, 500, 250, "Slot\tDescription"); y += 255;
+  stateList.setHeaderText("Slot", "Description");
   stateList.setHeaderVisible();
+  descLabel.setText("Description:");
+  loadButton.setText("Load");
+  saveButton.setText("Save");
+  eraseButton.setText("Erase");
 
-  descLabel.create(*this, x, y, 80, Style::TextBoxHeight, "Description:");
-  descEdit.create(*this, x + 80, y, 420, Style::TextBoxHeight); y += Style::TextBoxHeight + 5;
+  layout.setMargin(5);
+  layout.append(stateList, 0, 0, 5);
+  descLayout.append(descLabel, 80, 0, 5);
+  descLayout.append(descEdit,   0, 0);
+  layout.append(descLayout, 0, Style::LineEditHeight, 5);
+  controlLayout.append(spacer,       0, 0);
+  controlLayout.append(loadButton,  80, 0, 5);
+  controlLayout.append(saveButton,  80, 0, 5);
+  controlLayout.append(eraseButton, 80, 0);
+  layout.append(controlLayout, 0, Style::ButtonHeight);
 
-  loadButton.create(*this, x + 505 - 85 - 85 - 85, y, 80, Style::ButtonHeight, "Load");
-  saveButton.create(*this, x + 505 - 85 - 85, y, 80, Style::ButtonHeight, "Save");
-  eraseButton.create(*this, x + 505 - 85, y, 80, Style::ButtonHeight, "Erase"); y += Style::ButtonHeight + 5;
+  setGeometry({ 0, 0, 480, layout.minimumHeight() + 250 });
+  append(layout);
 
-  setGeometry(0, 0, 510, y);
   synchronize();
 
   stateList.onActivate = { &StateManager::slotLoad, this };
@@ -30,29 +38,25 @@ void StateManager::create() {
 void StateManager::synchronize() {
   descEdit.setText("");
   descEdit.setEnabled(false);
-  if(auto position = stateList.selection()) {
-    if(slot[position()].capacity() > 0) {
-      descEdit.setText(slotLoadDescription(position()));
-      descEdit.setEnabled(true);
-    }
+  if(stateList.selected() == false) return;
+  if(slot[stateList.selection()].capacity() > 0) {
+    descEdit.setText(slotLoadDescription(stateList.selection()));
+    descEdit.setEnabled(true);
   }
 }
 
 void StateManager::refresh() {
   for(unsigned i = 0; i < 32; i++) {
-    stateList.setItem(i, { 
-      rdecimal<2>(i + 1), "\t",
-      slotLoadDescription(i)
-    });
+    stateList.modify(i, rdecimal<2>(i + 1), slotLoadDescription(i));
   }
-  stateList.resizeColumnsToContent();
+  stateList.autoSizeColumns();
 }
 
 void StateManager::load() {
   stateList.reset();
   for(unsigned i = 0; i < 32; i++) {
     slot[i] = serializer();
-    stateList.addItem("");
+    stateList.append("");
   }
 
   string filename = { cartridge.baseName, ".bsa" };
@@ -101,16 +105,15 @@ void StateManager::save() {
 }
 
 void StateManager::slotLoad() {
-  if(auto position = stateList.selection()) {
-    serializer s(slot[position()].data(), slot[position()].capacity());
-    SNES::system.unserialize(s);
-  }
+  if(stateList.selected() == false) return;
+  serializer s(slot[stateList.selection()].data(), slot[stateList.selection()].capacity());
+  SNES::system.unserialize(s);
 }
 
 void StateManager::slotSave() {
-  if(auto position = stateList.selection()) {
+  if(stateList.selected()) {
     SNES::system.runtosave();
-    slot[position()] = SNES::system.serialize();
+    slot[stateList.selection()] = SNES::system.serialize();
   }
   refresh();
   synchronize();
@@ -118,8 +121,8 @@ void StateManager::slotSave() {
 }
 
 void StateManager::slotErase() {
-  if(auto position = stateList.selection()) {
-    slot[position()] = serializer();
+  if(stateList.selected()) {
+    slot[stateList.selection()] = serializer();
   }
   refresh();
   synchronize();
@@ -133,11 +136,10 @@ string StateManager::slotLoadDescription(unsigned i) {
 }
 
 void StateManager::slotSaveDescription() {
-  if(auto position = stateList.selection()) {
-    string text = descEdit.text();
-    if(slot[position()].capacity() > 0) {
-      strlcpy((char*)slot[position()].data() + HeaderLength, (const char*)text, 512);
-    }
+  if(stateList.selected() == false) return;
+  string text = descEdit.text();
+  if(slot[stateList.selection()].capacity() > 0) {
+    strlcpy((char*)slot[stateList.selection()].data() + HeaderLength, (const char*)text, 512);
   }
   refresh();
 }

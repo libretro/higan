@@ -1,26 +1,40 @@
 BreakpointEditor breakpointEditor;
 
 void BreakpointEditor::create() {
-  Window::create(0, 0, 256, 256, "Breakpoint Editor");
+  setTitle("Breakpoint Editor");
   application.addWindow(this, "Debugger.BreakpointEditor", "192,192");
 
-  unsigned x = 5, y = 5;
-
-  runToBreakpoint.create(*this, x, y, 295, Style::CheckBoxHeight, "Run to breakpoint");
-  y += Style::CheckBoxHeight + 5;
-
+  runToBreakpoint.setText("Run to breakpoint");
   for(unsigned n = 0; n < Breakpoints; n++) {
-    enableBox[n].create(*this, x, y, 35, Style::EditBoxHeight, { n + 1 });
-    addressBox[n].create(*this, x + 35, y, 60, Style::EditBoxHeight);
-    valueBox[n].create(*this, x + 100, y, 30, Style::EditBoxHeight);
-    typeBox[n].create(*this, x + 135, y, 80, Style::EditBoxHeight, "Exec\nRead\nWrite");
-    sourceBox[n].create(*this, x + 220, y, 80, Style::EditBoxHeight, "CPU\nAPU\nVRAM\nOAM\nCGRAM");
-    y += Style::EditBoxHeight + 5;
-
+    enableBox[n].setText({ n + 1 });
+    typeBox[n].append("Exec");
+    typeBox[n].append("Read");
+    typeBox[n].append("Write");
+    sourceBox[n].append("CPU");
+    sourceBox[n].append("APU");
+    sourceBox[n].append("VRAM");
+    sourceBox[n].append("OAM");
+    sourceBox[n].append("CGRAM");
     enableBox[n].onTick = [n]() { breakpointEditor.toggleBreakpoint(n); };
   }
 
-  setGeometry(0, 0, 305, y);
+  layout.setMargin(5);
+  layout.append(runToBreakpoint, 0, Style::CheckBoxHeight, 5);
+  for(unsigned n = 0; n < Breakpoints; n++) {
+    breakpointLayout[n].append(enableBox[n], 35, Style::LineEditHeight);
+    breakpointLayout[n].append(addressBox[n], 60, Style::LineEditHeight, 5);
+    breakpointLayout[n].append(valueBox[n], 30, Style::LineEditHeight, 5);
+    breakpointLayout[n].append(typeBox[n], 80, Style::LineEditHeight, 5);
+    breakpointLayout[n].append(sourceBox[n], 80, Style::LineEditHeight);
+    layout.append(breakpointLayout[n], 0, Style::LineEditHeight, 5);
+  }
+
+  setGeometry({ 0, 0, 310, layout.minimumHeight() });
+  append(layout);
+
+  onClose = []() {
+    debugger.showBreakpointEditor.setChecked(false);
+  };
 
   runToBreakpoint.onTick = []() {
     if(breakpointEditor.runToBreakpoint.checked()) {

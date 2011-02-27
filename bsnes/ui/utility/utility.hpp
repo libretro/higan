@@ -5,8 +5,10 @@ struct Utility : property<Utility> {
   void showMessage(const string &text);
 
   void setControllers();
+
   void setScale(unsigned scale = 0);
   void setFullscreen(bool fullscreen = true);
+
   void setFilter();
   void setShader();
 
@@ -17,6 +19,10 @@ struct Utility : property<Utility> {
   void loadState(unsigned slot);
 
   Utility();
+
+  bool fullscreen;
+  unsigned viewportX, viewportY;
+  unsigned viewportWidth, viewportHeight;
 
 private:
   string statusCurrentText;

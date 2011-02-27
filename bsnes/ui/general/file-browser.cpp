@@ -1,18 +1,20 @@
 FileBrowser fileBrowser;
 
 void FileBrowser::create() {
-  Window::create(0, 0, 256, 256);
   application.addWindow(this, "FileBrowser", "160,160");
 
-  unsigned x = 5, y = 5, height = Style::TextBoxHeight;
+  browseButton.setText("...");
+  upButton.setText("..");
 
-  pathBox.create(*this, x, y, 630 - height - height - 10, height);
-  browseButton.create(*this, x + 630 - height - height - 5, y, height, height, "...");
-  upButton.create(*this, x + 630 - height, y, height, height, ".."); y += height + 5;
+  layout.setMargin(5);
+  pathLayout.append(pathBox, 0, 0, 5);
+  pathLayout.append(browseButton, Style::LineEditHeight, 0, 5);
+  pathLayout.append(upButton, Style::LineEditHeight, 0);
+  layout.append(pathLayout, 0, Style::LineEditHeight, 5);
+  layout.append(contentsBox, 0, 0);
 
-  contentsBox.create(*this, x, y, 630, 350); y += 350 + 5;
-
-  setGeometry(0, 0, 640, y);
+  setGeometry({ 0, 0, 640, layout.minimumHeight() + 400 });
+  append(layout);
 
   pathBox.onActivate = []() {
     string path = fileBrowser.pathBox.text();
@@ -94,7 +96,7 @@ void FileBrowser::setFolder(const string &pathname) {
       }
     }
   }
-  foreach(item, contents) contentsBox.addItem(item);
+  foreach(item, contents) contentsBox.append(item);
   contentsBox.setSelection(0);
   contentsBox.setFocused();
 }
@@ -111,18 +113,17 @@ void FileBrowser::folderUp() {
 }
 
 void FileBrowser::fileActivate() {
-  if(auto position = contentsBox.selection()) {
-    string filename = contents[position()];
-    if(strend(filename, "/")) {
-      string cartridgeName = cartridgeFolder(filename);
-      if(cartridgeName == "") {
-        setFolder({ folder, filename });
-      } else {
-        loadFile({ folder, cartridgeName });
-      }
+  if(contentsBox.selected() == false) return;
+  string filename = contents[contentsBox.selection()];
+  if(strend(filename, "/")) {
+    string cartridgeName = cartridgeFolder(filename);
+    if(cartridgeName == "") {
+      setFolder({ folder, filename });
     } else {
-      loadFile({ folder, filename });
+      loadFile({ folder, cartridgeName });
     }
+  } else {
+    loadFile({ folder, filename });
   }
 }
 

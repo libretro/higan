@@ -1,7 +1,9 @@
 struct MemoryEditor : TopLevelWindow {
-  HexEditor editor;
+  HorizontalLayout layout;
+  HexEdit editor;
+  VerticalLayout controlLayout;
   ComboBox sourceBox;
-  TextBox gotoBox;
+  LineEdit gotoBox;
   Button refreshButton;
 
   SNES::Debugger::MemorySource source;

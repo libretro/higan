@@ -1,19 +1,27 @@
 struct CheatEditor : TopLevelWindow {
-  ListBox cheatList;
+  VerticalLayout layout;
+  ListView cheatList;
+  HorizontalLayout codeLayout;
   Label codeLabel;
-  TextBox codeEdit;
+  LineEdit codeEdit;
+  HorizontalLayout descLayout;
   Label descLabel;
-  TextBox descEdit;
+  LineEdit descEdit;
+  HorizontalLayout controlLayout;
+  Label spacer;
   Button findButton;
   Button clearAllButton;
   Button clearButton;
 
   TopLevelWindow databaseWindow;
-  ListBox databaseList;
-  lstring databaseCode;
+  VerticalLayout databaseLayout;
+  ListView databaseList;
+  HorizontalLayout databaseControlLayout;
   Button databaseSelectAll;
   Button databaseUnselectAll;
+  Label databaseSpacer;
   Button databaseOk;
+  lstring databaseCode;
 
   void load(string filename);
   void save(string filename);

@@ -18,24 +18,32 @@ void Debugger::create() {
   breakpointEditor.create();
   memoryEditor.create();
 
-  Window::create(0, 0, 256, 256, "Debugger");
+  setTitle("Debugger");
   application.addWindow(this, "Debugger", "160,160");
 
-  unsigned x = 5, y = 5;
-  enableDebugger.create(*this, x, y, 240, Style::CheckBoxHeight, "Enable debugger"); y += Style::CheckBoxHeight;
-  showConsole.create(*this, x, y, 240, Style::CheckBoxHeight, "Console"); y += Style::CheckBoxHeight;
-  showCPUDebugger.create(*this, x, y, 240, Style::CheckBoxHeight, "CPU debugger"); y += Style::CheckBoxHeight;
-  showSMPDebugger.create(*this, x, y, 240, Style::CheckBoxHeight, "SMP debugger"); y += Style::CheckBoxHeight;
-  showBreakpointEditor.create(*this, x, y, 240, Style::CheckBoxHeight, "Breakpoint editor"); y += Style::CheckBoxHeight;
-  showMemoryEditor.create(*this, x, y, 240, Style::CheckBoxHeight, "Memory editor"); y += Style::CheckBoxHeight;
+  enableDebugger.setText("Enable debugger");
+  showConsole.setText("Console");
+  showCPUDebugger.setText("CPU debugger");
+  showSMPDebugger.setText("SMP debugger");
+  showBreakpointEditor.setText("Breakpoint editor");
+  showMemoryEditor.setText("Memory editor");
+
+  layout.setMargin(5);
+  layout.append(enableDebugger, 0, Style::CheckBoxHeight);
+  layout.append(showConsole, 0, Style::CheckBoxHeight);
+  layout.append(showCPUDebugger, 0, Style::CheckBoxHeight);
+  layout.append(showSMPDebugger, 0, Style::CheckBoxHeight);
+  layout.append(showBreakpointEditor, 0, Style::CheckBoxHeight);
+  layout.append(showMemoryEditor, 0, Style::CheckBoxHeight);
+
+  setGeometry({ 0, 0, 256, layout.minimumHeight() });
+  append(layout);
 
   //windows shown by default
   showConsole.setChecked();
   showCPUDebugger.setChecked();
   showSMPDebugger.setChecked();
   showBreakpointEditor.setChecked();
-
-  setGeometry(0, 0, 250, y);
 
   enableDebugger.onTick = []() {
     debugger.enable(debugger.enableDebugger.checked());
@@ -63,7 +71,6 @@ void Debugger::create() {
 
   onClose = []() {
     debugger.enable(false);
-    return true;
   };
 
   synchronize();

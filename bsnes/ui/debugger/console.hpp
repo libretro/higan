@@ -1,9 +1,12 @@
 struct Console : TopLevelWindow {
-  EditBox output;
+  HorizontalLayout layout;
+  TextEdit output;
+  VerticalLayout controlLayout;
   CheckBox traceToConsole;
   CheckBox traceToFile;
   CheckBox traceCPU;
   CheckBox traceSMP;
+  Label spacer;
   Button clearConsole;
 
   string buffer;

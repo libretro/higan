@@ -8,19 +8,31 @@ Application application;
 void Application::main(int argc, char **argv) {
   quit = false;
 
-  #if defined(PHOENIX_WINDOWS)
-  proportionalFont.create("Tahoma", 8);
-  proportionalFontBold.create("Tahoma", 8, Font::Style::Bold);
-  monospaceFont.create("Courier New", 8);
+  #if defined(PLATFORM_WIN)
+  proportionalFont.setFamily("Tahoma");
+  proportionalFont.setSize(8);
+
+  proportionalFontBold.setFamily("Tahoma");
+  proportionalFontBold.setSize(8);
+  proportionalFontBold.setBold();
+
+  monospaceFont.setFamily("Lucida Console");
+  monospaceFont.setSize(8);
   #else
-  proportionalFont.create("Sans", 8);
-  proportionalFontBold.create("Sans", 8, Font::Style::Bold);
-  monospaceFont.create("Liberation Mono", 8);
+  proportionalFont.setFamily("Sans");
+  proportionalFont.setSize(8);
+
+  proportionalFontBold.setFamily("Sans");
+  proportionalFontBold.setSize(8);
+  proportionalFontBold.setBold();
+
+  monospaceFont.setFamily("Liberation Mono");
+  monospaceFont.setSize(8);
   #endif
 
   mainWindow.create();
   mainWindow.setVisible();
-  OS::run();
+  OS::processEvents();
 
   #if defined(PHOENIX_WINDOWS)
   video.driver("Direct3D");
@@ -28,9 +40,23 @@ void Application::main(int argc, char **argv) {
   video.driver("OpenGL");
   #endif
   video.set(Video::Handle, (uintptr_t)mainWindow.viewport.handle());
-  video.set(Video::Synchronize, true);
+  video.set(Video::Synchronize, false);
   video.set(Video::Filter, (unsigned)0);
   video.init();
+
+  #if defined(PHOENIX_WINDOWS)
+  audio.driver("XAudio2");
+  #else
+  audio.driver("ALSA");
+  #endif
+  audio.set(Audio::Handle, (uintptr_t)mainWindow.viewport.handle());
+  audio.set(Audio::Synchronize, true);
+  audio.set(Audio::Volume, 100U);
+  audio.set(Audio::Latency, 80U);
+  audio.set(Audio::Frequency, 44100U);
+  audio.set(Audio::Resample, true);
+  audio.set(Audio::ResampleRatio, 4194304.0 / 44100.0);
+  audio.init();
 
   #if defined(PHOENIX_WINDOWS)
   input.driver("RawInput");
@@ -45,7 +71,7 @@ void Application::main(int argc, char **argv) {
   if(argc == 2) utility.loadCartridge(argv[1]);
 
   while(quit == false) {
-    OS::run();
+    OS::processEvents();
 
     if(GameBoy::cartridge.loaded()) {
       do {

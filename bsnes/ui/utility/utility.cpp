@@ -70,53 +70,65 @@ void Utility::setScale(unsigned scale) {
     height = 239 * scale;
     if(config.video.aspectRatioCorrection) width *= 32.0 / 23.0;
   }
-  mainWindow.viewport.setGeometry(0, 0, width, height);
+
+  viewportX = 0;
+  viewportY = 0;
+  viewportWidth = width;
+  viewportHeight = height;
+
+  mainWindow.viewport.setGeometry({ 0, 0, width, height });
   Geometry geom = mainWindow.geometry();
-  mainWindow.setGeometry(geom.x, geom.y, width, height);
+  mainWindow.setGeometry({ geom.x, geom.y, width, height });
 }
 
 void Utility::setFullscreen(bool fullscreen) {
+  this->fullscreen = fullscreen;
+
   mainWindow.setMenuVisible(!fullscreen);
   mainWindow.setStatusVisible(!fullscreen);
-  mainWindow.setFullscreen(fullscreen);
+  mainWindow.setFullScreen(fullscreen);
   if(fullscreen == false) {
+    input.unacquire();
     setScale();
   } else {
+    input.acquire();
+    Geometry desktop = OS::desktopGeometry();
     unsigned width, height;
     switch(config.video.fullscreenScale) { default:
       case 0: {  //center (even multiple of base height)
         unsigned baseHeight = config.video.region == 0 ? 224 : 239;
-        unsigned heightScale = OS::desktopHeight() / baseHeight;
+        unsigned heightScale = desktop.height / baseHeight;
         height = baseHeight * heightScale;
         width = 256 * heightScale;
         if(config.video.region == 0 && config.video.aspectRatioCorrection) width *= 54.0 / 47.0;
         if(config.video.region == 1 && config.video.aspectRatioCorrection) width *= 32.0 / 23.0;
-        width = min(width, OS::desktopWidth());
+        width = min(width, desktop.width);
         break;
       }
 
       case 1: {  //scale (100% screen height, aspect-corrected width)
         unsigned baseHeight = config.video.region == 0 ? 224 : 239;
-        height = OS::desktopHeight();
+        height = desktop.height;
         width = 256.0 / baseHeight * height;
         if(config.video.region == 0 && config.video.aspectRatioCorrection) width *= 54.0 / 47.0;
         if(config.video.region == 1 && config.video.aspectRatioCorrection) width *= 32.0 / 23.0;
-        width = min(width, OS::desktopWidth());
+        width = min(width, desktop.width);
         break;
       }
 
       case 2: {  //stretch (100% screen width and 100% screen height)
-        width = OS::desktopWidth();
-        height = OS::desktopHeight();
+        width = desktop.width;
+        height = desktop.height;
         break;
       }
     }
 
-    mainWindow.viewport.setGeometry(
-      (OS::desktopWidth() - width) / 2,
-      (OS::desktopHeight() - height) / 2,
-      width, height
-    );
+    viewportX = (desktop.width - width) / 2;
+    viewportY = (desktop.height - height) / 2;
+    viewportWidth = width;
+    viewportHeight = height;
+
+    mainWindow.viewport.setGeometry({ viewportX, viewportY, viewportWidth, viewportHeight });
   }
 }
 
@@ -188,5 +200,6 @@ void Utility::loadState(unsigned slot) {
 }
 
 Utility::Utility() {
+  fullscreen = false;
   statusTime = 0;
 }

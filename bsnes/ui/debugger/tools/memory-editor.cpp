@@ -1,31 +1,31 @@
 MemoryEditor memoryEditor;
 
 void MemoryEditor::create() {
-  Window::create(0, 0, 256, 256, "Memory Editor");
+  setTitle("Memory Editor");
   application.addWindow(this, "Debugger.MemoryEditor", "192,192");
 
-  unsigned x = 5, y = 5;
-  editor.create(*this, x, y, 470, 210); x += 470 + 5;
   editor.setFont(application.monospaceFont);
   editor.setColumns(16);
   editor.setRows(16);
+  sourceBox.append("CPU");
+  sourceBox.append("APU");
+  sourceBox.append("VRAM");
+  sourceBox.append("OAM");
+  sourceBox.append("CGRAM");
+  refreshButton.setText("Refresh");
 
-  sourceBox.create(*this, x, y, 80, Style::ComboBoxHeight); y += Style::ComboBoxHeight;
-  sourceBox.addItem("CPU");
-  sourceBox.addItem("APU");
-  sourceBox.addItem("VRAM");
-  sourceBox.addItem("OAM");
-  sourceBox.addItem("CGRAM");
+  layout.setMargin(5);
+  layout.append(editor, 0, 0, 5);
+  controlLayout.append(sourceBox, 80, Style::ComboBoxHeight);
+  controlLayout.append(gotoBox, 80, Style::ComboBoxHeight);
+  controlLayout.append(refreshButton, 80, Style::ComboBoxHeight);
+  layout.append(controlLayout, 80, 0);
 
-  gotoBox.create(*this, x, y, 80, Style::TextBoxHeight); y += Style::TextBoxHeight;
-
-  refreshButton.create(*this, x, y, 80, Style::ButtonHeight, "Refresh"); y += Style::ButtonHeight;
-
-  setGeometry(0, 0, 560, 220);
+  setGeometry({ 0, 0, layout.minimumWidth() + 475, 230 });
+  append(layout);
 
   onClose = []() {
     debugger.showMemoryEditor.setChecked(false);
-    return true;
   };
 
   editor.onRead = { &MemoryEditor::read, this };
@@ -62,7 +62,7 @@ void MemoryEditor::setSource(SNES::Debugger::MemorySource source_) {
     case SNES::Debugger::MemorySource::OAM:    size = 544; break;
     case SNES::Debugger::MemorySource::CGRAM:  size = 512; break;
   }
-  editor.setSize(size);
+  editor.setLength(size);
   editor.setOffset(0);
   editor.update();
 }

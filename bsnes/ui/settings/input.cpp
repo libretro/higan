@@ -2,41 +2,58 @@ InputSettings inputSettings;
 static InputMapper::AbstractInput *activeInput = 0;
 
 void InputSettings::create() {
-  Window::create(0, 0, 256, 256, "Input Settings");
+  setTitle("Input Settings");
   application.addWindow(this, "InputSettings", "160,160");
-  setFont(application.proportionalFontBold);
+  setStatusFont(application.proportionalFontBold);
   setStatusVisible();
 
   activeInput = 0;
   activeMouse = 0;
 
-  unsigned x = 5, y = 5, height = Style::ButtonHeight;
+  portLabel.setText("Port:");
+  portBox.append(inputMapper.port1.name);
+  portBox.append(inputMapper.port2.name);
+  deviceLabel.setText("Device:");
+  mappingList.setHeaderText("Name", "Mapping");
+  mappingList.setHeaderVisible(true);
+  clearButton.setText("Clear");
+  mouseXaxis.setText("Mouse X-axis");
+  mouseYaxis.setText("Mouse Y-axis");
+  mouseLeft.setText("Mouse Left");
+  mouseMiddle.setText("Mouse Middle");
+  mouseRight.setText("Mouse Right");
 
-  portLabel.create(*this, x, y, 50, Style::ComboBoxHeight, "Port:");
-  portBox.create(*this, x + 50, y, 200, Style::ComboBoxHeight);
-  portBox.addItem(inputMapper.port1.name);
-  portBox.addItem(inputMapper.port2.name);
-  deviceLabel.create(*this, x + 255, y, 50, Style::ComboBoxHeight, "Device:");
-  deviceBox.create(*this, x + 305, y, 200, Style::ComboBoxHeight); y += Style::ComboBoxHeight + 5;
+  layout.setMargin(5);
+  selectionLayout.append(portLabel,   50, 0, 5);
+  selectionLayout.append(portBox,      0, 0, 5);
+  selectionLayout.append(deviceLabel, 50, 0, 5);
+  selectionLayout.append(deviceBox,    0, 0);
+  layout.append(selectionLayout, 0, Style::ComboBoxHeight, 5);
+  layout.append(mappingList, 0, 0, 5);
+  mapLayout.append(spacer,       0, 0);
+  mapLayout.append(clearButton, 80, 0);
+  layout.append(mapLayout, 0, Style::ButtonHeight);
 
-  mappingList.create(*this, x, y, 505, 265, "Name\tMapping"); y += 265 + 5;
-  mappingList.setHeaderVisible();
-  mappingList.setFocused();
+  axisLayout.setMargin(5);
+  axisLayout.append(axisSpacer, 0, 0);
+  axisControlLayout.append(mouseXaxis, 100, 0, 5);
+  axisControlLayout.append(mouseYaxis, 100, 0, 5);
+  axisLayout.append(axisControlLayout, 0, Style::ButtonHeight);
 
-  mouseXaxis.create(*this, x, y, 100, height, "Mouse X-axis");
-  mouseXaxis.setVisible(false);
-  mouseYaxis.create(*this, x + 105, y, 100, height, "Mouse Y-axis");
-  mouseYaxis.setVisible(false);
-  mouseLeft.create(*this, x, y, 100, height, "Mouse Left");
-  mouseLeft.setVisible(false);
-  mouseMiddle.create(*this, x + 105, y, 100, height, "Mouse Middle");
-  mouseMiddle.setVisible(false);
-  mouseRight.create(*this, x + 105 + 105, y, 100, height, "Mouse Right");
-  mouseRight.setVisible(false);
-  clearButton.create(*this, 515 - 85, y, 80, height, "Clear");
-  y += height + 5;
+  buttonLayout.setMargin(5);
+  buttonLayout.append(buttonSpacer, 0, 0);
+  buttonControlLayout.append(mouseLeft,   100, 0, 5);
+  buttonControlLayout.append(mouseMiddle, 100, 0, 5);
+  buttonControlLayout.append(mouseRight,  100, 0, 5);
+  buttonLayout.append(buttonControlLayout, 0, Style::ButtonHeight);
 
-  setGeometry(0, 0, 515, y);
+  setGeometry({ 0, 0, 480, layout.minimumHeight() + 250 });
+  append(layout);
+  append(axisLayout);
+  append(buttonLayout);
+
+  axisLayout.setVisible(false);
+  buttonLayout.setVisible(false);
 
   portChanged();
   portBox.onChange = { &InputSettings::portChanged, this };
@@ -51,7 +68,7 @@ void InputSettings::create() {
 
   clearButton.onTick = { &InputSettings::clearInput, this };
 
-  onClose = []() { inputSettings.endAssignment(); return true; };
+  onClose = []() { inputSettings.endAssignment(); };
 }
 
 void InputSettings::portChanged() {
@@ -62,7 +79,7 @@ void InputSettings::portChanged() {
     : (InputMapper::ControllerPort&)inputMapper.port2
   );
 
-  for(unsigned i = 0; i < port.size(); i++) deviceBox.addItem(port[i]->name);
+  for(unsigned i = 0; i < port.size(); i++) deviceBox.append(port[i]->name);
   deviceChanged();
 }
 
@@ -78,9 +95,9 @@ void InputSettings::deviceChanged() {
   for(unsigned i = 0; i < controller.size(); i++) {
     string mapping = controller[i]->mapping;
     if(mapping == "") mapping = "None";
-    mappingList.addItem({ controller[i]->name, "\t", mapping });
+    mappingList.append(controller[i]->name, mapping);
   }
-  mappingList.resizeColumnsToContent();
+  mappingList.autoSizeColumns();
 }
 
 void InputSettings::mappingChanged() {
@@ -94,55 +111,47 @@ void InputSettings::mappingChanged() {
   for(unsigned i = 0; i < controller.size(); i++) {
     string mapping = controller[i]->mapping;
     if(mapping == "") mapping = "None";
-    mappingList.setItem(i, { controller[i]->name, "\t", mapping });
+    mappingList.modify(i, controller[i]->name, mapping);
   }
-  mappingList.resizeColumnsToContent();
+  mappingList.autoSizeColumns();
 }
 
 void InputSettings::assignInput() {
-  if(auto position = mappingList.selection()) {
-    InputMapper::ControllerPort &port = (
-      portBox.selection() == 0
-      ? (InputMapper::ControllerPort&)inputMapper.port1
-      : (InputMapper::ControllerPort&)inputMapper.port2
-    );
-    InputMapper::Controller &controller = (InputMapper::Controller&)*port[deviceBox.selection()];
+  if(mappingList.selected() == false) return;
+  InputMapper::ControllerPort &port = (
+    portBox.selection() == 0
+    ? (InputMapper::ControllerPort&)inputMapper.port1
+    : (InputMapper::ControllerPort&)inputMapper.port2
+  );
+  InputMapper::Controller &controller = (InputMapper::Controller&)*port[deviceBox.selection()];
 
-    portBox.setEnabled(false);
-    deviceBox.setEnabled(false);
-    mappingList.setEnabled(false);
-    inputMapper.poll();  //flush any pending keypresses
-    activeInput = controller[position()];
-    setStatusText({ "Set assignment for [", activeInput->name, "] ..." });
-    if(dynamic_cast<InputMapper::AnalogInput*>(activeInput)) {
-      mouseLeft.setVisible(false);
-      mouseMiddle.setVisible(false);
-      mouseRight.setVisible(false);
-      mouseXaxis.setVisible(true);
-      mouseYaxis.setVisible(true);
-    } else {
-      mouseXaxis.setVisible(false);
-      mouseYaxis.setVisible(false);
-      mouseLeft.setVisible(true);
-      mouseMiddle.setVisible(true);
-      mouseRight.setVisible(true);
-    }
+  portBox.setEnabled(false);
+  deviceBox.setEnabled(false);
+  mappingList.setEnabled(false);
+  inputMapper.poll();  //flush any pending keypresses
+  activeInput = controller[mappingList.selection()];
+  setStatusText({ "Set assignment for [", activeInput->name, "] ..." });
+  if(dynamic_cast<InputMapper::AnalogInput*>(activeInput)) {
+    axisLayout.setVisible(true);
+    buttonLayout.setVisible(false);
+  } else {
+    axisLayout.setVisible(false);
+    buttonLayout.setVisible(true);
   }
 }
 
 void InputSettings::clearInput() {
-  if(auto position = mappingList.selection()) {
-    InputMapper::ControllerPort &port = (
-      portBox.selection() == 0
-      ? (InputMapper::ControllerPort&)inputMapper.port1
-      : (InputMapper::ControllerPort&)inputMapper.port2
-    );
-    InputMapper::Controller &controller = (InputMapper::Controller&)*port[deviceBox.selection()];
+  if(mappingList.selected() == false) return;
+  InputMapper::ControllerPort &port = (
+    portBox.selection() == 0
+    ? (InputMapper::ControllerPort&)inputMapper.port1
+    : (InputMapper::ControllerPort&)inputMapper.port2
+  );
+  InputMapper::Controller &controller = (InputMapper::Controller&)*port[deviceBox.selection()];
 
-    controller[position()]->mapping = "";
-    inputMapper.bind();
-    endAssignment();
-  }
+  controller[mappingList.selection()]->mapping = "";
+  inputMapper.bind();
+  endAssignment();
 }
 
 void InputSettings::setMapping(const string &mapping) {
@@ -157,11 +166,8 @@ void InputSettings::endAssignment() {
   deviceBox.setEnabled(true);
   mappingList.setEnabled(true);
   setStatusText("");
-  mouseXaxis.setVisible(false);
-  mouseYaxis.setVisible(false);
-  mouseLeft.setVisible(false);
-  mouseMiddle.setVisible(false);
-  mouseRight.setVisible(false);
+  axisLayout.setVisible(false);
+  buttonLayout.setVisible(false);
   mappingChanged();
   mappingList.setFocused();
 }

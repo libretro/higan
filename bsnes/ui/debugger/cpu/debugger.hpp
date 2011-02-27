@@ -1,5 +1,7 @@
 struct CPUDebugger : TopLevelWindow {
-  EditBox output;
+  HorizontalLayout layout;
+  TextEdit output;
+  VerticalLayout controlLayout;
   Button stepInto;
   Button stepOver;
   Button proceed;

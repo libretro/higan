@@ -1,18 +1,26 @@
 AudioSettings audioSettings;
 
 void AudioSettings::create() {
-  Window::create(0, 0, 256, 256, "Audio Settings");
+  setTitle("Audio Settings");
   application.addWindow(this, "AudioSettings", "160,160");
 
-  unsigned x = 5, y = 5;
+  volumeLabel.setText("Volume:");
+  volumeSlider.setLength(201);
+  frequencyLabel.setText("Frequency:");
+  frequencySlider.setLength(2001);
 
-  volumeLabel.create(*this, x, y, 70, Style::SliderHeight, "Volume:");
-  volumeValue.create(*this, x + 70, y, 60, Style::SliderHeight);
-  volumeSlider.create(*this, x + 130, y, 300, Style::SliderHeight, 201); y += Style::SliderHeight + 5;
+  layout.setMargin(5);
+  volumeLayout.append(volumeLabel, 70, 0);
+  volumeLayout.append(volumeValue, 60, 0);
+  volumeLayout.append(volumeSlider, 0, 0);
+  layout.append(volumeLayout, 0, Style::SliderHeight);
+  frequencyLayout.append(frequencyLabel, 70, 0);
+  frequencyLayout.append(frequencyValue, 60, 0);
+  frequencyLayout.append(frequencySlider, 0, 0);
+  layout.append(frequencyLayout, 0, Style::SliderHeight);
 
-  frequencyLabel.create(*this, x, y, 70, Style::SliderHeight, "Frequency:");
-  frequencyValue.create(*this, x + 70, y, 60, Style::SliderHeight);
-  frequencySlider.create(*this, x + 130, y, 300, Style::SliderHeight, 2001); y += Style::SliderHeight + 5;
+  setGeometry({ 0, 0, 480, layout.minimumHeight() });
+  append(layout);
 
   volumeSlider.onChange = []() {
     config.audio.volume = audioSettings.volumeSlider.position();
@@ -25,8 +33,6 @@ void AudioSettings::create() {
     audio.set(Audio::ResampleRatio, (double)config.audio.inputFrequency / (double)config.audio.outputFrequency);
     audioSettings.frequencyValue.setText({ config.audio.inputFrequency, "hz" });
   };
-
-  setGeometry(0, 0, 440, y);
 
   volumeSlider.setPosition(config.audio.volume);
   volumeValue.setText({ config.audio.volume, "%" });
