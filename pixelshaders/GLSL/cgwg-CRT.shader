@@ -67,13 +67,19 @@
                 vec4 weights2 = vec4((1.0-uv_ratio.y)/0.3);
                 weights2 = 0.51*exp(-pow(weights2*sqrt(2.0/wid),wid))/0.3/(0.6+0.2*wid);
 
-                vec4 mcol = vec4(1.0);
-                if ( mod(gl_TexCoord[0].x*rubyOutputSize.x*rubyTextureSize.x/rubyInputSize.x,2.0) < 1.0)
-                  mcol.g = 0.7;
-                else
-                  mcol.rb = vec2(0.7);
+                // mod_factor is the x-coordinate of the current output pixel.
+                float mod_factor = gl_TexCoord[0].x*rubyOutputSize.x*rubyTextureSize.x/rubyInputSize.x;
+                // dot-mask emulation:
+                // Output pixels are alternately tinted green and magenta.
+                vec3 dotMaskWeights = mix(
+                        vec3(1.0, 0.7, 1.0),
+                        vec3(0.7, 1.0, 0.7),
+                        floor(mod(mod_factor, 2.0))
+                    );
 
-                gl_FragColor = pow(mcol*(col * weights + col2 * weights2), vec4(1.0/2.2));
+                vec3 mul_res = (col * weights + col2 * weights2).xyz;
+                gl_FragColor = vec4(pow(dotMaskWeights * mul_res,
+                        vec3(1.0/2.2)), 1.0);
         }
     ]]></fragment>
 </shader>
