@@ -33,9 +33,17 @@
 
         void main()
         {
+            // Do the standard vertex processing
             gl_Position = gl_ModelViewProjectionMatrix * gl_Vertex;
 
-	    one = 0.99 / rubyTextureSize; // avoid float rounding errors
+            // Precalculate a bunch of useful values we'll need in the fragment
+            // shader.
+
+            // The size of one texel, in texture-coordinates
+            one = 0.99 / rubyTextureSize; // avoid float rounding errors
+
+            // Texture coordinates of the texel we're drawing, and some
+            // neighbours.
             c11 = gl_MultiTexCoord0.xy;
             c01 = c11 + vec2(-one.x, 0.0);
             c21 = c11 + vec2(one.x, 0.0);
@@ -46,7 +54,10 @@
             c22 = c11 + vec2(one.x, one.y);
             c32 = c11 + vec2(2.0 * one.x, one.y);
 
+            // Texel coordinates of the texel we're drawing.
             ratio_scale = c11 * rubyTextureSize;
+
+            // Resulting X pixel-coordinate of the pixel we're drawing.
             mod_factor =
                     c11.x * rubyOutputSize.x * rubyTextureSize.x
                     / rubyInputSize.x
@@ -69,6 +80,8 @@
         #define PI 3.141592653589
         #define gamma 2.7
 
+        // Returns a vec4 whose elements are 1.0 if the corresponding element
+        // in data is less than the corresponding element in condition.
         vec4 less_than(vec4 data, vec4 condition)
         {
             vec4 ret = vec4(1.0) + condition - data;
@@ -77,9 +90,15 @@
 
         void main()
         {     
+            // Of all the pixels that are mapped onto the texel we are
+            // currently rendering, which pixel are we currently rendering?
             vec2 uv_ratio = fract(ratio_scale);
+
+            // Color of this line, color of the line below.
             vec3 col, col2;
 
+            // Create a matrix from the colours of the texels on the current
+            // scanline.
             mat4 texes0 = mat4 (
                     TEX2D(c01),
                     TEX2D(c11),
@@ -87,6 +106,8 @@
                     TEX2D(c31)
                 );
 
+            // Create a matrix from the colours of the texels on the following
+            // scanline.
             mat4 texes1 = mat4 (
                     TEX2D(c02),
                     TEX2D(c12),
@@ -120,14 +141,17 @@
             vec3 weights2 = vec3(3.3333 - (uv_ratio.y * 3.33333));
             weights2 = 1.7 * (exp(-pow(weights2 * inversesqrt(0.5 * wid), wid)) / (0.6 + 0.2 * wid));
 
-            vec3 mcol = mix(
+            // dot-mask emulation:
+            // Output pixels are alternately tinted green and magenta. 
+            vec3 dotMaskWeights = mix(
                     vec3(1.0, 0.7, 1.0),
                     vec3(0.7, 1.0, 0.7),
                     floor(mod(mod_factor, 2.0))
                 );
 
             vec3 mul_res = col * weights + col2 * weights2;
-            gl_FragColor = vec4(pow(mcol * mul_res, vec3(0.45454545)), 1.0);
+            gl_FragColor = vec4(pow(dotMaskWeights * mul_res,
+                    vec3(0.45454545)), 1.0);
         }
     ]]></fragment>
 </shader>
