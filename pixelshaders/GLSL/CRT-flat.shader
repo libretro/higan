@@ -40,7 +40,7 @@
             // shader.
 
             // The size of one texel, in texture-coordinates
-            one = 0.99 / rubyTextureSize; // avoid float rounding errors
+            one = 1.0 / rubyTextureSize;
 
             // Texture coordinates of the texel we're drawing, and some
             // neighbours.
@@ -80,14 +80,6 @@
         #define PI 3.141592653589
         #define gamma 2.7
 
-        // Returns a vec4 whose elements are 1.0 if the corresponding element
-        // in data is less than the corresponding element in condition.
-        vec4 less_than(vec4 data, vec4 condition)
-        {
-            vec4 ret = vec4(1.0) + condition - data;
-            return clamp(floor(ret), 0.0, 1.0);
-        }
-
         void main()
         {     
             // Of all the pixels that are mapped onto the texel we are
@@ -120,12 +112,9 @@
                           uv_ratio.x,
                     1.0 - uv_ratio.x,
                     2.0 - uv_ratio.x
-                );
-            coeffs = mix(
-                    (sin(PI*coeffs) * sin(PI*coeffs*0.5)) / (coeffs*coeffs),
-                    vec4(1.0),
-                    less_than(abs(coeffs), vec4(0.01))
-                ) / dot(coeffs, vec4(1.0));
+                ) + 0.01;
+            coeffs = (sin(PI*coeffs) * sin(PI*coeffs*0.5)) / (coeffs*coeffs);
+            coeffs = coeffs / dot(coeffs, vec4(1.0));
 
             col = clamp(texes0 * coeffs, 0.0, 1.0).xyz;
             col2 = clamp(texes1 * coeffs, 0.0, 1.0).xyz;
