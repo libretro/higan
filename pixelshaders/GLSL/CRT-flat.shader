@@ -151,7 +151,7 @@
 
             vec3 mul_res = col * weights + col2 * weights2;
             gl_FragColor = vec4(pow(dotMaskWeights * mul_res,
-                    vec3(0.45454545)), 1.0);
+                    vec3(1.0/2.2)), 1.0);
         }
     ]]></fragment>
 </shader>
