@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-    cgwg's CRT shader
+    cgwg's flat CRT shader
 
     Copyright (C) 2010 cgwg
 
