@@ -10,6 +10,7 @@ struct Interface : public SNES::Interface {
   snes_audio_sample_t paudio_sample;
   snes_input_poll_t pinput_poll;
   snes_input_state_t pinput_state;
+  string basename;
 
   void video_refresh(const uint16_t *data, unsigned width, unsigned height) {
     if(pvideo_refresh) return pvideo_refresh(data, width, height);
@@ -28,11 +29,24 @@ struct Interface : public SNES::Interface {
     return 0;
   }
 
+  void message(const string &text) {
+    print(text, "\n");
+  }
+
+  string path(SNES::Cartridge::Slot slot, const string &hint) {
+    return { basename, hint };
+  }
+
   Interface() : pvideo_refresh(0), paudio_sample(0), pinput_poll(0), pinput_state(0) {
   }
 };
 
 static Interface interface;
+
+const char* snes_library_id(void) {
+  static string id = { SNES::Info::Name, " v", SNES::Info::Version };
+  return (const char*)id;
+}
 
 unsigned snes_library_revision_major(void) {
 #ifndef LIBSNES_REVISION_MAJOR
@@ -71,7 +85,7 @@ void snes_set_controller_port_device(bool port, unsigned device) {
 }
 
 void snes_set_cartridge_basename(const char *basename) {
-  SNES::cartridge.basename = basename;
+  interface.basename = basename;
 }
 
 void snes_init(void) {
@@ -189,7 +203,7 @@ bool snes_load_cartridge_super_game_boy(
   string xmlrom = (rom_xml && *rom_xml) ? string(rom_xml) : SNESCartridge(rom_data, rom_size).xmlMemoryMap;
   if(dmg_data) {
     string xmldmg = (dmg_xml && *dmg_xml) ? string(dmg_xml) : GameBoyCartridge(dmg_data, dmg_size).xml;
-    GameBoy::cartridge.load(dmg_xml, dmg_data, dmg_size);
+    GameBoy::cartridge.load(xmldmg, dmg_data, dmg_size);
   }
   SNES::cartridge.load(SNES::Cartridge::Mode::SuperGameBoy, { xmlrom, "" });
   SNES::system.power();

@@ -409,6 +409,24 @@ unsigned snes_library_revision_major(void);
 
 unsigned snes_library_revision_minor(void);
 
+// snes_library_id:
+//
+//    Returns a human-readable string describing this libsnes implementation.
+//
+//    This allows programs that use the API to report which implementation
+//    they're using, as well as to prevent implementation-specific data like
+//    save-states generated with one core from being loaded in a different
+//    core.
+//
+//    Added in API v1.3.
+//
+//    Returns:
+//
+//      A pointer to a null-terminated ASCII string. This string is allocated
+//      by the implementation, it should not be modified or free()d.
+
+const char* snes_library_id(void);
+
 // snes_init:
 //
 //    Initializes the libsnes implementation.

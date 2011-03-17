@@ -4,6 +4,9 @@ gameboy := gameboy
 profile := accuracy
 ui := ui
 
+# debugger
+options :=
+
 # compiler
 c       := $(compiler) -std=gnu99
 cpp     := $(subst cc,++,$(compiler)) -std=gnu++0x
@@ -17,6 +20,8 @@ objects := libco
 
 # profile-guided optimization
 # flags += -fprofile-use
+
+flags := $(flags) $(foreach o,$(call strupper,$(options)),-D$o)
 
 # platform
 ifeq ($(platform),x)

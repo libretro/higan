@@ -118,6 +118,9 @@ void MainWindow::create() {
   settingsVideoModeAspectRatioCorrection.setText("Correct Aspect Ratio");
   settingsVideoMode.append(settingsVideoModeAspectRatioCorrection);
 
+  settingsVideoModeSmoothVideo.setText("Smooth Video");
+  settingsVideoMode.append(settingsVideoModeSmoothVideo);
+
   settingsVideoMode.append(settingsVideoModeSeparator2);
 
   settingsVideoModeNTSC.setText("NTSC");
@@ -126,12 +129,11 @@ void MainWindow::create() {
   settingsVideoModePAL.setText("PAL");
   settingsVideoMode.append(settingsVideoModePAL);
 
+  setupFiltersAndShaders();
+
   RadioItem::group(
     settingsVideoModeNTSC, settingsVideoModePAL
   );
-
-  settingsSmoothVideo.setText("Smooth Video");
-  settings.append(settingsSmoothVideo);
 
   settings.append(settingsSeparator1);
 
@@ -240,9 +242,9 @@ void MainWindow::create() {
   if(config.video.scale == 4) settingsVideoMode4x.setChecked();
   if(config.video.scale == 5) settingsVideoMode5x.setChecked();
   settingsVideoModeAspectRatioCorrection.setChecked(config.video.aspectRatioCorrection);
+  settingsVideoModeSmoothVideo.setChecked(config.video.smooth);
   if(config.video.region == 0) settingsVideoModeNTSC.setChecked();
   if(config.video.region == 1) settingsVideoModePAL.setChecked();
-  settingsSmoothVideo.setChecked(config.video.smooth);
   settingsSynchronizeVideo.setChecked(config.video.synchronize);
   settingsSynchronizeAudio.setChecked(config.audio.synchronize);
   settingsMuteAudio.setChecked(config.audio.mute);
@@ -299,12 +301,22 @@ void MainWindow::create() {
     utility.setScale();
   };
 
+  settingsVideoModeSmoothVideo.onTick = []() {
+    config.video.smooth = mainWindow.settingsVideoModeSmoothVideo.checked();
+    video.set(Video::Filter, (unsigned)config.video.smooth);
+  };
+
   settingsVideoModeNTSC.onTick = []() { config.video.region = 0; utility.setScale(); };
   settingsVideoModePAL.onTick  = []() { config.video.region = 1; utility.setScale(); };
 
-  settingsSmoothVideo.onTick = []() {
-    config.video.smooth = mainWindow.settingsSmoothVideo.checked();
-    video.set(Video::Filter, (unsigned)config.video.smooth);
+  settingsVideoFilterNone.onTick = []() {
+    config.video.filter = "";
+    utility.setFilter();
+  };
+
+  settingsVideoShaderNone.onTick = []() {
+    config.video.shader = "";
+    utility.setShader();
   };
 
   settingsSynchronizeVideo.onTick = []() {
@@ -371,5 +383,104 @@ void MainWindow::synchronize() {
     systemReset.setEnabled(true);
     toolsStateSave.setEnabled(true);
     toolsStateLoad.setEnabled(true);
+  }
+}
+
+void MainWindow::setupFiltersAndShaders() {
+  string folderPath;
+  lstring files;
+  reference_array<RadioItem&> group;
+  signed active;
+
+  settingsVideoFilter.setText("Video Filter");
+
+  settingsVideoFilterNone.setText("None");
+  settingsVideoFilter.append(settingsVideoFilterNone);
+
+  settingsVideoFilter.append(settingsVideoFilterSeparator);
+
+  group.append(settingsVideoFilterNone);
+  active = -1;
+
+  folderPath = { path.base, "filters/" };
+  files = directory::files(folderPath, "*.filter");
+  if(files.size() == 0) {
+    #if defined(PLATFORM_X) || defined(PLATFORM_OSX)
+    folderPath = { path.user, ".config/bsnes/filters/" };
+    #else
+    folderPath = { path.user, "bsnes/filters/" };
+    #endif
+    files = directory::files(folderPath, "*.filter");
+  }
+  foreach(filename, files) {
+    settingsVideoFilterName.append({ folderPath, filename });
+  }
+
+  if(settingsVideoFilterName.size() == 0) {
+    config.video.filter = "";  //as the list (and thus the 'None' option) is invisible,
+    utility.setFilter();       //erase any previously saved filter name
+  } else {
+    settingsVideoFilterItem = new RadioItem[settingsVideoFilterName.size()];
+    foreach(filename, settingsVideoFilterName, n) {
+      settingsVideoFilterItem[n].onTick = [n]() {
+        config.video.filter = mainWindow.settingsVideoFilterName[n];
+        utility.setFilter();
+      };
+      settingsVideoFilterItem[n].setText(nall::basename(notdir(filename)));
+      settingsVideoFilter.append(settingsVideoFilterItem[n]);
+      group.append(settingsVideoFilterItem[n]);
+      if(filename == config.video.filter) active = n;
+    }
+
+    RadioItem::group(group);
+    group.reset();
+    active < 0 ? settingsVideoFilterNone.setChecked() : settingsVideoFilterItem[active].setChecked();
+    settings.append(settingsVideoFilter);
+  }
+
+  settingsVideoShader.setText("Video Shader");
+
+  settingsVideoShaderNone.setText("None");
+  settingsVideoShader.append(settingsVideoShaderNone);
+
+  settingsVideoShader.append(settingsVideoShaderSeparator);
+
+  group.append(settingsVideoShaderNone);
+  active = -1;
+
+  folderPath = { path.base, "shaders/" };
+  files = directory::files(folderPath, { "*.", config.video.driver, ".shader" });
+  if(files.size() == 0) {
+    #if defined(PLATFORM_X) || defined(PLATFORM_OSX)
+    folderPath = { path.user, ".config/bsnes/shaders/" };
+    #else
+    folderPath = { path.user, "bsnes/shaders/" };
+    #endif
+    files = directory::files(folderPath, { "*.", config.video.driver, ".shader" });
+  }
+  foreach(filename, files) {
+    settingsVideoShaderName.append({ folderPath, filename });
+  }
+
+  if(settingsVideoShaderName.size() == 0) {
+    config.video.shader = "";
+    utility.setShader();
+  } else {
+    settingsVideoShaderItem = new RadioItem[settingsVideoShaderName.size()];
+    foreach(filename, settingsVideoShaderName, n) {
+      settingsVideoShaderItem[n].onTick = [n]() {
+        config.video.shader = mainWindow.settingsVideoShaderName[n];
+        utility.setShader();
+      };
+      settingsVideoShaderItem[n].setText(nall::basename(nall::basename(notdir(filename))));
+      settingsVideoShader.append(settingsVideoShaderItem[n]);
+      group.append(settingsVideoShaderItem[n]);
+      if(filename == config.video.shader) active = n;
+    }
+
+    RadioItem::group(group);
+    group.reset();
+    active < 0 ? settingsVideoShaderNone.setChecked() : settingsVideoShaderItem[active].setChecked();
+    settings.append(settingsVideoShader);
   }
 }

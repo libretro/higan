@@ -1,12 +1,10 @@
 namespace SNES {
   namespace Info {
     static const char Name[] = "bsnes";
-    static const char Version[] = "076";
+    static const char Version[] = "077";
     static const unsigned SerializerVersion = 18;
   }
 }
-
-//#define DEBUGGER
 
 #include <libco/libco.h>
 
@@ -41,10 +39,10 @@ using namespace nall;
 #endif
 
 namespace SNES {
-  typedef int8_t   int8;
-  typedef int16_t  int16;
-  typedef int32_t  int32;
-  typedef int64_t  int64;
+  typedef int8_t  int8;
+  typedef int16_t int16;
+  typedef int32_t int32;
+  typedef int64_t int64;
 
   typedef uint8_t  uint8;
   typedef uint16_t uint16;
@@ -140,6 +138,7 @@ namespace SNES {
   #include <snes/chip/chip.hpp>
   #include <snes/cartridge/cartridge.hpp>
   #include <snes/cheat/cheat.hpp>
+  #include <snes/interface/interface.hpp>
 
   #include <snes/memory/memory-inline.hpp>
   #include <snes/ppu/counter/counter-inline.hpp>

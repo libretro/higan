@@ -10,12 +10,14 @@ void Application::main(int argc, char **argv) {
   config.create();
   inputMapper.create();
 
-  config.path.base = realpath(argv[0]);
-  config.path.user = { userpath(), ".bsnes/" };
+  path.base = dir(realpath(argv[0]));
+  path.user = userpath();
+  path.load();
+  path.save();
 
   config.load();
   config.save();
-  if(config.path.current == "") config.path.current = config.path.base;
+
   inputMapper.bind();
 
   #if defined(PLATFORM_WIN)
@@ -57,6 +59,7 @@ void Application::main(int argc, char **argv) {
   inputSettings.create();
   advancedSettings.create();
   cheatEditor.create();
+  cheatDatabase.create();
   stateManager.create();
   #if defined(DEBUGGER)
   debugger.create();
@@ -132,6 +135,8 @@ void Application::main(int argc, char **argv) {
   foreach(window, windows) window->setVisible(false);
   OS::processEvents();
   SNES::system.term();
+
+  path.save();
   config.save();
 
   video.term();
@@ -158,19 +163,23 @@ int main(int argc, char **argv) {
 }
 
 void Application::loadGeometry() {
-  geometryConfig.load(string(config.path.user, "bsnes-geometry.cfg"));
+  geometryConfig.load(path.home("geometry.cfg"));
   foreach(window, windows) {
     lstring position;
     position.split(",", window->position);
     Geometry geom = window->geometry();
-    window->setGeometry({ (signed)integer(position[0]), (signed)integer(position[1]), geom.width, geom.height });
+    window->setGeometry({
+      (signed)integer(position[0]), (signed)integer(position[1]),
+      geom.width, geom.height
+    //(unsigned)decimal(position[2]), (unsigned)decimal(position[3])
+    });
   }
 }
 
 void Application::saveGeometry() {
   foreach(window, windows) {
     Geometry geom = window->geometry();
-    window->position = { geom.x, ",", geom.y };
+    window->position = { geom.x, ",", geom.y, ",", geom.width, ",", geom.height };
   }
-  geometryConfig.save(string(config.path.user, "bsnes-geometry.cfg"));
+  geometryConfig.save(path.home("geometry.cfg"));
 }

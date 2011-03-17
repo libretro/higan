@@ -4,7 +4,7 @@ include $(gameboy)/Makefile
 # We define the API version here, so it can be included in the code and passed
 # to the linker.
 libsnesRevisionMajor := 1
-libsnesRevisionMinor := 2
+libsnesRevisionMinor := 3
 libsnesRevisionFull  := $(libsnesRevisionMajor).$(libsnesRevisionMinor)
 
 flags += -DLIBSNES_REVISION_MAJOR=$(libsnesRevisionMajor)
