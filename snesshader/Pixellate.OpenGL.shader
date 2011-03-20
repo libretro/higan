@@ -8,6 +8,7 @@
   ]]></vertex>
 
   <fragment><![CDATA[
+    #version 130
     uniform sampler2D rubyTexture;
     uniform vec2      rubyTextureSize;
 
