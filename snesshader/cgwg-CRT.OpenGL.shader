@@ -21,6 +21,7 @@
     -->
 <shader language="GLSL">
     <fragment><![CDATA[
+        #version 130
         uniform sampler2D rubyTexture;
         uniform vec2 rubyInputSize;
         uniform vec2 rubyOutputSize;
