@@ -133,7 +133,7 @@ http://www.gnu.org/copyleft/gpl.html
 	    line(xystart.y + stepxy.y * 2.0, xpos, linetaps) * columntaps.b +
 	    line(xystart.y + stepxy.y * 3.0, xpos, linetaps) * columntaps.a;
 
-	    gl_FragColor.a = gl_Color.a;
+	    gl_FragColor.a = 1.0;
 	}
     ]]></fragment>
 </shader>
