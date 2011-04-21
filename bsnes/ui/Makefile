@@ -99,6 +99,7 @@ ifeq ($(platform),x)
 	mkdir -p ~/.config/bsnes
 	cp data/cheats.xml ~/.config/bsnes/cheats.xml
 	chmod 777 ~/.config/bsnes ~/.config/bsnes/cheats.xml
+endif
 
 uninstall:
 ifeq ($(platform),x)
