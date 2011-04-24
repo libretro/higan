@@ -41,15 +41,8 @@ http://www.gnu.org/copyleft/gpl.html
 	float weight(float x)
 	{
 	    float ax = abs(x);
-	    // Mitchel-Netravali coefficients.
-	    // Best psychovisual result.
-	    const float B = 1.0 / 3.0;
-	    const float C = 1.0 / 3.0;
-
-	    // Sharper version.
-	    // May look better in some cases.
-	    //const float B = 0.0;
-	    //const float C = 0.75;
+	    const float B = 0.1;
+	    const float C = 0.5;
 
 	    if (ax < 1.0) {
 		return (
@@ -78,10 +71,10 @@ http://www.gnu.org/copyleft/gpl.html
 	vec4 weight4(float x)
 	{
 	    return vec4(
-	    weight(x + 1.0),
-	    weight(x),
-	    weight(1.0 - x),
-	    weight(2.0 - x));
+		weight(x + 1.0),
+		weight(x),
+		weight(1.0 - x),
+		weight(2.0 - x));
 	}
 
 	vec3 pixel(float xpos, float ypos)
@@ -128,10 +121,10 @@ http://www.gnu.org/copyleft/gpl.html
 		xystart.x + stepxy.x * 3.0);
 
 	    gl_FragColor.rgb =
-	    line(xystart.y                 , xpos, linetaps) * columntaps.r +
-	    line(xystart.y + stepxy.y      , xpos, linetaps) * columntaps.g +
-	    line(xystart.y + stepxy.y * 2.0, xpos, linetaps) * columntaps.b +
-	    line(xystart.y + stepxy.y * 3.0, xpos, linetaps) * columntaps.a;
+		line(xystart.y                 , xpos, linetaps) * columntaps.r +
+		line(xystart.y + stepxy.y      , xpos, linetaps) * columntaps.g +
+		line(xystart.y + stepxy.y * 2.0, xpos, linetaps) * columntaps.b +
+		line(xystart.y + stepxy.y * 3.0, xpos, linetaps) * columntaps.a;
 
 	    gl_FragColor.a = 1.0;
 	}
