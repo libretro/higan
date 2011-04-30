@@ -13,6 +13,7 @@ void InputSettings::create() {
   portLabel.setText("Port:");
   portBox.append(inputMapper.port1.name);
   portBox.append(inputMapper.port2.name);
+  portBox.append(inputMapper.hotkeys.name);
   deviceLabel.setText("Device:");
   mappingList.setHeaderText("Name", "Mapping");
   mappingList.setHeaderVisible(true);
@@ -24,33 +25,33 @@ void InputSettings::create() {
   mouseRight.setText("Mouse Right");
 
   layout.setMargin(5);
-  selectionLayout.append(portLabel,   50, 0, 5);
-  selectionLayout.append(portBox,      0, 0, 5);
-  selectionLayout.append(deviceLabel, 50, 0, 5);
-  selectionLayout.append(deviceBox,    0, 0);
-  layout.append(selectionLayout, 0, Style::ComboBoxHeight, 5);
-  layout.append(mappingList, 0, 0, 5);
-  mapLayout.append(spacer,       0, 0);
-  mapLayout.append(clearButton, 80, 0);
-  layout.append(mapLayout, 0, Style::ButtonHeight);
+  selectionLayout.append(portLabel,    0,  0, 5);
+  selectionLayout.append(portBox,     ~0,  0, 5);
+  selectionLayout.append(deviceLabel,  0,  0, 5);
+  selectionLayout.append(deviceBox,   ~0,  0   );
+  layout.append(selectionLayout,              5);
+  layout.append(mappingList,          ~0, ~0, 5);
+  mapLayout.append(spacer,            ~0,  0   );
+  mapLayout.append(clearButton,       80,  0   );
+  layout.append(mapLayout);
 
   axisLayout.setMargin(5);
-  axisLayout.append(axisSpacer, 0, 0);
-  axisControlLayout.append(mouseXaxis, 100, 0, 5);
-  axisControlLayout.append(mouseYaxis, 100, 0, 5);
-  axisLayout.append(axisControlLayout, 0, Style::ButtonHeight);
+  axisLayout.append(axisSpacer,         ~0, ~0   );
+  axisControlLayout.append(mouseXaxis, 100,  0, 5);
+  axisControlLayout.append(mouseYaxis, 100,  0, 5);
+  axisLayout.append(axisControlLayout);
 
   buttonLayout.setMargin(5);
-  buttonLayout.append(buttonSpacer, 0, 0);
-  buttonControlLayout.append(mouseLeft,   100, 0, 5);
-  buttonControlLayout.append(mouseMiddle, 100, 0, 5);
-  buttonControlLayout.append(mouseRight,  100, 0, 5);
-  buttonLayout.append(buttonControlLayout, 0, Style::ButtonHeight);
+  buttonLayout.append(buttonSpacer,        ~0, ~0   );
+  buttonControlLayout.append(mouseLeft,   100,  0, 5);
+  buttonControlLayout.append(mouseMiddle, 100,  0, 5);
+  buttonControlLayout.append(mouseRight,  100,  0, 5);
+  buttonLayout.append(buttonControlLayout);
 
-  setGeometry({ 0, 0, 480, layout.minimumHeight() + 250 });
   append(layout);
   append(axisLayout);
   append(buttonLayout);
+  setGeometry({ 0, 0, 480, layout.minimumGeometry().height + 250 });
 
   axisLayout.setVisible(false);
   buttonLayout.setVisible(false);
@@ -74,9 +75,9 @@ void InputSettings::create() {
 void InputSettings::portChanged() {
   deviceBox.reset();
   InputMapper::ControllerPort &port = (
-    portBox.selection() == 0
-    ? (InputMapper::ControllerPort&)inputMapper.port1
-    : (InputMapper::ControllerPort&)inputMapper.port2
+    portBox.selection() == 0 ? (InputMapper::ControllerPort&)inputMapper.port1 :
+    portBox.selection() == 1 ? (InputMapper::ControllerPort&)inputMapper.port2 :
+  /*portBox.selection() == 2*/ (InputMapper::ControllerPort&)inputMapper.hotkeys
   );
 
   for(unsigned i = 0; i < port.size(); i++) deviceBox.append(port[i]->name);
@@ -86,9 +87,9 @@ void InputSettings::portChanged() {
 void InputSettings::deviceChanged() {
   mappingList.reset();
   InputMapper::ControllerPort &port = (
-    portBox.selection() == 0
-    ? (InputMapper::ControllerPort&)inputMapper.port1
-    : (InputMapper::ControllerPort&)inputMapper.port2
+    portBox.selection() == 0 ? (InputMapper::ControllerPort&)inputMapper.port1 :
+    portBox.selection() == 1 ? (InputMapper::ControllerPort&)inputMapper.port2 :
+  /*portBox.selection() == 2*/ (InputMapper::ControllerPort&)inputMapper.hotkeys
   );
   InputMapper::Controller &controller = (InputMapper::Controller&)*port[deviceBox.selection()];
 
@@ -102,9 +103,9 @@ void InputSettings::deviceChanged() {
 
 void InputSettings::mappingChanged() {
   InputMapper::ControllerPort &port = (
-    portBox.selection() == 0
-    ? (InputMapper::ControllerPort&)inputMapper.port1
-    : (InputMapper::ControllerPort&)inputMapper.port2
+    portBox.selection() == 0 ? (InputMapper::ControllerPort&)inputMapper.port1 :
+    portBox.selection() == 1 ? (InputMapper::ControllerPort&)inputMapper.port2 :
+  /*portBox.selection() == 2*/ (InputMapper::ControllerPort&)inputMapper.hotkeys
   );
   InputMapper::Controller &controller = (InputMapper::Controller&)*port[deviceBox.selection()];
 
@@ -119,9 +120,9 @@ void InputSettings::mappingChanged() {
 void InputSettings::assignInput() {
   if(mappingList.selected() == false) return;
   InputMapper::ControllerPort &port = (
-    portBox.selection() == 0
-    ? (InputMapper::ControllerPort&)inputMapper.port1
-    : (InputMapper::ControllerPort&)inputMapper.port2
+    portBox.selection() == 0 ? (InputMapper::ControllerPort&)inputMapper.port1 :
+    portBox.selection() == 1 ? (InputMapper::ControllerPort&)inputMapper.port2 :
+  /*portBox.selection() == 2*/ (InputMapper::ControllerPort&)inputMapper.hotkeys
   );
   InputMapper::Controller &controller = (InputMapper::Controller&)*port[deviceBox.selection()];
 
@@ -143,9 +144,9 @@ void InputSettings::assignInput() {
 void InputSettings::clearInput() {
   if(mappingList.selected() == false) return;
   InputMapper::ControllerPort &port = (
-    portBox.selection() == 0
-    ? (InputMapper::ControllerPort&)inputMapper.port1
-    : (InputMapper::ControllerPort&)inputMapper.port2
+    portBox.selection() == 0 ? (InputMapper::ControllerPort&)inputMapper.port1 :
+    portBox.selection() == 1 ? (InputMapper::ControllerPort&)inputMapper.port2 :
+  /*portBox.selection() == 2*/ (InputMapper::ControllerPort&)inputMapper.hotkeys
   );
   InputMapper::Controller &controller = (InputMapper::Controller&)*port[deviceBox.selection()];
 

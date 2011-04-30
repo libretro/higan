@@ -78,31 +78,34 @@ void Filter::render(uint32_t *output, unsigned outpitch, const uint16_t *input, 
   }
 }
 
-void Interface::video_refresh(const uint16_t *data, unsigned width, unsigned height) {
-  bool interlace = (height >= 240);
-  bool overscan = (height == 239 || height == 478);
+//data is a 512x512x16bpp buffer, broken in two-scanline pairs (for interlace):
+//  0 -   7 = front porch
+//        8 = empty scanline 0
+//  9 - 232 = standard scanlines 1 - 224
+//233 - 247 = overscan scanlines 225-239
+//248 - 255 = back porch
+
+void Interface::video_refresh(const uint16_t *data, bool hires, bool interlace, bool overscan) {
+  unsigned width = hires ? 512 : 256;
+  unsigned height = config.video.region == 0 ? 224 : 239;
+  if(interlace) height <<= 1;
   unsigned inpitch = interlace ? 1024 : 2048;
 
-  uint32_t *buffer;
-  unsigned outpitch;
-
-  if(config.video.region == 0 && (height == 239 || height == 478)) {
-    //NTSC overscan compensation (center image, remove 15 lines)
-    data += 7 * 1024;
-    if(height == 239) height = 224;
-    if(height == 478) height = 448;
+  if(config.video.region == 0) {
+    if(overscan == false) data +=  9 * 1024;  // 0 + 224 +  0
+    if(overscan == true ) data += 16 * 1024;  //-7 + 224 + -7
   }
 
-  if(config.video.region == 1 && (height == 224 || height == 448)) {
-    //PAL underscan compensation (center image, add 15 lines)
-    data -= 7 * 1024;
-    if(height == 224) height = 239;
-    if(height == 448) height = 478;
+  if(config.video.region == 1) {
+    if(overscan == false) data +=  1 * 1024;  // 8 + 224 +  7
+    if(overscan == true ) data +=  9 * 1024;  // 0 + 239 +  0
   }
 
   unsigned outwidth = width, outheight = height;
   filter.size(outwidth, outheight);
 
+  uint32_t *buffer;
+  unsigned outpitch;
   if(video.lock(buffer, outpitch, outwidth, outheight)) {
     filter.render(buffer, outpitch, data, inpitch, width, height);
     video.unlock();

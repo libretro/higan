@@ -1,3 +1,9 @@
+Geometry pLineEdit::minimumGeometry() {
+  Font &font = this->font();
+  Geometry geometry = font.geometry(lineEdit.state.text);
+  return { 0, 0, geometry.width + 12, font.p.height() + 10 };
+}
+
 void pLineEdit::setEditable(bool editable) {
   SendMessage(hwnd, EM_SETREADONLY, editable == false, 0);
 }

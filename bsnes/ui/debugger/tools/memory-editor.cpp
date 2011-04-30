@@ -15,14 +15,14 @@ void MemoryEditor::create() {
   refreshButton.setText("Refresh");
 
   layout.setMargin(5);
-  layout.append(editor, 0, 0, 5);
-  controlLayout.append(sourceBox, 80, Style::ComboBoxHeight);
-  controlLayout.append(gotoBox, 80, Style::ComboBoxHeight);
-  controlLayout.append(refreshButton, 80, Style::ComboBoxHeight);
-  layout.append(controlLayout, 80, 0);
-
-  setGeometry({ 0, 0, layout.minimumWidth() + 475, 230 });
+  layout.append(editor,               ~0, ~0, 5);
+  controlLayout.append(sourceBox,     80,  0   );
+  controlLayout.append(gotoBox,       80,  0   );
+  controlLayout.append(refreshButton, 80,  0   );
+  controlLayout.append(spacer,        80, ~0   );
+  layout.append(controlLayout                  );
   append(layout);
+  setGeometry({ 0, 0, layout.minimumGeometry().width + 475, 230 });
 
   onClose = []() {
     debugger.showMemoryEditor.setChecked(false);

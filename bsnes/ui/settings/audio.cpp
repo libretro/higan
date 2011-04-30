@@ -10,17 +10,16 @@ void AudioSettings::create() {
   frequencySlider.setLength(2001);
 
   layout.setMargin(5);
-  volumeLayout.append(volumeLabel, 70, 0);
-  volumeLayout.append(volumeValue, 60, 0);
-  volumeLayout.append(volumeSlider, 0, 0);
-  layout.append(volumeLayout, 0, Style::SliderHeight);
-  frequencyLayout.append(frequencyLabel, 70, 0);
-  frequencyLayout.append(frequencyValue, 60, 0);
-  frequencyLayout.append(frequencySlider, 0, 0);
-  layout.append(frequencyLayout, 0, Style::SliderHeight);
-
-  setGeometry({ 0, 0, 480, layout.minimumHeight() });
+  volumeLayout.append(volumeLabel,        70, 0);
+  volumeLayout.append(volumeValue,        60, 0);
+  volumeLayout.append(volumeSlider,       ~0, 0);
+  layout.append(volumeLayout                   );
+  frequencyLayout.append(frequencyLabel,  70, 0);
+  frequencyLayout.append(frequencyValue,  60, 0);
+  frequencyLayout.append(frequencySlider, ~0, 0);
+  layout.append(frequencyLayout);
   append(layout);
+  setGeometry({ 0, 0, 480, layout.minimumGeometry().height });
 
   volumeSlider.onChange = []() {
     config.audio.volume = audioSettings.volumeSlider.position();
