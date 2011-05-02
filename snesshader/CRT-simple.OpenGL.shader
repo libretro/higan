@@ -10,20 +10,58 @@
     any later version.
     -->
 <shader language="GLSL">
+    <vertex><![CDATA[
+        uniform vec2 rubyInputSize;
+        uniform vec2 rubyOutputSize;
+        uniform vec2 rubyTextureSize;
+
+        // Define some calculations that will be used in fragment shader.
+        varying vec2 texCoord;
+        varying vec2 one;
+        varying float mod_factor;
+
+        void main()
+        {
+                // Do the standard vertex processing
+                gl_Position = gl_ModelViewProjectionMatrix * gl_Vertex;
+
+                // Precalculate a bunch of useful values we'll need in the fragment
+                // shader.
+
+                // Texture coords
+                texCoord = gl_MultiTexCoord0.xy;
+
+                // The size of one texel, in texture-coordinates
+                one = 1.0 / rubyTextureSize;
+
+                // Resulting X pixel-coordinate of the pixel we're drawing.
+                mod_factor = texCoord.x * rubyTextureSize.x * rubyOutputSize.x / rubyInputSize.x;
+        }
+    ]]></vertex>
     <fragment><![CDATA[
         uniform sampler2D rubyTexture;
         uniform vec2 rubyInputSize;
         uniform vec2 rubyOutputSize;
         uniform vec2 rubyTextureSize;
 
-        // Abbreviations
-        #define TEX2D(c) texture2D(rubyTexture, (c))
-        #define PI 3.141592653589
+        varying vec2 texCoord;
+        varying vec2 one;
+        varying float mod_factor;
+
+        // Simulate a CRT gamma of 2.4
+        #define inputGamma  2.4
+
+        // Compensate for the standard sRGB gamma of 2.2
+        #define outputGamma 2.2
 
         // Controls the intensity of the barrel distortion used to emulate the
         // curvature of a CRT. 0.0 is perfectly flat, 1.0 is annoyingly
         // distorted, higher values are increasingly ridiculous.
         #define distortion 0.2
+
+        // Abbreviations
+        #define TEX2D(c) pow(texture2D(rubyTexture, (c)), vec4(inputGamma))
+        #define PI 3.141592653589
 
         // Apply radial distortion to the given coordinate.
         vec2 radialDistortion(vec2 coord) {
@@ -54,8 +92,8 @@
                 // independent of its width. That is, for a narrower beam
                 // "weights" should have a higher peak at the center of the
                 // scanline than for a wider beam.
-                vec4 weights = vec4(distance * 3.333333);
-                return 0.51 * exp(-pow(weights * sqrt(2.0 / wid), wid)) / (0.18 + 0.06 * wid);
+                vec4 weights = vec4(distance / 0.3);
+                return 1.7 * exp(-pow(weights * inversesqrt(0.5 * wid), wid)) / (0.6 + 0.2 * wid);
         }
 
         void main()
@@ -81,44 +119,40 @@
                 // of the next scanline). The grid of lines represents the
                 // edges of the texels of the underlying texture.
 
-                // The size of one texel, in texture-coordinates.
-                vec2 one = 1.0 / rubyTextureSize;
-
                 // Texture coordinates of the texel containing the active pixel
-                vec2 xy = radialDistortion(gl_TexCoord[0].xy);
+                vec2 xy = radialDistortion(texCoord);
 
                 // Of all the pixels that are mapped onto the texel we are
                 // currently rendering, which pixel are we currently rendering?
-                vec2 uv_ratio = fract(xy * rubyTextureSize) - vec2(0.5);
+                vec2 ratio_scale = xy * rubyTextureSize - vec2(0.5);
+                vec2 uv_ratio = fract(ratio_scale);
 
                 // Snap to the center of the underlying texel.
-                xy.y = (floor(xy.y * rubyTextureSize.y) + 0.5) / rubyTextureSize.y;
+                xy.y = (floor(ratio_scale.y) + 0.5) / rubyTextureSize.y;
 
                 // Calculate the effective colour of the current and next
-                // scanlines at the horizontal location of the current pixel.
+                // scanlines at the horizontal location of the current pixel,
+                // using the Lanczos coefficients above.
                 vec4 col  = TEX2D(xy);
                 vec4 col2 = TEX2D(xy + vec2(0.0, one.y));
 
                 // Calculate the influence of the current and next scanlines on
                 // the current pixel.
-                vec4 weights  = scanlineWeights(abs(uv_ratio.y) , col);
+                vec4 weights  = scanlineWeights(uv_ratio.y, col);
                 vec4 weights2 = scanlineWeights(1.0 - uv_ratio.y, col2);
                 vec3 mul_res  = (col * weights + col2 * weights2).xyz;
-
-                // mod_factor is the x-coordinate of the current output pixel.
-                float mod_factor = gl_TexCoord[0].x * rubyOutputSize.x * rubyTextureSize.x / rubyInputSize.x;
 
                 // dot-mask emulation:
                 // Output pixels are alternately tinted green and magenta.
                 vec3 dotMaskWeights = mix(
-                        vec3(1.00, 0.80, 1.00),
-                        vec3(0.80, 1.00, 0.80),
+                        vec3(1.0, 0.7, 1.0),
+                        vec3(0.7, 1.0, 0.7),
                         floor(mod(mod_factor, 2.0))
                     );
 
                 mul_res *= dotMaskWeights;
 
-                gl_FragColor = vec4(mul_res, 1.0);
+                gl_FragColor = vec4(pow(mul_res, vec3(1.0 / outputGamma)), 1.0);
         }
     ]]></fragment>
 </shader>
