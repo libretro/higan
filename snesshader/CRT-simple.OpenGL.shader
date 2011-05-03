@@ -22,16 +22,16 @@
 
         void main()
         {
-                // Do the standard vertex processing
+                // Do the standard vertex processing.
                 gl_Position = gl_ModelViewProjectionMatrix * gl_Vertex;
 
                 // Precalculate a bunch of useful values we'll need in the fragment
                 // shader.
 
-                // Texture coords
+                // Texture coords.
                 texCoord = gl_MultiTexCoord0.xy;
 
-                // The size of one texel, in texture-coordinates
+                // The size of one texel, in texture-coordinates.
                 one = 1.0 / rubyTextureSize;
 
                 // Resulting X pixel-coordinate of the pixel we're drawing.
@@ -48,24 +48,28 @@
         varying vec2 one;
         varying float mod_factor;
 
-        // Simulate a CRT gamma of 2.4
-        #define inputGamma  2.4
-
-        // Compensate for the standard sRGB gamma of 2.2
-        #define outputGamma 2.2
+        // Enable screen curvature.
+        #define CURVATURE
 
         // Controls the intensity of the barrel distortion used to emulate the
         // curvature of a CRT. 0.0 is perfectly flat, 1.0 is annoyingly
         // distorted, higher values are increasingly ridiculous.
         #define distortion 0.2
 
-        // Abbreviations
+        // Simulate a CRT gamma of 2.4.
+        #define inputGamma  2.4
+
+        // Compensate for the standard sRGB gamma of 2.2.
+        #define outputGamma 2.2
+
+        // Macros.
         #define TEX2D(c) pow(texture2D(rubyTexture, (c)), vec4(inputGamma))
         #define PI 3.141592653589
 
         // Apply radial distortion to the given coordinate.
-        vec2 radialDistortion(vec2 coord) {
-                                coord *= rubyTextureSize / rubyInputSize;
+        vec2 radialDistortion(vec2 coord)
+        {
+                coord *= rubyTextureSize / rubyInputSize;
                 vec2 cc = coord - 0.5;
                 float dist = dot(cc, cc) * distortion;
                 return (coord + cc * (1.0 + dist) * dist) * rubyInputSize / rubyTextureSize;
@@ -119,8 +123,12 @@
                 // of the next scanline). The grid of lines represents the
                 // edges of the texels of the underlying texture.
 
-                // Texture coordinates of the texel containing the active pixel
+                // Texture coordinates of the texel containing the active pixel.
+        #ifdef CURVATURE
                 vec2 xy = radialDistortion(texCoord);
+        #else
+                vec2 xy = texCoord;
+        #endif
 
                 // Of all the pixels that are mapped onto the texel we are
                 // currently rendering, which pixel are we currently rendering?
@@ -140,7 +148,7 @@
                 // the current pixel.
                 vec4 weights  = scanlineWeights(uv_ratio.y, col);
                 vec4 weights2 = scanlineWeights(1.0 - uv_ratio.y, col2);
-                vec3 mul_res  = (col * weights + col2 * weights2).xyz;
+                vec3 mul_res  = (col * weights + col2 * weights2).rgb;
 
                 // dot-mask emulation:
                 // Output pixels are alternately tinted green and magenta.
