@@ -139,8 +139,7 @@
                 xy.y = (floor(ratio_scale.y) + 0.5) / rubyTextureSize.y;
 
                 // Calculate the effective colour of the current and next
-                // scanlines at the horizontal location of the current pixel,
-                // using the Lanczos coefficients above.
+                // scanlines at the horizontal location of the current pixel.
                 vec4 col  = TEX2D(xy);
                 vec4 col2 = TEX2D(xy + vec2(0.0, one.y));
 
