@@ -9,9 +9,10 @@
     ]]></vertex>
 
     <fragment><![CDATA[
-        #version 130
         uniform sampler2D rubyTexture;
         uniform vec2      rubyTextureSize;
+
+        #define round(x) floor( (x) + 0.5 )
 
         void main()
         {
