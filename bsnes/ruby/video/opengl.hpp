@@ -16,9 +16,13 @@ PFNGLCREATESHADERPROC glCreateShader = 0;
 PFNGLDELETESHADERPROC glDeleteShader = 0;
 PFNGLSHADERSOURCEPROC glShaderSource = 0;
 PFNGLCOMPILESHADERPROC glCompileShader = 0;
+PFNGLGETSHADERIVPROC glGetShaderiv = 0;
+PFNGLGETSHADERINFOLOGPROC glGetShaderInfoLog = 0;
 PFNGLATTACHSHADERPROC glAttachShader = 0;
 PFNGLDETACHSHADERPROC glDetachShader = 0;
 PFNGLLINKPROGRAMPROC glLinkProgram = 0;
+PFNGLGETPROGRAMIVPROC glGetProgramiv = 0;
+PFNGLGETPROGRAMINFOLOGPROC glGetProgramInfoLog = 0;
 PFNGLGETUNIFORMLOCATIONPROC glGetUniformLocation = 0;
 PFNGLUNIFORM1IPROC glUniform1i = 0;
 PFNGLUNIFORM2FVPROC glUniform2fv = 0;
@@ -165,6 +169,17 @@ public:
     }
 
     glLinkProgram(glprogram);
+
+    GLint tmp;
+    glGetProgramiv(glprogram, GL_LINK_STATUS, &tmp);
+    if (!tmp) {
+      glGetProgramiv(glprogram, GL_INFO_LOG_LENGTH, &tmp);
+      GLchar *buf = new GLchar[tmp];
+      fprintf(stderr, "Errors linking shader program:\n", tmp);
+      glGetProgramInfoLog(glprogram, tmp, NULL, buf);
+      fprintf(stderr, "%s", buf);
+      delete buf;
+    }
   }
 
   void set_fragment_shader(const char *source) {
@@ -172,6 +187,17 @@ public:
     glShaderSource(fragmentshader, 1, &source, 0);
     glCompileShader(fragmentshader);
     glAttachShader(glprogram, fragmentshader);
+
+    GLint tmp;
+    glGetShaderiv(fragmentshader, GL_COMPILE_STATUS, &tmp);
+    if (!tmp) {
+      glGetShaderiv(fragmentshader, GL_INFO_LOG_LENGTH, &tmp);
+      GLchar *buf = new GLchar[tmp];
+      fprintf(stderr, "Errors compiling fragment shader:\n");
+      glGetShaderInfoLog(fragmentshader, tmp, NULL, buf);
+      fprintf(stderr, "%s", buf);
+      delete buf;
+    }
   }
 
   void set_vertex_shader(const char *source) {
@@ -179,6 +205,17 @@ public:
     glShaderSource(vertexshader, 1, &source, 0);
     glCompileShader(vertexshader);
     glAttachShader(glprogram, vertexshader);
+
+    GLint tmp;
+    glGetShaderiv(vertexshader, GL_COMPILE_STATUS, &tmp);
+    if (!tmp) {
+      glGetShaderiv(vertexshader, GL_INFO_LOG_LENGTH, &tmp);
+      GLchar *buf = new GLchar[tmp];
+      fprintf(stderr, "Errors compiling vertex shader:\n");
+      glGetShaderInfoLog(vertexshader, tmp, NULL, buf);
+      fprintf(stderr, "%s", buf);
+      delete buf;
+    }
   }
 
   void init() {
@@ -200,17 +237,22 @@ public:
     glDeleteShader = (PFNGLDELETESHADERPROC)glGetProcAddress("glDeleteShader");
     glShaderSource = (PFNGLSHADERSOURCEPROC)glGetProcAddress("glShaderSource");
     glCompileShader = (PFNGLCOMPILESHADERPROC)glGetProcAddress("glCompileShader");
+    glGetShaderiv = (PFNGLGETSHADERIVPROC)glGetProcAddress("glGetShaderiv");
+    glGetShaderInfoLog = (PFNGLGETSHADERINFOLOGPROC)glGetProcAddress("glGetShaderInfoLog");
     glAttachShader = (PFNGLATTACHSHADERPROC)glGetProcAddress("glAttachShader");
     glDetachShader = (PFNGLDETACHSHADERPROC)glGetProcAddress("glDetachShader");
     glLinkProgram = (PFNGLLINKPROGRAMPROC)glGetProcAddress("glLinkProgram");
+    glGetProgramiv = (PFNGLGETPROGRAMIVPROC)glGetProcAddress("glGetProgramiv");
+    glGetProgramInfoLog = (PFNGLGETPROGRAMINFOLOGPROC)glGetProcAddress("glGetProgramInfoLog");
     glGetUniformLocation = (PFNGLGETUNIFORMLOCATIONPROC)glGetProcAddress("glGetUniformLocation");
     glUniform1i = (PFNGLUNIFORM1IPROC)glGetProcAddress("glUniform1i");
     glUniform2fv = (PFNGLUNIFORM2FVPROC)glGetProcAddress("glUniform2fv");
     glUniform4fv = (PFNGLUNIFORM4FVPROC)glGetProcAddress("glUniform4fv");
 
     shader_support = glCreateProgram && glUseProgram && glCreateShader
-    && glDeleteShader && glShaderSource && glCompileShader && glAttachShader
-    && glDetachShader && glLinkProgram && glGetUniformLocation
+    && glDeleteShader && glShaderSource && glCompileShader && glGetShaderiv
+    && glGetShaderInfoLog && glAttachShader && glDetachShader && glLinkProgram
+    && glGetProgramiv && glGetProgramInfoLog && glGetUniformLocation
     && glUniform1i && glUniform2fv && glUniform4fv;
 
     if(shader_support) glprogram = glCreateProgram();
