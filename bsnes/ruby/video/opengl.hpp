@@ -175,9 +175,8 @@ public:
     if (!tmp) {
       glGetProgramiv(glprogram, GL_INFO_LOG_LENGTH, &tmp);
       GLchar *buf = new GLchar[tmp];
-      fprintf(stderr, "Errors linking shader program:\n", tmp);
       glGetProgramInfoLog(glprogram, tmp, NULL, buf);
-      fprintf(stderr, "%s", buf);
+      nall::print("Errors linking shader program:\n", buf, "\n");
       delete buf;
     }
   }
@@ -193,9 +192,8 @@ public:
     if (!tmp) {
       glGetShaderiv(fragmentshader, GL_INFO_LOG_LENGTH, &tmp);
       GLchar *buf = new GLchar[tmp];
-      fprintf(stderr, "Errors compiling fragment shader:\n");
       glGetShaderInfoLog(fragmentshader, tmp, NULL, buf);
-      fprintf(stderr, "%s", buf);
+      nall::print("Errors compiling fragment shader:\n", buf, "\n");
       delete buf;
     }
   }
@@ -211,9 +209,8 @@ public:
     if (!tmp) {
       glGetShaderiv(vertexshader, GL_INFO_LOG_LENGTH, &tmp);
       GLchar *buf = new GLchar[tmp];
-      fprintf(stderr, "Errors compiling vertex shader:\n");
       glGetShaderInfoLog(vertexshader, tmp, NULL, buf);
-      fprintf(stderr, "%s", buf);
+      nall::print("Errors compiling vertex shader:\n", buf, "\n");
       delete buf;
     }
   }
