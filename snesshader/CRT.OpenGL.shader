@@ -125,7 +125,7 @@
                 // "weights" should have a higher peak at the center of the
                 // scanline than for a wider beam.
                 vec4 weights = vec4(distance / 0.3);
-                return 1.7 * exp(-pow(weights * inversesqrt(0.5 * wid), wid)) / (0.6 + 0.2 * wid);
+                return 1.4 * exp(-pow(weights * inversesqrt(0.5 * wid), wid)) / (0.6 + 0.2 * wid);
         }
 
         void main()
