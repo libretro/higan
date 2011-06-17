@@ -25,14 +25,14 @@
         uniform vec2 rubyTextureSize;
         uniform vec2 rubyOutputSize;
 
-	// Uncomment to use method 1 for simulating RGB triads.
+        // Uncomment to use method 1 for simulating RGB triads.
         // #define TRIAD1
 
-	// Uncomment to use method 2 for simulating RGB triads.
+        // Uncomment to use method 2 for simulating RGB triads.
         // #define TRIAD2
 
         // Enable screen curvature.
-	// #define CURVATURE
+        // #define CURVATURE
 
         // Controls the intensity of the barrel distortion used to emulate the
         // curvature of a CRT. 0.0 is perfectly flat, 1.0 is annoyingly
@@ -51,9 +51,9 @@
         // To increase bloom / luminosity, decrease this parameter
         #define FACTOR_ADJUST   2.0
 
-	// Defines the coarseness of the spots. Should be set to at least the
-	// scale multiplier the output will be rendered at, no visible effect
-	// beyond that point.
+        // Defines the coarseness of the spots. Should be set to at least the
+        // scale multiplier the output will be rendered at, no visible effect
+        // beyond that point.
         #define SCALE   10.0
 
         // Apply radial distortion to the given coordinate.
@@ -66,9 +66,9 @@
         }
 
         #ifdef CURVATURE
-        #	define TEXCOORDS       radialDistortion(gl_TexCoord[0].xy)
+        #       define TEXCOORDS       radialDistortion(gl_TexCoord[0].xy)
         #else
-        #	define TEXCOORDS       gl_TexCoord[0].xy
+        #       define TEXCOORDS       gl_TexCoord[0].xy
         #endif // CURVATURE
 
         // Constants
@@ -77,99 +77,99 @@
 
         #ifdef USE_ALL_NEIGHBOURS
         vec2 oney = vec2(0.0, 1.0 / rubyTextureSize.y);
-	#endif // USE_ALL_NEIGHBOURS
+        #endif // USE_ALL_NEIGHBOURS
 
         float factor(float lumi, vec2 dxy)
         {
-		float dist = sqrt(dxy.x*dxy.x + dxy.y*dxy.y * X_SIZE_ADJUST);
+                float dist = sqrt(dxy.x*dxy.x + dxy.y*dxy.y * X_SIZE_ADJUST);
 
-		return
-			(2.0 + lumi)
-			* (1.0 - smoothstep(0.0, SPOT_WIDTH, dist/SCALE))
-			/ FACTOR_ADJUST;
+                return
+                        (2.0 + lumi)
+                        * (1.0 - smoothstep(0.0, SPOT_WIDTH, dist/SCALE))
+                        / FACTOR_ADJUST;
         }
 
-	void main(void)
-	{
-		vec2 coords_scaled = floor(TEXCOORDS * rubyTextureSize * SCALE);
-		vec2 coords_snes = floor(coords_scaled / SCALE);
-		vec2 coords_texture = (coords_snes + vec2(0.5))
-			/ rubyTextureSize;
+        void main(void)
+        {
+                vec2 coords_scaled = floor(TEXCOORDS * rubyTextureSize * SCALE);
+                vec2 coords_snes = floor(coords_scaled / SCALE);
+                vec2 coords_texture = (coords_snes + vec2(0.5))
+                        / rubyTextureSize;
 
-		vec2 ecart = coords_scaled - (SCALE * coords_snes
-			+ vec2(SCALE * 0.5 - 0.5));
+                vec2 ecart = coords_scaled - (SCALE * coords_snes
+                        + vec2(SCALE * 0.5 - 0.5));
 
-		vec4 color = texture2D(rubyTexture, coords_texture);
-		float luminosity = dot(color, luminosity_weights);
+                vec4 color = texture2D(rubyTexture, coords_texture);
+                float luminosity = dot(color, luminosity_weights);
 
-		color *= factor(luminosity, ecart);
+                color *= factor(luminosity, ecart);
 
-		// RIGHT NEIGHBOUR
-		vec4 pcol = texture2D(rubyTexture, coords_texture + onex);
-		luminosity = dot(pcol, luminosity_weights);
-		color += pcol * factor(luminosity, ecart + vec2(-SCALE , 0.0));
+                // RIGHT NEIGHBOUR
+                vec4 pcol = texture2D(rubyTexture, coords_texture + onex);
+                luminosity = dot(pcol, luminosity_weights);
+                color += pcol * factor(luminosity, ecart + vec2(-SCALE , 0.0));
 
-		// LEFT NEIGHBOUR
-		pcol = texture2D(rubyTexture, coords_texture - onex);
-		luminosity = dot(pcol, luminosity_weights);
-		color += pcol * factor(luminosity, ecart + vec2(SCALE , 0.0));
+                // LEFT NEIGHBOUR
+                pcol = texture2D(rubyTexture, coords_texture - onex);
+                luminosity = dot(pcol, luminosity_weights);
+                color += pcol * factor(luminosity, ecart + vec2(SCALE , 0.0));
 
-	#ifdef USE_ALL_NEIGHBOURS
-		// TOP
-		pcol = texture2D(rubyTexture, coords_texture + oney);
-		luminosity = dot(pcol, luminosity_weights);
-		color += pcol * factor(luminosity, ecart + vec2(0.0, -SCALE));
+        #ifdef USE_ALL_NEIGHBOURS
+                // TOP
+                pcol = texture2D(rubyTexture, coords_texture + oney);
+                luminosity = dot(pcol, luminosity_weights);
+                color += pcol * factor(luminosity, ecart + vec2(0.0, -SCALE));
 
-		// TOP-LEFT
-		pcol = texture2D(rubyTexture, coords_texture + oney - onex);
-		luminosity = dot(pcol, luminosity_weights);
-		color += pcol * factor(luminosity, ecart + vec2(SCALE, -SCALE));
+                // TOP-LEFT
+                pcol = texture2D(rubyTexture, coords_texture + oney - onex);
+                luminosity = dot(pcol, luminosity_weights);
+                color += pcol * factor(luminosity, ecart + vec2(SCALE, -SCALE));
 
-		// TOP-RIGHT
-		pcol = texture2D(rubyTexture, coords_texture + oney + onex);
-		luminosity = dot(pcol, luminosity_weights);
-		color += pcol * factor(luminosity, ecart + vec2(-SCALE, -SCALE));
+                // TOP-RIGHT
+                pcol = texture2D(rubyTexture, coords_texture + oney + onex);
+                luminosity = dot(pcol, luminosity_weights);
+                color += pcol * factor(luminosity, ecart + vec2(-SCALE, -SCALE));
 
-		// BOTTOM
-		pcol = texture2D(rubyTexture, coords_texture - oney);
-		luminosity = dot(pcol, luminosity_weights);
-		color += pcol * factor(luminosity, ecart + vec2(0.0, SCALE));
+                // BOTTOM
+                pcol = texture2D(rubyTexture, coords_texture - oney);
+                luminosity = dot(pcol, luminosity_weights);
+                color += pcol * factor(luminosity, ecart + vec2(0.0, SCALE));
 
-		// BOTTOM-LEFT
-		pcol = texture2D(rubyTexture, coords_texture - oney - onex);
-		luminosity = dot(pcol, luminosity_weights);
-		color += pcol * factor(luminosity, ecart + vec2(SCALE, SCALE));
+                // BOTTOM-LEFT
+                pcol = texture2D(rubyTexture, coords_texture - oney - onex);
+                luminosity = dot(pcol, luminosity_weights);
+                color += pcol * factor(luminosity, ecart + vec2(SCALE, SCALE));
 
-		// BOTTOM-RIGHT
-		pcol = texture2D(rubyTexture, coords_texture - oney + onex);
-		luminosity = dot(pcol, luminosity_weights);
-		color += pcol * factor(luminosity, ecart + vec2(-SCALE, SCALE));
-	#endif // USE_ALL_NEIGHBOURS
+                // BOTTOM-RIGHT
+                pcol = texture2D(rubyTexture, coords_texture - oney + onex);
+                luminosity = dot(pcol, luminosity_weights);
+                color += pcol * factor(luminosity, ecart + vec2(-SCALE, SCALE));
+        #endif // USE_ALL_NEIGHBOURS
 
-	#ifdef TRIAD1
-		vec2 coords_screen = floor(gl_TexCoord[0].xy * rubyOutputSize);
+        #ifdef TRIAD1
+                vec2 coords_screen = floor(gl_TexCoord[0].xy * rubyOutputSize);
 
-		float modulo = mod(coords_screen.y + coords_screen.x , 3.0);
-		if (modulo == 0.0)
-		    color.rgb *= vec3(1.0,0.5,0.5);
-		else if  (modulo <= 1.0)
-		    color.rgb *= vec3(0.5,1.0,0.5);
-		else
-		    color.rgb *= vec3(0.5,0.5,1.0);
-	#endif // TRIAD1
+                float modulo = mod(coords_screen.y + coords_screen.x , 3.0);
+                if (modulo == 0.0)
+                    color.rgb *= vec3(1.0,0.5,0.5);
+                else if  (modulo <= 1.0)
+                    color.rgb *= vec3(0.5,1.0,0.5);
+                else
+                    color.rgb *= vec3(0.5,0.5,1.0);
+        #endif // TRIAD1
 
-	#ifdef TRIAD2
-		color = clamp(color, 0.0, 1.0);
+        #ifdef TRIAD2
+                color = clamp(color, 0.0, 1.0);
 
-		vec2 coords_screen = floor(gl_TexCoord[0].xy * rubyOutputSize);
+                vec2 coords_screen = floor(gl_TexCoord[0].xy * rubyOutputSize);
 
-		float modulo = mod(coords_screen.x , 3.0);
-		if (modulo == 0.0)            color.gb *= 0.8;
-		else if (modulo == 1.0)      color.rb *= 0.8;
-		else                                            color.rg *= 0.8;
-	#endif // TRIAD2
+                float modulo = mod(coords_screen.x , 3.0);
+                if (modulo == 0.0)            color.gb *= 0.8;
+                else if (modulo == 1.0)      color.rb *= 0.8;
+                else                                            color.rg *= 0.8;
+        #endif // TRIAD2
 
-		gl_FragColor = clamp(color, 0.0, 1.0);
+                gl_FragColor = clamp(color, 0.0, 1.0);
         }
     ]]></fragment>
 </shader>
