@@ -25,151 +25,176 @@
         uniform vec2 rubyTextureSize;
         uniform vec2 rubyOutputSize;
 
-        // Uncomment to use method 1 for simulating RGB triads.
-        // #define TRIAD1
+        // 0.5 = the spot stays inside the original pixel
+        // 1.0 = the spot bleeds up to the center of next pixel
+        #define SPOT_WIDTH  1.00
 
-        // Uncomment to use method 2 for simulating RGB triads.
-        // #define TRIAD2
+        // Used to counteract the desaturation effect of weighting.
+        #define COLOR_BOOST 1.5
 
-        // Enable screen curvature.
-        // #define CURVATURE
+        // for scanline effect, 0.5 to 0.7 in height
+        #define SPOT_HEIGHT 0.55
 
-        // Controls the intensity of the barrel distortion used to emulate the
-        // curvature of a CRT. 0.0 is perfectly flat, 1.0 is annoyingly
-        // distorted, higher values are increasingly ridiculous.
-        #define distortion 0.2
+        // Uncomment this to have darker pixels producing smaller spots.
+        // #define SPOT_SIZE_IS_INFLUENCED_BY_LUMI
 
-        // Uncomment to use neighbours from previous and next scanlines
-        #define USE_ALL_NEIGHBOURS
 
-        // 0.5 = same width as original pixel, 1.0-1.2 gives nice overlap
-        #define SPOT_WIDTH      1.2
+        // Different way to handle RGB phosphors.
+        // #define RGB_BAR
+        // #define RGB_TRIAD
+        // #define MG_BAR
 
-        // Shape of the spots: 1.0 = circle, 4.0 = ellipse with 2:1 aspect
-        #define X_SIZE_ADJUST   2.0
+        // Constants used with gamma correction.
+        #define InputGamma 2.4
+        #define OutputGamma 2.2
 
-        // To increase bloom / luminosity, decrease this parameter
-        #define FACTOR_ADJUST   2.0
+        // Uncomment one of these to choose a gamma correction method.
+        // If none are uncommented, no gamma correction is done.
+        // #define REAL_GAMMA
+        #define FAKE_GAMMA
+        // #define FAKER_GAMMA
 
-        // Defines the coarseness of the spots. Should be set to at least the
-        // scale multiplier the output will be rendered at, no visible effect
-        // beyond that point.
-        #define SCALE   10.0
+        #ifdef REAL_GAMMA
+        #define GAMMA_IN(color)     pow(color, vec4(InputGamma))
+        #define GAMMA_OUT(color)    pow(color, vec4(1.0 / OutputGamma))
 
-        // Apply radial distortion to the given coordinate.
-        vec2 radialDistortion(vec2 coord)
-        {
-                coord *= rubyTextureSize / rubyInputSize;
-                vec2 cc = coord - 0.5;
-                float dist = dot(cc, cc) * distortion;
-                return (coord + cc * (1.0 + dist) * dist) * rubyInputSize / rubyTextureSize;
-        }
+        #elif defined FAKE_GAMMA
+        /*
+         * Approximations:
+         * for 1<g<2 : x^g ~ ax + bx^2
+         *             where   a=6/(g+1)-2  and b=1-a
+         * for 2<g<3 : x^g ~ ax^2 + bx^3
+         *             where   a=12/(g+1)-3 and b=1-a
+         * for 1<g<2 : x^(1/g) ~ (sqrt(a^2+4bx)-a)
+         *             where   a=6/(g+1)-2  and b=1-a
+         * for 2<g<3 : Not computed yet, probably needs cube_root...
+         *             so no better than using pow ?
+         */
+        vec4 A_IN = vec4( 12.0/(InputGamma+1.0)-3.0 );
+        vec4 B_IN = vec4(1.0) - A_IN;
+        #define GAMMA_IN(color)     ( (A_IN + B_IN * color) * color * color )
+        #define GAMMA_OUT(color)    pow(color, vec4(1.0 / OutputGamma ))
 
-        #ifdef CURVATURE
-        #       define TEXCOORDS       radialDistortion(gl_TexCoord[0].xy)
+        #elif defined FAKER_GAMMA
+        vec4 A_IN = vec4( 6.0/( InputGamma/OutputGamma + 1.0 ) - 2.0 );
+        vec4 B_IN = vec4(1.0) - A_IN;
+        #define GAMMA_IN(color)     ( (A_IN + B_IN * color) * color )
+        #define GAMMA_OUT(color)    color
+
+        #else // No gamma correction
+        #define GAMMA_IN(color) color
+        #define GAMMA_OUT(color) color
+        #endif
+
+        #define TEX2D(coords)   GAMMA_IN( texture2D(rubyTexture, coords) )
+
+        #ifdef SPOT_SIZE_IS_INFLUENCED_BY_LUMI
+        float lumi;
+        float size;
+        vec4 lumW = vec4( 0.3, 0.6, 0.1, 0.0 );
+
+        // Define SIZE to decrease the spot-size for darker pixels.
+        // the last parenthesis needs work...
+        #define SIZE(col) \
+                lumi = dot(col, lumW); \
+                size = SPOT_WIDTH * ( 0.5 + 0.5 * lumi);
+
         #else
-        #       define TEXCOORDS       gl_TexCoord[0].xy
-        #endif // CURVATURE
+        float size = SPOT_WIDTH;
+        // in this case, the size is fixed => the macro does nothing
+        #define SIZE(col)
+        #endif // SPOT_SIZE_IS_INFLUENCED_BY_LUMI
 
-        // Constants
-        vec4 luminosity_weights = vec4(0.2126, 0.7152, 0.0722, 0.0);
-        vec2 onex = vec2(1.0 / rubyTextureSize.x, 0.0);
-
-        #ifdef USE_ALL_NEIGHBOURS
-        vec2 oney = vec2(0.0, 1.0 / rubyTextureSize.y);
-        #endif // USE_ALL_NEIGHBOURS
-
-        float factor(float lumi, vec2 dxy)
-        {
-                float dist = sqrt(dxy.x*dxy.x + dxy.y*dxy.y * X_SIZE_ADJUST);
-
-                return
-                        (2.0 + lumi)
-                        * (1.0 - smoothstep(0.0, SPOT_WIDTH, dist/SCALE))
-                        / FACTOR_ADJUST;
-        }
+        vec2 onex = vec2( 1.0/rubyTextureSize.x, 0.0 );
 
         void main(void)
         {
-                vec2 coords_scaled = floor(TEXCOORDS * rubyTextureSize * SCALE);
-                vec2 coords_snes = floor(coords_scaled / SCALE);
-                vec2 coords_texture = (coords_snes + vec2(0.5))
-                        / rubyTextureSize;
+                vec2 coords = ( gl_TexCoord[0].xy * rubyTextureSize );
+                vec2 pixel_center = floor( coords ) + vec2(0.5);
+                vec2 texture_coords = pixel_center / rubyTextureSize;
 
-                vec2 ecart = coords_scaled - (SCALE * coords_snes
-                        + vec2(SCALE * 0.5 - 0.5));
+                vec4 color = TEX2D( texture_coords );
 
-                vec4 color = texture2D(rubyTexture, coords_texture);
-                float luminosity = dot(color, luminosity_weights);
+                float dx = coords.x - pixel_center.x;
 
-                color *= factor(luminosity, ecart);
+                // macro to determinate spot size
+                // can be fixed or influenced by the pixel luminosity
+                SIZE( color );
 
-                // RIGHT NEIGHBOUR
-                vec4 pcol = texture2D(rubyTexture, coords_texture + onex);
-                luminosity = dot(pcol, luminosity_weights);
-                color += pcol * factor(luminosity, ecart + vec2(-SCALE , 0.0));
+                float weight = dx / size;
+                if (weight>1.0) weight = 1.0;
+                weight = 1.0 - weight * weight;
 
-                // LEFT NEIGHBOUR
-                pcol = texture2D(rubyTexture, coords_texture - onex);
-                luminosity = dot(pcol, luminosity_weights);
-                color += pcol * factor(luminosity, ecart + vec2(SCALE , 0.0));
+                color *= vec4( weight * weight * COLOR_BOOST );
 
-        #ifdef USE_ALL_NEIGHBOURS
-                // TOP
-                pcol = texture2D(rubyTexture, coords_texture + oney);
-                luminosity = dot(pcol, luminosity_weights);
-                color += pcol * factor(luminosity, ecart + vec2(0.0, -SCALE));
+                // get closest neighbour to blend
+                vec4 colorNB;
+                if (dx>0.0) {
+                    colorNB = TEX2D( texture_coords + onex );
+                    dx = 1.0 - dx;
+                } else {
+                    colorNB = TEX2D( texture_coords - onex );
+                    dx = 1.0 + dx;
+                }
 
-                // TOP-LEFT
-                pcol = texture2D(rubyTexture, coords_texture + oney - onex);
-                luminosity = dot(pcol, luminosity_weights);
-                color += pcol * factor(luminosity, ecart + vec2(SCALE, -SCALE));
+                // macro to determinate spot size
+                // can be fixed or influenced by the pixel luminosity
+                SIZE( colorNB );
 
-                // TOP-RIGHT
-                pcol = texture2D(rubyTexture, coords_texture + oney + onex);
-                luminosity = dot(pcol, luminosity_weights);
-                color += pcol * factor(luminosity, ecart + vec2(-SCALE, -SCALE));
+                weight = dx / size;
+                if (weight>1.0) weight = 1.0;
+                weight = 1.0 - weight * weight;
 
-                // BOTTOM
-                pcol = texture2D(rubyTexture, coords_texture - oney);
-                luminosity = dot(pcol, luminosity_weights);
-                color += pcol * factor(luminosity, ecart + vec2(0.0, SCALE));
+                color = color + colorNB * vec4(weight * weight  * COLOR_BOOST);
 
-                // BOTTOM-LEFT
-                pcol = texture2D(rubyTexture, coords_texture - oney - onex);
-                luminosity = dot(pcol, luminosity_weights);
-                color += pcol * factor(luminosity, ecart + vec2(SCALE, SCALE));
+                // scanline
+                float dy = coords.y - pixel_center.y;
+                weight = dy / SPOT_HEIGHT;
+                weight = 1.0 - weight * weight;
+                color *= vec4(weight * weight);
 
-                // BOTTOM-RIGHT
-                pcol = texture2D(rubyTexture, coords_texture - oney + onex);
-                luminosity = dot(pcol, luminosity_weights);
-                color += pcol * factor(luminosity, ecart + vec2(-SCALE, SCALE));
-        #endif // USE_ALL_NEIGHBOURS
+        #ifdef RGB_BAR
+                vec2 output_coords = floor( l_TexCoord[0].xy * rubyOutputSize);
 
-        #ifdef TRIAD1
-                vec2 coords_screen = floor(gl_TexCoord[0].xy * rubyOutputSize);
-
-                float modulo = mod(coords_screen.y + coords_screen.x , 3.0);
-                if (modulo == 0.0)
-                    color.rgb *= vec3(1.0,0.5,0.5);
-                else if  (modulo <= 1.0)
-                    color.rgb *= vec3(0.5,1.0,0.5);
+                float modulo = mod(output_coords.x,3.0);
+                if ( modulo == 0.0 )
+                    color = color * vec4(1.4,0.5,0.5,0.0);
+                else if ( modulo == 1.0 )
+                    color = color * vec4(0.5,1.4,0.5,0.0);
                 else
-                    color.rgb *= vec3(0.5,0.5,1.0);
-        #endif // TRIAD1
+                    color = color * vec4(0.5,0.5,1.4,0.0);
+        #endif
 
-        #ifdef TRIAD2
-                color = clamp(color, 0.0, 1.0);
+        #ifdef RGB_TRIAD
+                vec2 output_coords = floor(gl_TexCoord[0].xy * rubyOutputSize);
 
-                vec2 coords_screen = floor(gl_TexCoord[0].xy * rubyOutputSize);
+                float modulo = mod(output_coords.x,2.0);
 
-                float modulo = mod(coords_screen.x , 3.0);
-                if (modulo == 0.0)            color.gb *= 0.8;
-                else if (modulo == 1.0)      color.rb *= 0.8;
-                else                                            color.rg *= 0.8;
-        #endif // TRIAD2
+                if ( modulo == 0.0 )
+                    modulo = mod( output_coords.y,6.0);
+                else
+                    modulo = mod(output_coords.y + 3.0, 6.0);
 
-                gl_FragColor = clamp(color, 0.0, 1.0);
+                if ( modulo < 2.0 )
+                    color = color * vec4(1.0,0.0,0.0,0.0);
+                else if ( modulo < 4.0 )
+                    color = color * vec4(0.0,1.0,0.0,0.0);
+                else
+                    color = color * vec4(0.0,0.0,1.0,0.0);
+        #endif
+
+        #ifdef MG_BAR
+                vec2 output_coords = floor(gl_TexCoord[0].xy * rubyOutputSize);
+
+                float modulo = mod(output_coords.x,2.0);
+                if ( modulo == 0.0 )
+                    color = color * vec4(1.0,0.1,1.0,0.0);
+                else
+                    color = color * vec4(0.1,1.0,0.1,0.0);
+        #endif
+
+                gl_FragColor = clamp(GAMMA_OUT(color), 0.0, 1.0);
+
         }
     ]]></fragment>
 </shader>
