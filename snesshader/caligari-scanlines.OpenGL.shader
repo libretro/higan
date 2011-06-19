@@ -27,17 +27,11 @@
 
         // 0.5 = the spot stays inside the original pixel
         // 1.0 = the spot bleeds up to the center of next pixel
-        #define SPOT_WIDTH  1.00
+        #define SPOT_WIDTH  0.9
+        #define SPOT_HEIGHT 0.65
 
         // Used to counteract the desaturation effect of weighting.
-        #define COLOR_BOOST 1.5
-
-        // for scanline effect, 0.5 to 0.7 in height
-        #define SPOT_HEIGHT 0.55
-
-        // Uncomment this to have darker pixels producing smaller spots.
-        // #define SPOT_SIZE_IS_INFLUENCED_BY_LUMI
-
+        #define COLOR_BOOST 1.45
 
         // Different way to handle RGB phosphors.
         // #define RGB_BAR
@@ -67,13 +61,15 @@
          *             where   a=12/(g+1)-3 and b=1-a
          * for 1<g<2 : x^(1/g) ~ (sqrt(a^2+4bx)-a)
          *             where   a=6/(g+1)-2  and b=1-a
-         * for 2<g<3 : Not computed yet, probably needs cube_root...
-         *             so no better than using pow ?
+         * for 2<g<3 : x^(1/g) ~ (a sqrt(x) + b sqrt(sqrt(x)))
+         *             where   a = 6 - 15g / 2(g+1)  and b = 1-a
          */
-        vec4 A_IN = vec4( 12.0/(InputGamma+1.0)-3.0 );
-        vec4 B_IN = vec4(1.0) - A_IN;
-        #define GAMMA_IN(color)     ( (A_IN + B_IN * color) * color * color )
-        #define GAMMA_OUT(color)    pow(color, vec4(1.0 / OutputGamma ))
+        vec4 A_IN  = vec4(12.0/(InputGamma+1.0)-3.0);
+        vec4 B_IN  = vec4(1.0) - A_IN;
+        vec4 A_OUT = vec4(6.0 - 15.0 * OutputGamma / 2.0 / (OutputGamma+1.0));
+        vec4 B_OUT = vec4(1.0) - A_OUT;
+        #define GAMMA_IN(color)  ((A_IN + B_IN * color) * color * color)
+        #define GAMMA_OUT(color) (A_OUT * sqrt(color) + B_OUT * sqrt(sqrt(color)))
 
         #elif defined FAKER_GAMMA
         vec4 A_IN = vec4( 6.0/( InputGamma/OutputGamma + 1.0 ) - 2.0 );
@@ -88,24 +84,14 @@
 
         #define TEX2D(coords)   GAMMA_IN( texture2D(rubyTexture, coords) )
 
-        #ifdef SPOT_SIZE_IS_INFLUENCED_BY_LUMI
-        float lumi;
-        float size;
-        vec4 lumW = vec4( 0.3, 0.6, 0.1, 0.0 );
-
-        // Define SIZE to decrease the spot-size for darker pixels.
-        // the last parenthesis needs work...
-        #define SIZE(col) \
-                lumi = dot(col, lumW); \
-                size = SPOT_WIDTH * ( 0.5 + 0.5 * lumi);
-
-        #else
-        float size = SPOT_WIDTH;
-        // in this case, the size is fixed => the macro does nothing
-        #define SIZE(col)
-        #endif // SPOT_SIZE_IS_INFLUENCED_BY_LUMI
+        // Macro for weights computing
+        #define WEIGHT(w) \
+                if(w>1.0) w=1.0; \
+                w = 1.0 - w * w; \
+                w = w * w;
 
         vec2 onex = vec2( 1.0/rubyTextureSize.x, 0.0 );
+        vec2 oney = vec2( 0.0, 1.0/rubyTextureSize.y );
 
         void main(void)
         {
@@ -117,41 +103,55 @@
 
                 float dx = coords.x - pixel_center.x;
 
-                // macro to determinate spot size
-                // can be fixed or influenced by the pixel luminosity
-                SIZE( color );
+                float h_weight_00 = dx / SPOT_WIDTH;
+                WEIGHT(h_weight_00);
 
-                float weight = dx / size;
-                if (weight>1.0) weight = 1.0;
-                weight = 1.0 - weight * weight;
+                color *= vec4( h_weight_00  );
 
-                color *= vec4( weight * weight * COLOR_BOOST );
-
-                // get closest neighbour to blend
-                vec4 colorNB;
+                // get closest horizontal neighbour to blend
+                vec2 coords01;
                 if (dx>0.0) {
-                    colorNB = TEX2D( texture_coords + onex );
-                    dx = 1.0 - dx;
+                        coords01 = onex;
+                        dx = 1.0 - dx;
                 } else {
-                    colorNB = TEX2D( texture_coords - onex );
-                    dx = 1.0 + dx;
+                        coords01 = -onex;
+                        dx = 1.0 + dx;
                 }
+                vec4 colorNB = TEX2D( texture_coords + coords01 );
 
-                // macro to determinate spot size
-                // can be fixed or influenced by the pixel luminosity
-                SIZE( colorNB );
+                float h_weight_01 = dx / SPOT_WIDTH;
+                WEIGHT( h_weight_01 );
 
-                weight = dx / size;
-                if (weight>1.0) weight = 1.0;
-                weight = 1.0 - weight * weight;
+                color = color + colorNB * vec4( h_weight_01 );
 
-                color = color + colorNB * vec4(weight * weight  * COLOR_BOOST);
-
-                // scanline
+                //////////////////////////////////////////////////////
+                // Vertical Blending
                 float dy = coords.y - pixel_center.y;
-                weight = dy / SPOT_HEIGHT;
-                weight = 1.0 - weight * weight;
-                color *= vec4(weight * weight);
+                float v_weight_00 = dy / SPOT_HEIGHT;
+                WEIGHT(v_weight_00);
+                color *= vec4( v_weight_00 );
+
+                // get closest vertical neighbour to blend
+                vec2 coords10;
+                if (dy>0.0) {
+                        coords10 = oney;
+                        dy = 1.0 - dy;
+                } else {
+                        coords10 = -oney;
+                        dy = 1.0 + dy;
+                }
+                colorNB = TEX2D( texture_coords + coords10 );
+
+                float v_weight_10 = dy / SPOT_HEIGHT;
+                WEIGHT( v_weight_10 );
+
+                color = color + colorNB * vec4( v_weight_10 * h_weight_00 );
+
+                colorNB = TEX2D(  texture_coords + coords01 + coords10 );
+
+                color = color + colorNB * vec4( v_weight_10 * h_weight_01 );
+
+                color *= vec4( COLOR_BOOST );
 
         #ifdef RGB_BAR
                 vec2 output_coords = floor( l_TexCoord[0].xy * rubyOutputSize);
@@ -194,7 +194,6 @@
         #endif
 
                 gl_FragColor = clamp(GAMMA_OUT(color), 0.0, 1.0);
-
         }
     ]]></fragment>
 </shader>
