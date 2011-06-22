@@ -154,7 +154,7 @@
                 color *= vec4( COLOR_BOOST );
 
         #ifdef RGB_BAR
-                vec2 output_coords = floor( l_TexCoord[0].xy * rubyOutputSize);
+                vec2 output_coords = floor(gl_TexCoord[0].xy * rubyOutputSize / rubyInputSize * rubyTextureSize);
 
                 float modulo = mod(output_coords.x,3.0);
                 if ( modulo == 0.0 )
@@ -166,12 +166,12 @@
         #endif
 
         #ifdef RGB_TRIAD
-                vec2 output_coords = floor(gl_TexCoord[0].xy * rubyOutputSize);
+                vec2 output_coords = gl_TexCoord[0].xy * rubyOutputSize / rubyInputSize * rubyTextureSize;
 
                 float modulo = mod(output_coords.x,2.0);
 
-                if ( modulo == 0.0 )
-                    modulo = mod( output_coords.y,6.0);
+                if ( modulo < 1.0 )
+                    modulo = mod(output_coords.y, 6.0);
                 else
                     modulo = mod(output_coords.y + 3.0, 6.0);
 
@@ -184,7 +184,7 @@
         #endif
 
         #ifdef MG_BAR
-                vec2 output_coords = floor(gl_TexCoord[0].xy * rubyOutputSize);
+                vec2 output_coords = floor(gl_TexCoord[0].xy * rubyOutputSize / rubyInputSize * rubyTextureSize);
 
                 float modulo = mod(output_coords.x,2.0);
                 if ( modulo == 0.0 )
