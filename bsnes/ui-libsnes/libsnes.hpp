@@ -54,13 +54,14 @@ extern "C" {
 // connected to a controller port, for use with the
 // snes_set_controller_port_device() function and the snes_input_state_t
 // callback.
-#define SNES_DEVICE_NONE         0
-#define SNES_DEVICE_JOYPAD       1
-#define SNES_DEVICE_MULTITAP     2
-#define SNES_DEVICE_MOUSE        3
-#define SNES_DEVICE_SUPER_SCOPE  4
-#define SNES_DEVICE_JUSTIFIER    5
-#define SNES_DEVICE_JUSTIFIERS   6
+#define SNES_DEVICE_NONE          0
+#define SNES_DEVICE_JOYPAD        1
+#define SNES_DEVICE_MULTITAP      2
+#define SNES_DEVICE_MOUSE         3
+#define SNES_DEVICE_SUPER_SCOPE   4
+#define SNES_DEVICE_JUSTIFIER     5
+#define SNES_DEVICE_JUSTIFIERS    6
+#define SNES_DEVICE_SERIAL_CABLE  7
 
 // These constants represent the button and axis inputs on various controllers,
 // for use with the snes_input_state_t callback.
