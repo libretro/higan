@@ -547,6 +547,9 @@ void snes_set_input_state(snes_input_state_t);
 //                passed "id" parameters between 0 and 3, inclusive.
 //              - SNES_DEVICE_MOUSE: A SNES mouse controller, as shipped with
 //                Mario Paint.
+//              - SNES_DEVICE_SERIAL_CABLE: Allows SNES software to communicate
+//                with the outside world. See http://byuu.org/snes/serial/
+//                for details.
 //
 //          These devices only work properly when connected to port 2:
 //              - SNES_DEVICE_SUPER_SCOPE: A Nintendo Super Scope light-gun
@@ -555,6 +558,10 @@ void snes_set_input_state(snes_input_state_t);
 //              - SNES_DEVICE_JUSTIFIERS: Two Konami Justifier light-gun
 //                devices, daisy-chained together. Your input state callback
 //                will be passed "id" parameters 0 and 1.
+//
+//          (Technically, the Super Scope and the Justifiers can be used in
+//          port 1 if the game reads $4213 non-stop for the entire frame, but
+//          most games don't bother doing that.)
 
 void snes_set_controller_port_device(bool port, unsigned device);
 
