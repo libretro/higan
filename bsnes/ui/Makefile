@@ -42,7 +42,7 @@ endif
 rubyflags := $(if $(finstring .sdl,$(ruby)),`sdl-config --cflags`)
 
 link += $(if $(findstring .sdl,$(ruby)),`sdl-config --libs`)
-link += $(if $(findstring video.direct3d,$(ruby)),-ld3d9)
+link += $(if $(findstring video.direct3d,$(ruby)),-lwinmm)
 link += $(if $(findstring video.directdraw,$(ruby)),-lddraw)
 link += $(if $(findstring video.glx,$(ruby)),-lGL)
 link += $(if $(findstring video.wgl,$(ruby)),-lopengl32)
