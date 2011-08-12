@@ -1,10 +1,10 @@
 VideoSettings videoSettings;
 
 void VideoSettings::create() {
-  setTitle("Video Settings");
-  application.addWindow(this, "VideoSettings", "160,160");
+  title.setText("Video Settings");
+  title.setFont(application.titleFont);
 
-  colorAdjustmentLabel.setText("Color Adjustment :.");
+  colorAdjustmentLabel.setText("Color adjustment:");
   colorAdjustmentLabel.setFont(application.proportionalFontBold);
   brightnessLabel.setText("Brightness:");
   brightnessSlider.setLength(201);
@@ -13,14 +13,19 @@ void VideoSettings::create() {
   gammaLabel.setText("Gamma:");
   gammaSlider.setLength(201);
   gammaRampCheck.setText("Enable NTSC gamma ramp simulation");
-  fullscreenLabel.setText("Fullscreen :.");
+  fullscreenLabel.setText("Fullscreen:");
   fullscreenLabel.setFont(application.proportionalFontBold);
   fullscreenCenter.setText("Center");
   fullscreenScale.setText("Scale");
   fullscreenStretch.setText("Stretch");
   RadioBox::group(fullscreenCenter, fullscreenScale, fullscreenStretch);
 
-  layout.setMargin(5);
+  panelLayout.setMargin(5);
+  panelLayout.append(panel, SettingsWindow::PanelWidth, ~0, 5);
+  panelLayout.append(layout);
+
+  layout.append(title, ~0, 0, 5);
+
   layout.append(colorAdjustmentLabel,        ~0, 0   );
   brightnessLayout.append(brightnessLabel,   80, 0   );
   brightnessLayout.append(brightnessValue,   50, 0   );
@@ -40,8 +45,9 @@ void VideoSettings::create() {
   fullscreenLayout.append(fullscreenScale,   ~0, 0, 5);
   fullscreenLayout.append(fullscreenStretch, ~0, 0   );
   layout.append(fullscreenLayout);
-  append(layout);
-  setGeometry({ 0, 0, 480, layout.minimumGeometry().height });
+
+  layout.append(spacer, ~0, ~0);
+  settingsWindow.append(panelLayout);
 
   brightnessSlider.setPosition(config.video.brightness);
   brightnessValue.setText({ config.video.brightness, "%" });
@@ -63,9 +69,11 @@ void VideoSettings::create() {
   contrastSlider.onChange = brightnessSlider.onChange = gammaSlider.onChange = gammaRampCheck.onTick =
   { &VideoSettings::adjust, this };
 
-  fullscreenCenter.onTick = []() { config.video.fullscreenScale = 0; };
-  fullscreenScale.onTick = []() { config.video.fullscreenScale = 1; };
-  fullscreenStretch.onTick = []() { config.video.fullscreenScale = 2; };
+  fullscreenCenter.onTick = [] { config.video.fullscreenScale = 0; };
+  fullscreenScale.onTick = [] { config.video.fullscreenScale = 1; };
+  fullscreenStretch.onTick = [] { config.video.fullscreenScale = 2; };
+
+  adjust();
 }
 
 void VideoSettings::adjust() {

@@ -1,11 +1,11 @@
 include nall/Makefile
 snes := snes
 gameboy := gameboy
-profile := compatibility
+profile := accuracy
 ui := ui
+# phoenix := gtk
 
-# debugger
-options :=
+# options += debugger
 
 # compiler
 c       := $(compiler) -std=gnu99

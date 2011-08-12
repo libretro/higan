@@ -1,10 +1,13 @@
 #include <snes/snes.hpp>
 
 #include <nall/base64.hpp>
+#include <nall/bmp.hpp>
+#include <nall/compositor.hpp>
 #include <nall/config.hpp>
 #include <nall/directory.hpp>
 #include <nall/filemap.hpp>
 #include <nall/input.hpp>
+#include <nall/resource.hpp>
 #include <nall/ups.hpp>
 #include <nall/snes/cartridge.hpp>
 #include <nall/gameboy/cartridge.hpp>
@@ -39,6 +42,8 @@ struct Application {
   Font proportionalFont;
   Font proportionalFontBold;
   Font monospaceFont;
+  Font titleFont;
+  bool compositorActive;
 
   bool pause;
   bool quit;

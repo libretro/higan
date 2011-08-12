@@ -37,6 +37,11 @@ void StateManager::create() {
 void StateManager::synchronize() {
   descEdit.setText("");
   descEdit.setEnabled(false);
+
+  loadButton.setEnabled(stateList.selected());
+  saveButton.setEnabled(stateList.selected());
+  eraseButton.setEnabled(stateList.selected());
+
   if(stateList.selected() == false) return;
   if(slot[stateList.selection()].capacity() > 0) {
     descEdit.setText(slotLoadDescription(stateList.selection()));
@@ -46,7 +51,7 @@ void StateManager::synchronize() {
 
 void StateManager::refresh() {
   for(unsigned i = 0; i < 32; i++) {
-    stateList.modify(i, rdecimal<2>(i + 1), slotLoadDescription(i));
+    stateList.modify(i, decimal<2>(i + 1), slotLoadDescription(i));
   }
   stateList.autoSizeColumns();
 }
@@ -74,6 +79,7 @@ void StateManager::load() {
   }
 
   refresh();
+  synchronize();
 }
 
 void StateManager::save() {

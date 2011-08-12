@@ -122,14 +122,23 @@ void Interface::video_refresh(const uint16_t *data, bool hires, bool interlace, 
     frameCounter = 0;
     previous = current;
   }
+
+  if(captureScreenshot) {
+    captureScreenshot = false;
+    time_t currentTime = time(0);
+    tm *info = localtime(&currentTime);
+    string filename = { "-",
+      decimal<4, '0'>(info->tm_year + 1900), "-", decimal<2, '0'>(info->tm_mon + 1), "-", decimal<2, '0'>(info->tm_mday), " ",
+      decimal<2, '0'>(info->tm_hour), ":", decimal<2, '0'>(info->tm_min), ":", decimal<2, '0'>(info->tm_sec), ".bmp"
+    };
+    bmp::write(path(utility.slotPath(), filename), buffer, outwidth, outheight, outpitch, false);
+    utility.showMessage("Screenshot captured");
+  }
 }
 
 void Interface::audio_sample(uint16_t left, uint16_t right) {
   if(config.audio.mute) left = right = 0;
   audio.sample(left, right);
-}
-
-void Interface::input_poll() {
 }
 
 int16_t Interface::input_poll(bool port, SNES::Input::Device device, unsigned index, unsigned id) {
@@ -143,4 +152,8 @@ void Interface::message(const string &text) {
 
 string Interface::path(SNES::Cartridge::Slot slot, const string &hint) {
   return ::path.load(slot, hint);
+}
+
+Interface::Interface() {
+  captureScreenshot = false;
 }

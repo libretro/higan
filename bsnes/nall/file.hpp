@@ -4,11 +4,11 @@
 #include <nall/platform.hpp>
 #include <nall/stdint.hpp>
 #include <nall/string.hpp>
-#include <nall/utf8.hpp>
 #include <nall/utility.hpp>
+#include <nall/windows/utf8.hpp>
 
 namespace nall {
-  inline FILE* fopen_utf8(const char *utf8_filename, const char *mode) {
+  inline FILE* fopen_utf8(const string &utf8_filename, const char *mode) {
     #if !defined(_WIN32)
     return fopen(utf8_filename, mode);
     #else
@@ -21,6 +21,24 @@ namespace nall {
     enum class mode : unsigned { read, write, readwrite, writeread };
     enum class index : unsigned { absolute, relative };
     enum class time : unsigned { create, modify, access };
+
+    static bool read(const string &filename, uint8_t *&data, unsigned &size) {
+      file fp;
+      if(fp.open(filename, mode::read) == false) return false;
+      size = fp.size();
+      data = new uint8_t[size];
+      fp.read(data, size);
+      fp.close();
+      return true;
+    }
+
+    static bool write(const string &filename, const uint8_t *data, unsigned size) {
+      file fp;
+      if(fp.open(filename, mode::write) == false) return false;
+      fp.write(data, size);
+      fp.close();
+      return true;
+    }
 
     uint8_t read() {
       if(!fp) return 0xff;                       //file not open
@@ -135,7 +153,7 @@ namespace nall {
       return file_offset >= file_size;
     }
 
-    static bool exists(const char *filename) {
+    static bool exists(const string &filename) {
       #if !defined(_WIN32)
       struct stat64 data;
       return stat64(filename, &data) == 0;
@@ -145,7 +163,7 @@ namespace nall {
       #endif
     }
 
-    static uintmax_t size(const char *filename) {
+    static uintmax_t size(const string &filename) {
       #if !defined(_WIN32)
       struct stat64 data;
       stat64(filename, &data);
@@ -156,7 +174,7 @@ namespace nall {
       return S_ISREG(data.st_mode) ? data.st_size : 0u;
     }
 
-    static time_t timestamp(const char *filename, file::time mode = file::time::create) {
+    static time_t timestamp(const string &filename, file::time mode = file::time::create) {
       #if !defined(_WIN32)
       struct stat64 data;
       stat64(filename, &data);
@@ -175,7 +193,7 @@ namespace nall {
       return fp;
     }
 
-    bool open(const char *filename, mode mode_) {
+    bool open(const string &filename, mode mode_) {
       if(fp) return false;
 
       switch(file_mode = mode_) {

@@ -7,6 +7,9 @@ void Application::main(int argc, char **argv) {
   #if defined(PLATFORM_WIN)
   utf8_args(argc, argv);
   #endif
+
+  compositorActive = compositor::enabled();
+
   config.create();
   inputMapper.create();
 
@@ -30,6 +33,10 @@ void Application::main(int argc, char **argv) {
 
   monospaceFont.setFamily("Lucida Console");
   monospaceFont.setSize(8);
+
+  titleFont.setFamily("Segoe Print");
+  titleFont.setSize(16);
+  titleFont.setBold();
   #else
   proportionalFont.setFamily("Sans");
   proportionalFont.setSize(8);
@@ -40,6 +47,11 @@ void Application::main(int argc, char **argv) {
 
   monospaceFont.setFamily("Liberation Mono");
   monospaceFont.setSize(8);
+
+  titleFont.setFamily("Sans");
+  titleFont.setSize(16);
+  titleFont.setBold();
+  titleFont.setItalic();
   #endif
 
   SNES::system.init(&interface);
@@ -55,10 +67,8 @@ void Application::main(int argc, char **argv) {
   singleSlotLoader.create();
   doubleSlotLoader.create();
   nssDipWindow.create();
-  videoSettings.create();
-  audioSettings.create();
-  inputSettings.create();
-  advancedSettings.create();
+  aboutWindow.create();
+  settingsWindow.create();
   cheatEditor.create();
   cheatDatabase.create();
   stateManager.create();
@@ -108,6 +118,7 @@ void Application::main(int argc, char **argv) {
   utility.setControllers();
   utility.setFilter();
   utility.setShader();
+  if(config.settings.startFullScreen) utility.setFullScreen();
 
   if(argc == 2) cartridge.loadNormal(argv[1]);
 
@@ -144,6 +155,8 @@ void Application::main(int argc, char **argv) {
   video.term();
   audio.term();
   input.term();
+
+  if(compositorActive) compositor::enable(true);
 }
 
 void Application::addWindow(TopLevelWindow *window, const string &name, const string &position) {

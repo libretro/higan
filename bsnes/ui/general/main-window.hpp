@@ -56,10 +56,7 @@ struct MainWindow : TopLevelWindow {
   CheckItem settingsSynchronizeAudio;
   CheckItem settingsMuteAudio;
   Separator settingsSeparator2;
-  Item settingsVideo;
-  Item settingsAudio;
-  Item settingsInput;
-  Item settingsAdvanced;
+  Item settingsConfiguration;
 
   Menu tools;
   Menu toolsStateSave;
@@ -75,6 +72,7 @@ struct MainWindow : TopLevelWindow {
   Item toolsStateLoad4;
   Item toolsStateLoad5;
   Separator toolsSeparator1;
+  Item toolsCaptureScreenshot;
   Item toolsCheatEditor;
   Item toolsStateManager;
   #if defined(DEBUGGER)

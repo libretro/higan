@@ -30,7 +30,9 @@ struct Configuration : public configuration {
   } input;
 
   struct Settings {
+    bool startFullScreen;
     unsigned focusPolicy;
+    unsigned compositorPolicy;
   } settings;
 
   struct Controller {
