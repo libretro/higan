@@ -129,16 +129,22 @@ void Interface::video_refresh(const uint16_t *data, bool hires, bool interlace, 
     tm *info = localtime(&currentTime);
     string filename = { "-",
       decimal<4, '0'>(info->tm_year + 1900), "-", decimal<2, '0'>(info->tm_mon + 1), "-", decimal<2, '0'>(info->tm_mday), " ",
-      decimal<2, '0'>(info->tm_hour), ":", decimal<2, '0'>(info->tm_min), ":", decimal<2, '0'>(info->tm_sec), ".bmp"
+      decimal<2, '0'>(info->tm_hour), ".", decimal<2, '0'>(info->tm_min), ".", decimal<2, '0'>(info->tm_sec), ".bmp"
     };
-    bmp::write(path(utility.slotPath(), filename), buffer, outwidth, outheight, outpitch, false);
-    utility.showMessage("Screenshot captured");
+    if(bmp::write(path(utility.activeSlot(), filename), buffer, outwidth, outheight, outpitch, false)) {
+      utility.showMessage("Screenshot captured");
+    }
   }
 }
 
-void Interface::audio_sample(uint16_t left, uint16_t right) {
-  if(config.audio.mute) left = right = 0;
-  audio.sample(left, right);
+void Interface::audio_sample(int16_t lchannel, int16_t rchannel) {
+  if(config.audio.mute) lchannel = 0, rchannel = 0;
+  dspaudio.sample(lchannel, rchannel);
+  while(dspaudio.pending()) {
+    signed lsample, rsample;
+    dspaudio.read(lsample, rsample);
+    audio.sample(lsample, rsample);
+  }
 }
 
 int16_t Interface::input_poll(bool port, SNES::Input::Device device, unsigned index, unsigned id) {

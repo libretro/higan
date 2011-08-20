@@ -1,10 +1,16 @@
 namespace SNES {
   namespace Info {
     static const char Name[] = "bsnes";
-    static const char Version[] = "081";
+    static const char Version[] = "082";
     static const unsigned SerializerVersion = 21;
   }
 }
+
+/*
+  bsnes - SNES emulator
+  author: byuu
+  license: GPLv2
+*/
 
 #include <libco/libco.h>
 
@@ -13,6 +19,7 @@ namespace SNES {
 #include <nall/array.hpp>
 #include <nall/detect.hpp>
 #include <nall/dl.hpp>
+#include <nall/dsp.hpp>
 #include <nall/endian.hpp>
 #include <nall/file.hpp>
 #include <nall/foreach.hpp>
