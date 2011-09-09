@@ -16,8 +16,12 @@ ifeq ($(platform),x)
   endif
 
   ruby := video.glx video.xv video.sdl
-  ruby += audio.alsa audio.openal audio.oss audio.pulseaudio audio.pulseaudiosimple audio.ao
+  ruby += audio.openal audio.oss audio.pulseaudio audio.pulseaudiosimple audio.ao
   ruby += input.sdl input.x
+
+  ifneq ($(findstring Linux,$(uname)),)
+    ruby += audio.alsa
+  endif
 
   link += $(if $(findstring audio.openal,$(ruby)),-lopenal)
 else ifeq ($(platform),osx)
