@@ -60,7 +60,7 @@ void pListView::setChecked(unsigned row, bool checked) {
 
 void pListView::setHeaderText(const lstring &text) {
   QStringList labels;
-  foreach(column, text) labels << QString::fromUtf8(column);
+  for(auto &column : text) labels << QString::fromUtf8(column);
 
   qtListView->setColumnCount(text.size());
   qtListView->setAlternatingRowColors(text.size() >= 2);
@@ -95,14 +95,36 @@ void pListView::setSelection(unsigned row) {
 
 void pListView::constructor() {
   qtWidget = qtListView = new QTreeWidget;
-  qtListView->setHeaderLabels(QStringList() << "");
-  qtListView->setHeaderHidden(true);
   qtListView->setAllColumnsShowFocus(true);
   qtListView->setRootIsDecorated(false);
 
   connect(qtListView, SIGNAL(itemActivated(QTreeWidgetItem*, int)), SLOT(onActivate()));
   connect(qtListView, SIGNAL(currentItemChanged(QTreeWidgetItem*, QTreeWidgetItem*)), SLOT(onChange(QTreeWidgetItem*)));
   connect(qtListView, SIGNAL(itemChanged(QTreeWidgetItem*, int)), SLOT(onTick(QTreeWidgetItem*)));
+
+  pWidget::synchronizeState();
+  setCheckable(listView.state.checkable);
+  setHeaderText(listView.state.headerText.size() ? listView.state.headerText : lstring{ " " });
+  setHeaderVisible(listView.state.headerVisible);
+  for(auto &row : listView.state.text) append(row);
+  if(listView.state.checkable) {
+    for(unsigned n = 0; n < listView.state.checked.size(); n++) {
+      setChecked(n, listView.state.checked[n]);
+    }
+  }
+  setSelected(listView.state.selected);
+  if(listView.state.selected) setSelection(listView.state.selection);
+  autoSizeColumns();
+}
+
+void pListView::destructor() {
+  delete qtListView;
+  qtWidget = qtListView = 0;
+}
+
+void pListView::orphan() {
+  destructor();
+  constructor();
 }
 
 void pListView::onActivate() {

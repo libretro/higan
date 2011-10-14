@@ -757,7 +757,7 @@ void snes_cheat_reset(void);
 //          previously specififed index, the array will be resized to
 //          accommodate.
 //
-//      enabled:
+//      enable:
 //          True means that the cheat will actually be applied, False means
 //          that the cheat will have no effect. There is no way to enable or
 //          disable a cheat after it has been added, other than to call
@@ -773,7 +773,7 @@ void snes_cheat_reset(void);
 //          ("1234-ABCD") or ProActionReplay format ("1234AB:CD" or
 //          "1234ABCD").
 
-void snes_cheat_set(unsigned index, bool enabled, const char *code);
+void snes_cheat_set(unsigned index, bool enable, const char *code);
 
 ////////////////////////////////////////////////////////////////////////////}}}
 

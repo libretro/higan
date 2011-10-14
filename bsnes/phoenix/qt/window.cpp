@@ -1,21 +1,22 @@
 void pWindow::append(Layout &layout) {
-  layout.setParent(window);
   Geometry geometry = window.state.geometry;
   geometry.x = geometry.y = 0;
   layout.setGeometry(geometry);
 }
 
 void pWindow::append(Menu &menu) {
-  if(window.state.menuFont) menu.p.qtMenu->setFont(*window.state.menuFont->p.qtFont);
+  if(window.state.menuFont != "") menu.p.setFont(window.state.menuFont);
+  else menu.p.setFont("Sans, 8");
   qtMenu->addMenu(menu.p.qtMenu);
 }
 
 void pWindow::append(Widget &widget) {
-  if(!widget.state.font && window.state.widgetFont) {
-    widget.setFont(*window.state.widgetFont);
+  if(widget.state.font == "") {
+    if(window.state.widgetFont != "") widget.p.setFont(window.state.widgetFont);
+    else widget.p.setFont("Sans, 8");
   }
   widget.p.qtWidget->setParent(qtContainer);
-  widget.setVisible(widget.state.visible);
+  widget.setVisible(widget.visible());
 }
 
 Color pWindow::backgroundColor() {
@@ -25,14 +26,14 @@ Color pWindow::backgroundColor() {
 }
 
 Geometry pWindow::frameMargin() {
-  unsigned menuHeight = window.state.menuVisible ? qtMenu->height() : 0;
-  unsigned statusHeight = window.state.statusVisible ? qtStatus->height() : 0;
+  unsigned menuHeight = window.state.menuVisible ? settings->menuGeometryHeight : 0;
+  unsigned statusHeight = window.state.statusVisible ? settings->statusGeometryHeight : 0;
   if(window.state.fullScreen) return { 0, menuHeight, 0, menuHeight + statusHeight };
   return {
-    settings.frameGeometryX,
-    settings.frameGeometryY + menuHeight,
-    settings.frameGeometryWidth,
-    settings.frameGeometryHeight + menuHeight + statusHeight
+    settings->frameGeometryX,
+    settings->frameGeometryY + menuHeight,
+    settings->frameGeometryWidth,
+    settings->frameGeometryHeight + menuHeight + statusHeight
   };
 }
 
@@ -47,6 +48,21 @@ Geometry pWindow::geometry() {
     return { 0, menuHeight, OS::desktopGeometry().width, OS::desktopGeometry().height - menuHeight - statusHeight };
   }
   return window.state.geometry;
+}
+
+void pWindow::remove(Layout &layout) {
+}
+
+void pWindow::remove(Menu &menu) {
+  //QMenuBar::removeMenu() does not exist
+  qtMenu->clear();
+  for(auto &menu : window.state.menu) append(menu);
+}
+
+void pWindow::remove(Widget &widget) {
+  //bugfix: orphan() destroys and recreates widgets (to disassociate them from their parent);
+  //attempting to create widget again after QApplication::quit() crashes libQtGui
+  if(qtApplication) widget.p.orphan();
 }
 
 void pWindow::setBackgroundColor(const Color &color) {
@@ -79,10 +95,13 @@ void pWindow::setGeometry(const Geometry &geometry_) {
   Geometry geometry = geometry_, margin = frameMargin();
 
   setResizable(window.state.resizable);
-  qtWindow->move(geometry.x - margin.x, geometry.y - margin.y);
-  qtWindow->adjustSize();
+  qtWindow->move(geometry.x, geometry.y);
+  //qtWindow->adjustSize() fails if larger than 2/3rds screen size
+  qtWindow->resize(qtWindow->sizeHint());
+  qtWindow->setMinimumSize(1, 1);
+  qtContainer->setMinimumSize(1, 1);
 
-  foreach(layout, window.state.layout) {
+  for(auto &layout : window.state.layout) {
     geometry = geometry_;
     geometry.x = geometry.y = 0;
     layout.setGeometry(geometry);
@@ -90,9 +109,9 @@ void pWindow::setGeometry(const Geometry &geometry_) {
   locked = false;
 }
 
-void pWindow::setMenuFont(Font &font) {
-  qtMenu->setFont(*font.p.qtFont);
-  foreach(item, window.state.menu) item.p.setFont(font);
+void pWindow::setMenuFont(const string &font) {
+  qtMenu->setFont(pFont::create(font));
+  for(auto &item : window.state.menu) item.p.setFont(font);
 }
 
 void pWindow::setMenuVisible(bool visible) {
@@ -111,8 +130,8 @@ void pWindow::setResizable(bool resizable) {
   qtStatus->setSizeGripEnabled(resizable);
 }
 
-void pWindow::setStatusFont(Font &font) {
-  qtStatus->setFont(*font.p.qtFont);
+void pWindow::setStatusFont(const string &font) {
+  qtStatus->setFont(pFont::create(font));
 }
 
 void pWindow::setStatusText(const string &text) {
@@ -138,8 +157,8 @@ void pWindow::setVisible(bool visible) {
   locked = false;
 }
 
-void pWindow::setWidgetFont(Font &font) {
-  foreach(item, window.state.widget) {
+void pWindow::setWidgetFont(const string &font) {
+  for(auto &item : window.state.widget) {
     if(!item.state.font) item.setFont(font);
   }
 }
@@ -168,6 +187,16 @@ void pWindow::constructor() {
   qtLayout->addWidget(qtStatus);
 
   setGeometry(window.state.geometry);
+  setMenuFont("Sans, 8");
+  setStatusFont("Sans, 8");
+}
+
+void pWindow::destructor() {
+  delete qtStatus;
+  delete qtContainer;
+  delete qtMenu;
+  delete qtLayout;
+  delete qtWindow;
 }
 
 void pWindow::updateFrameGeometry() {
@@ -176,19 +205,31 @@ void pWindow::updateFrameGeometry() {
     usleep(100);
     QApplication::processEvents();
   }
+
   QRect border = qtWindow->frameGeometry();
   QRect client = qtWindow->geometry();
 
-  settings.frameGeometryX = client.x() - border.x();
-  settings.frameGeometryY = client.y() - border.y();
-  settings.frameGeometryWidth = border.width() - client.width();
-  settings.frameGeometryHeight = border.height() - client.height();
+  settings->frameGeometryX = client.x() - border.x();
+  settings->frameGeometryY = client.y() - border.y();
+  settings->frameGeometryWidth = border.width() - client.width();
+  settings->frameGeometryHeight = border.height() - client.height();
+
+  if(window.state.menuVisible) {
+    for(unsigned n = 0; n < 10; n++) { usleep(100); QApplication::processEvents(); }
+    settings->menuGeometryHeight = qtMenu->height();
+  }
+
+  if(window.state.statusVisible) {
+    for(unsigned n = 0; n < 10; n++) { usleep(100); QApplication::processEvents(); }
+    settings->statusGeometryHeight = qtStatus->height();
+  }
 }
 
 void pWindow::QtWindow::closeEvent(QCloseEvent *event) {
+  self.window.state.ignore = false;
   event->ignore();
-  hide();
   if(self.window.onClose) self.window.onClose();
+  if(self.window.state.ignore == false) hide();
 }
 
 void pWindow::QtWindow::moveEvent(QMoveEvent *event) {
@@ -208,7 +249,7 @@ void pWindow::QtWindow::resizeEvent(QResizeEvent*) {
     self.window.state.geometry.height = self.qtContainer->geometry().height();
   }
 
-  foreach(layout, self.window.state.layout) {
+  for(auto &layout : self.window.state.layout) {
     Geometry geometry = self.geometry();
     geometry.x = geometry.y = 0;
     layout.setGeometry(geometry);
@@ -222,7 +263,7 @@ void pWindow::QtWindow::resizeEvent(QResizeEvent*) {
 QSize pWindow::QtWindow::sizeHint() const {
   unsigned width = self.window.state.geometry.width;
   unsigned height = self.window.state.geometry.height;
-  if(self.window.state.menuVisible) height += self.qtMenu->height();
-  if(self.window.state.statusVisible) height += self.qtStatus->height();
+  if(self.window.state.menuVisible) height += settings->menuGeometryHeight;
+  if(self.window.state.statusVisible) height += settings->statusGeometryHeight;
   return QSize(width, height);
 }

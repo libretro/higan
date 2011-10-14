@@ -1,5 +1,4 @@
-#ifndef NALL_STRING_UTILITY_HPP
-#define NALL_STRING_UTILITY_HPP
+#ifdef NALL_STRING_INTERNAL_HPP
 
 namespace nall {
 
@@ -65,7 +64,7 @@ string sha256(const uint8_t *data, unsigned size) {
   sha256_final(&sha);
   sha256_hash(&sha, hash);
   string result;
-  foreach(byte, hash) result.append(hex<2>(byte));
+  for(auto &byte : hash) result.append(hex<2>(byte));
   return result;
 }
 

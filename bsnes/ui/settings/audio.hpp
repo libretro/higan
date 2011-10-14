@@ -1,27 +1,27 @@
-struct AudioSettings {
-  HorizontalLayout panelLayout;
-  Widget panel;
-  VerticalLayout layout;
-  Label title;
+struct AudioSlider : HorizontalLayout {
+  Label name;
+  Label value;
+  HorizontalSlider slider;
 
-  HorizontalLayout frequencyLayout;
-  Label frequencyLabel;
-  Label frequencyValue;
-  HorizontalSlider frequencySlider;
+  unsigned base;
+  unsigned step;
 
-  HorizontalLayout volumeLayout;
-  Label volumeLabel;
-  Label volumeValue;
-  HorizontalSlider volumeSlider;
-
-  HorizontalLayout balanceLayout;
-  Label balanceLabel;
-  Label balanceValue;
-  HorizontalSlider balanceSlider;
-
-  Widget spacer;
-
-  void create();
+  unsigned position();
+  void setPosition(unsigned position);
+  AudioSlider();
 };
 
-extern AudioSettings audioSettings;
+struct AudioSettings : SettingsLayout {
+  Label title;
+  Label frequencyAdjustmentLabel;
+  AudioSlider nes;
+  AudioSlider snes;
+  AudioSlider gameBoy;
+  Label outputAdjustmentLabel;
+  AudioSlider volume;
+
+  void synchronize();
+  AudioSettings();
+};
+
+extern AudioSettings *audioSettings;

@@ -1,10 +1,12 @@
 include nall/Makefile
 
+nes := nes
 snes := snes
 gameboy := gameboy
 profile := accuracy
 ui := ui
 
+# options += console
 # options += debugger
 
 # compiler
@@ -25,20 +27,21 @@ else ifeq ($(pgo),optimize)
   flags += -fprofile-use
 endif
 
-flags := $(flags) $(foreach o,$(call strupper,$(options)),-D$o)
-
 # platform
 ifeq ($(platform),x)
+  # tree vectorization causes code generation errors with Linux/GCC 4.6.1
+  flags += -fno-tree-vectorize
   link += -s -ldl -lX11 -lXext
 else ifeq ($(platform),osx)
 else ifeq ($(platform),win)
-  link += -mwindows
-# link += -mconsole
+  link += $(if $(findstring console,$(options)),-mconsole,-mwindows)
   link += -mthreads -s -luuid -lkernel32 -luser32 -lgdi32 -lcomctl32 -lcomdlg32 -lshell32 -lole32
-  link += -enable-stdcall-fixup -Wl,-enable-auto-import -Wl,-enable-runtime-pseudo-reloc
+  link += -Wl,-enable-auto-import -Wl,-enable-runtime-pseudo-reloc
 else
   unknown_platform: help;
 endif
+
+flags := $(flags) $(foreach o,$(call strupper,$(options)),-D$o)
 
 # implicit rules
 compile = \
@@ -74,6 +77,6 @@ clean:
 	-@$(call delete,*.manifest)
 
 archive-all:
-	tar -cjf bsnes.tar.bz2 data gameboy libco nall obj out phoenix ruby snes ui ui-gameboy ui-libsnes Makefile cc.bat clean.bat sync.sh
+	tar -cjf bsnes.tar.bz2 data gameboy libco nall nes obj out phoenix ruby snes ui ui-libsnes Makefile cc.bat clean.bat sync.sh
 
 help:;

@@ -1,206 +1,129 @@
 #include "base.hpp"
-#include "interface.cpp"
-#include "config.cpp"
+
+Application *application = 0;
 nall::DSP dspaudio;
-Application application;
 
-void Application::main(int argc, char **argv) {
-  #if defined(PLATFORM_WIN)
-  utf8_args(argc, argv);
-  #endif
+//allow files to exist in the same folder as binary;
+//otherwise default to home folder
+string Application::path(const string &filename) {
+  string result = { basepath, filename };
+  if(file::exists(result)) return result;
+  return { userpath, filename };
+}
 
-  compositorActive = compositor::enabled();
+void Application::run() {
+  inputManager->scan();
 
-  config.create();
-  inputMapper.create();
+  autopause = (mainWindow->focused() == false && config->input.focusPolicy == 2);
+  utility->updateStatus();
 
-  path.base = dir(realpath(argv[0]));
-  path.user = userpath();
-  path.load();
-  path.save();
-
-  config.load();
-  config.save();
-
-  inputMapper.bind();
-
-  #if defined(PLATFORM_WIN)
-  proportionalFont.setFamily("Tahoma");
-  proportionalFont.setSize(8);
-
-  proportionalFontBold.setFamily("Tahoma");
-  proportionalFontBold.setSize(8);
-  proportionalFontBold.setBold();
-
-  monospaceFont.setFamily("Lucida Console");
-  monospaceFont.setSize(8);
-
-  titleFont.setFamily("Segoe Print");
-  titleFont.setSize(16);
-  titleFont.setBold();
-  #else
-  proportionalFont.setFamily("Sans");
-  proportionalFont.setSize(8);
-
-  proportionalFontBold.setFamily("Sans");
-  proportionalFontBold.setSize(8);
-  proportionalFontBold.setBold();
-
-  monospaceFont.setFamily("Liberation Mono");
-  monospaceFont.setSize(8);
-
-  titleFont.setFamily("Sans");
-  titleFont.setSize(16);
-  titleFont.setBold();
-  titleFont.setItalic();
-  #endif
-
-  SNES::system.init(&interface);
-
-  if(config.video.driver == "") config.video.driver = video.default_driver();
-  if(config.audio.driver == "") config.audio.driver = audio.default_driver();
-  if(config.input.driver == "") config.input.driver = input.default_driver();
-
-  palette.update();
-
-  mainWindow.create();
-  fileBrowser.create();
-  singleSlotLoader.create();
-  doubleSlotLoader.create();
-  nssDipWindow.create();
-  aboutWindow.create();
-  settingsWindow.create();
-  cheatEditor.create();
-  cheatDatabase.create();
-  stateManager.create();
-  #if defined(DEBUGGER)
-  debugger.create();
-  #endif
-
-  loadGeometry();
-  saveGeometry();
-
-  utility.setScale(config.video.scale);
-  mainWindow.setVisible();
-  OS::processEvents();
-
-  video.driver(config.video.driver);
-  video.set(Video::Handle, mainWindow.viewport.handle());
-  video.set(Video::Synchronize, config.video.synchronize);
-  video.set(Video::Filter, (unsigned)config.video.smooth);
-  if(video.init() == false) {
-    MessageWindow::critical(mainWindow, "Failed to initialize video.");
-    video.driver("None");
-    video.init();
+  if(interface->cartridgeLoaded() == false || pause || autopause) {
+    audio.clear();
+    usleep(20 * 1000);
+    return;
   }
 
-  audio.driver(config.audio.driver);
-  audio.set(Audio::Handle, mainWindow.viewport.handle());
-  audio.set(Audio::Synchronize, config.audio.synchronize);
-  audio.set(Audio::Latency, config.audio.latency);
-  audio.set(Audio::Frequency, config.audio.outputFrequency);
-  if(audio.init() == false) {
-    MessageWindow::critical(mainWindow, "Failed to initialize audio.");
-    audio.driver("None");
-    audio.init();
+  interface->run();
+}
+
+Application::Application(int argc, char **argv) {
+  application = this;
+  quit = false;
+  pause = false;
+  autopause = false;
+  {
+    char path[PATH_MAX];
+    auto unused = ::realpath(argv[0], path);
+    basepath = dir(path);
+    unused = ::userpath(path);
+    userpath = path;
+    if(Intrinsics::platform() == Intrinsics::Platform::Windows) {
+      userpath.append("bsnes/");
+    } else {
+      userpath.append(".config/bsnes/");
+    }
+    mkdir(userpath, 0755);
   }
+  config = new Config;
+  interface = new Interface;
+  inputManager = new InputManager;
+  utility = new Utility;
 
-  dspaudio.setPrecision(16);  //16-bit signed audio
-  dspaudio.setVolume((double)config.audio.volume / 100.0);
-  dspaudio.setBalance((double)((signed)config.audio.balance - 100) / 100.0);
-  dspaudio.setFrequency(config.audio.inputFrequency);
-  dspaudio.setResampler(DSP::Resampler::Hermite);
-  dspaudio.setResamplerFrequency(config.audio.outputFrequency);
+  title = "bsnes v083";
 
-  input.driver(config.input.driver);
-  input.set(Input::Handle, mainWindow.viewport.handle());
-  if(input.init() == false) {
-    MessageWindow::critical(mainWindow, "Failed to initialize input.");
-    input.driver("None");
-    input.init();
-  }
+  string fontFamily = Intrinsics::platform() == Intrinsics::Platform::Windows ? "Tahoma, " : "Sans, ";
+  normalFont = { fontFamily, "8" };
+  boldFont = { fontFamily, "8, Bold" };
+  titleFont = { fontFamily, "16, Bold" };
 
-  utility.setControllers();
-  utility.setFilter();
-  utility.setShader();
-  if(config.settings.startFullScreen) utility.setFullScreen();
+  windowManager = new WindowManager;
+  mainWindow = new MainWindow;
+  fileBrowser = new FileBrowser;
+  slotLoader = new SlotLoader;
+  dipSwitches = new DipSwitches;
+  settingsWindow = new SettingsWindow;
+  cheatDatabase = new CheatDatabase;
+  cheatEditor = new CheatEditor;
+  stateManager = new StateManager;
+  windowManager->loadGeometry();
 
-  if(argc == 2) cartridge.loadNormal(argv[1]);
+  utility->setMode(Interface::Mode::None);
+  mainWindow->setVisible();
+
+  video.driver(config->video.driver);
+  video.set(Video::Handle, mainWindow->viewport.handle());
+  video.set(Video::Synchronize, config->video.synchronize);
+  video.init();
+  utility->bindVideoFilter();
+  utility->bindVideoShader();
+
+  audio.driver(config->audio.driver);
+  audio.set(Audio::Handle, mainWindow->viewport.handle());
+  audio.set(Audio::Synchronize, config->audio.synchronize);
+  audio.set(Audio::Latency, 60u);
+  audio.set(Audio::Frequency, 48000u);
+  audio.init();
+
+  dspaudio.setPrecision(16);
+  dspaudio.setVolume(config->audio.mute == false ? 1.0 : 0.0);
+  dspaudio.setBalance(0.0);
+  dspaudio.setResampler(DSP::ResampleEngine::Sinc);
+  dspaudio.setResamplerFrequency(48000.0);
+
+  input.driver(config->input.driver);
+  input.set(Input::Handle, mainWindow->viewport.handle());
+  input.init();
+
+  if(config->video.startFullScreen) utility->toggleFullScreen();
+  if(argc == 2) interface->loadCartridge(argv[1]);
 
   while(quit == false) {
     OS::processEvents();
-    inputMapper.poll();
-    utility.updateStatus();
-
-    if(SNES::cartridge.loaded()) {
-      if(application.pause == true || (config.settings.focusPolicy == 0 && mainWindow.focused() == false)) {
-        audio.clear();
-        usleep(20 * 1000);
-        continue;
-      }
-      #if defined(DEBUGGER)
-      debugger.run();
-      #else
-      SNES::system.run();
-      #endif
-    } else {
-      usleep(20 * 1000);
-    }
+    Application::run();
   }
 
-  cartridge.unload();
-  utility.setFullScreen(false);
-  saveGeometry();
-  foreach(window, windows) window->setVisible(false);
-  OS::processEvents();
-  SNES::system.term();
-
-  path.save();
-  config.save();
-
-  video.term();
-  audio.term();
-  input.term();
-
-  if(compositorActive) compositor::enable(true);
+  interface->unloadCartridge();
+  windowManager->saveGeometry();
 }
 
-void Application::addWindow(TopLevelWindow *window, const string &name, const string &position) {
-  windows.append(window);
-  window->name = name;
-  window->position = position;
-  window->setWidgetFont(proportionalFont);
-  geometryConfig.attach(window->position, window->name);
-}
-
-Application::Application() {
-  pause = false;
-  quit = false;
+Application::~Application() {
+  delete stateManager;
+  delete cheatEditor;
+  delete cheatDatabase;
+  delete settingsWindow;
+  delete dipSwitches;
+  delete slotLoader;
+  delete fileBrowser;
+  delete mainWindow;
+  delete windowManager;
+  delete utility;
+  delete inputManager;
+  delete interface;
+  delete config;
 }
 
 int main(int argc, char **argv) {
-  application.main(argc, argv);
+  new Application(argc, argv);
+  delete application;
   return 0;
-}
-
-void Application::loadGeometry() {
-  geometryConfig.load(path.home("geometry.cfg"));
-  foreach(window, windows) {
-    lstring position;
-    position.split(",", window->position);
-    Geometry geom = window->geometry();
-    window->setGeometry({
-      (signed)integer(position[0]), (signed)integer(position[1]),
-      geom.width, geom.height
-    //(unsigned)decimal(position[2]), (unsigned)decimal(position[3])
-    });
-  }
-}
-
-void Application::saveGeometry() {
-  foreach(window, windows) {
-    Geometry geom = window->geometry();
-    window->position = { geom.x, ",", geom.y, ",", geom.width, ",", geom.height };
-  }
-  geometryConfig.save(path.home("geometry.cfg"));
 }

@@ -1,38 +1,27 @@
-struct VideoSettings {
-  HorizontalLayout panelLayout;
-  Widget panel;
-  VerticalLayout layout;
-  Label title;
+struct VideoSlider : HorizontalLayout {
+  Label name;
+  Label value;
+  HorizontalSlider slider;
 
-  Label colorAdjustmentLabel;
-
-  Label brightnessLabel;
-  HorizontalLayout brightnessLayout;
-  Label brightnessValue;
-  HorizontalSlider brightnessSlider;
-
-  Label contrastLabel;
-  HorizontalLayout contrastLayout;
-  Label contrastValue;
-  HorizontalSlider contrastSlider;
-
-  Label gammaLabel;
-  HorizontalLayout gammaLayout;
-  Label gammaValue;
-  HorizontalSlider gammaSlider;
-
-  CheckBox gammaRampCheck;
-
-  Label fullscreenLabel;
-  HorizontalLayout fullscreenLayout;
-  RadioBox fullscreenCenter;
-  RadioBox fullscreenScale;
-  RadioBox fullscreenStretch;
-
-  Widget spacer;
-
-  void create();
-  void adjust();
+  VideoSlider();
 };
 
-extern VideoSettings videoSettings;
+struct VideoSettings : SettingsLayout {
+  Label title;
+  Label colorAdjustment;
+  VideoSlider brightness;
+  VideoSlider contrast;
+  VideoSlider gamma;
+  CheckBox gammaRamp;
+  Label overscanAdjustment;
+  VideoSlider overscanHorizontal;
+  VideoSlider overscanVertical;
+  Label fullScreenMode;
+  HorizontalLayout fullScreenLayout;
+  RadioBox fullScreen[3];
+
+  void synchronize();
+  VideoSettings();
+};
+
+extern VideoSettings *videoSettings;

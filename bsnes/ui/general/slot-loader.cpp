@@ -1,163 +1,185 @@
-SingleSlotLoader singleSlotLoader;
-DoubleSlotLoader doubleSlotLoader;
+SlotLoader *slotLoader = 0;
 
-void SingleSlotLoader::create() {
-  application.addWindow(this, "SingleSlotLoader", "160,160");
+SlotLoaderPath::SlotLoaderPath() {
+  browse.setText("Browse ...");
+  append(label, 40, 0, 5);
+  append(path, ~0, 0, 5);
+  append(browse, 80, 0);
+}
 
-  baseLabel.setText("Base:");
-  baseBrowse.setText("...");
-  slotLabel.setText("Slot:");
-  slotBrowse.setText("...");
-  okButton.setText("Ok");
-
-  const unsigned sq = baseBrowse.minimumGeometry().height;
-
+SlotLoader::SlotLoader() {
   layout.setMargin(5);
-  baseLayout.append(baseLabel,   40,  0, 5);
-  baseLayout.append(basePath,    ~0,  0, 5);
-  baseLayout.append(baseBrowse,  sq, sq   );
-  layout.append(baseLayout,              5);
-  slotLayout.append(slotLabel,   40,  0, 5);
-  slotLayout.append(slotPath,    ~0,  0, 5);
-  slotLayout.append(slotBrowse,  sq, sq   );
-  layout.append(slotLayout,              5);
-  controlLayout.append(spacer,   ~0,  0   );
-  controlLayout.append(okButton, 80,  0   );
-  layout.append(controlLayout);
+  base.label.setText("Base:");
+  slot[0].label.setText("Slot:");
+  slot[1].label.setText("Slot:");
+  loadButton.setText("Load");
+
   append(layout);
-  setGeometry({ 0, 0, 480, layout.minimumGeometry().height });
+  layout.append(base, ~0, 0, 5);
+  layout.append(slot[0], ~0, 0, 5);
+  layout.append(slot[1], ~0, 0, 5);
+  layout.append(controlLayout, ~0, 0);
+    controlLayout.append(spacer, ~0, 0);
+    controlLayout.append(loadButton, 80, 0);
 
-  baseBrowse.onTick = []() {
-    fileBrowser.fileOpen(FileBrowser::Mode::Cartridge, [](string filename) {
-      singleSlotLoader.basePath.setText(filename);
-    });
-  };
-
-  slotBrowse.onTick = []() {
-    FileBrowser::Mode fileMode = (singleSlotLoader.mode == Mode::SuperGameBoy
-    ? FileBrowser::Mode::GameBoy : FileBrowser::Mode::Satellaview);
-    fileBrowser.fileOpen(fileMode, [](string filename) {
-      singleSlotLoader.slotPath.setText(filename);
-    });
-  };
-
-  okButton.onTick = { &SingleSlotLoader::load, this };
+  setGeometry({ 128, 128, 500, layout.minimumGeometry().height });
+  windowManager->append(this, "SlotLoader");
 }
 
-void SingleSlotLoader::loadCartridgeBsxSlotted() {
-  mode = Mode::BsxSlotted;
-  setTitle("Load BS-X Slotted Cartridge");
-  basePath.setText("");
-  slotPath.setText("");
+void SlotLoader::synchronize() {
+  loadButton.setEnabled(base.path.text() != "");
+}
+
+void SlotLoader::loadSatellaviewSlotted() {
+  setTitle("Load Cartridge - Satellaview-Slotted");
+
+  base.path.setText("");
+
+  slot[0].path.setText("");
+  slot[0].path.setEnabled(true);
+  slot[0].browse.setEnabled(true);
+
+  slot[1].path.setText("");
+  slot[1].path.setEnabled(false);
+  slot[1].browse.setEnabled(false);
+
+  base.browse.onTick = [&] {
+    fileBrowser->open("Load Cartridge - SNES", FileBrowser::Mode::SNES, [&](const string &filename) {
+      base.path.setText(filename);
+      synchronize();
+    });
+  };
+
+  slot[0].browse.onTick = [&] {
+    fileBrowser->open("Load Cartridge - Satellaview", FileBrowser::Mode::Satellaview, [&](const string &filename) {
+      slot[0].path.setText(filename);
+      synchronize();
+    });
+  };
+
+  loadButton.onTick = [&] {
+    this->setVisible(false);
+    interface->snes.loadSatellaviewSlottedCartridge(base.path.text(), slot[0].path.text());
+  };
+
+  synchronize();
   setVisible();
-  okButton.setFocused();
 }
 
-void SingleSlotLoader::loadCartridgeBsx() {
-  mode = Mode::Bsx;
-  setTitle("Load BS-X Cartridge");
-  basePath.setText(path.satellaviewBios);
-  slotPath.setText("");
-  setVisible();
-  okButton.setFocused();
-}
+void SlotLoader::loadSatellaview() {
+  setTitle("Load Cartridge - Satellaview");
 
-void SingleSlotLoader::loadCartridgeSuperGameBoy() {
-  mode = Mode::SuperGameBoy;
-  setTitle("Load Super Game Boy cartridge");
-  basePath.setText(path.superGameBoyBios);
-  slotPath.setText("");
-  setVisible();
-  okButton.setFocused();
-}
+  base.path.setText(config->path.bios.satellaview);
 
-void SingleSlotLoader::load() {
-  setVisible(false);
+  slot[0].path.setText("");
+  slot[0].path.setEnabled(true);
+  slot[0].browse.setEnabled(true);
 
-  switch(mode) {
-    case Mode::BsxSlotted: {
-      cartridge.loadBsxSlotted(basePath.text(), slotPath.text());
-      break;
-    }
-    case Mode::Bsx: {
-      path.satellaviewBios = basePath.text();
-      cartridge.loadBsx(basePath.text(), slotPath.text());
-      break;
-    }
-    case Mode::SuperGameBoy: {
-      path.superGameBoyBios = basePath.text();
-      cartridge.loadSuperGameBoy(basePath.text(), slotPath.text());
-      break;
-    }
-  }
-}
+  slot[1].path.setText("");
+  slot[1].path.setEnabled(false);
+  slot[1].browse.setEnabled(false);
 
-//
-
-void DoubleSlotLoader::create() {
-  application.addWindow(this, "DoubleSlotLoader", "160,160");
-
-  baseLabel.setText("Base:");
-  baseBrowse.setText("...");
-  slotALabel.setText("Slot A:");
-  slotABrowse.setText("...");
-  slotBLabel.setText("Slot B:");
-  slotBBrowse.setText("...");
-  okButton.setText("Ok");
-
-  const unsigned sq = baseBrowse.minimumGeometry().height;
-
-  layout.setMargin(5);
-  baseLayout.append(baseLabel,    40,  0, 5);
-  baseLayout.append(basePath,     ~0,  0, 5);
-  baseLayout.append(baseBrowse,   sq, sq   );
-  layout.append(baseLayout,               5);
-  slotALayout.append(slotALabel,  40,  0, 5);
-  slotALayout.append(slotAPath,   ~0,  0, 5);
-  slotALayout.append(slotABrowse, sq, sq   );
-  layout.append(slotALayout,              5);
-  slotBLayout.append(slotBLabel,  40,  0, 5);
-  slotBLayout.append(slotBPath,   ~0,  0, 5);
-  slotBLayout.append(slotBBrowse, sq, sq   );
-  layout.append(slotBLayout,              5);
-  controlLayout.append(spacer,    ~0,  0   );
-  controlLayout.append(okButton,  80,  0   );
-  layout.append(controlLayout);
-  append(layout);
-  setGeometry({ 0, 0, 480, layout.minimumGeometry().height });
-
-  baseBrowse.onTick = []() {
-    fileBrowser.fileOpen(FileBrowser::Mode::Cartridge, [](string filename) {
-      doubleSlotLoader.basePath.setText(filename);
+  base.browse.onTick = [&] {
+    fileBrowser->open("Load BIOS - Satellaview", FileBrowser::Mode::SNES, [&](const string &filename) {
+      config->path.bios.satellaview = filename;
+      base.path.setText(filename);
+      synchronize();
     });
   };
 
-  slotABrowse.onTick = []() {
-    fileBrowser.fileOpen(FileBrowser::Mode::SufamiTurbo, [](string filename) {
-      doubleSlotLoader.slotAPath.setText(filename);
+  slot[0].browse.onTick = [&] {
+    fileBrowser->open("Load Cartridge - Satellaview", FileBrowser::Mode::Satellaview, [&](const string &filename) {
+      slot[0].path.setText(filename);
+      synchronize();
     });
   };
 
-  slotBBrowse.onTick = []() {
-    fileBrowser.fileOpen(FileBrowser::Mode::SufamiTurbo, [](string filename) {
-      doubleSlotLoader.slotBPath.setText(filename);
-    });
+  loadButton.onTick = [&] {
+    this->setVisible(false);
+    interface->snes.loadSatellaviewCartridge(base.path.text(), slot[0].path.text());
   };
 
-  okButton.onTick = { &DoubleSlotLoader::load, this };
-}
-
-void DoubleSlotLoader::loadCartridgeSufamiTurbo() {
-  setTitle("Load Sufami Turbo Cartridge");
-  basePath.setText(path.sufamiTurboBios);
-  slotAPath.setText("");
-  slotBPath.setText("");
+  synchronize();
   setVisible();
-  okButton.setFocused();
 }
 
-void DoubleSlotLoader::load() {
-  setVisible(false);
-  path.sufamiTurboBios = basePath.text();
-  cartridge.loadSufamiTurbo(basePath.text(), slotAPath.text(), slotBPath.text());
+void SlotLoader::loadSufamiTurbo() {
+  setTitle("Load Cartridge - Sufami Turbo");
+
+  base.path.setText(config->path.bios.sufamiTurbo);
+
+  slot[0].path.setText("");
+  slot[0].path.setEnabled(true);
+  slot[0].browse.setEnabled(true);
+
+  slot[1].path.setText("");
+  slot[1].path.setEnabled(true);
+  slot[1].browse.setEnabled(true);
+
+  base.browse.onTick = [&] {
+    fileBrowser->open("Load BIOS - Sufami Turbo", FileBrowser::Mode::SNES, [&](const string &filename) {
+      config->path.bios.sufamiTurbo = filename;
+      base.path.setText(filename);
+      synchronize();
+    });
+  };
+
+  slot[0].browse.onTick = [&] {
+    fileBrowser->open("Load Cartridge - Sufami Turbo", FileBrowser::Mode::SufamiTurbo, [&](const string &filename) {
+      slot[0].path.setText(filename);
+      synchronize();
+    });
+  };
+
+  slot[1].browse.onTick = [&] {
+    fileBrowser->open("Load Cartridge - Sufami Turbo", FileBrowser::Mode::SufamiTurbo, [&](const string &filename) {
+      slot[1].path.setText(filename);
+      synchronize();
+    });
+  };
+
+  loadButton.onTick = [&] {
+    this->setVisible(false);
+    interface->snes.loadSufamiTurboCartridge(base.path.text(), slot[0].path.text(), slot[1].path.text());
+  };
+
+  synchronize();
+  setVisible();
+}
+
+void SlotLoader::loadSuperGameBoy() {
+  setTitle("Load Cartridge - Super Game Boy");
+
+  base.path.setText(config->path.bios.superGameBoy);
+
+  slot[0].path.setText("");
+  slot[0].path.setEnabled(true);
+  slot[0].browse.setEnabled(true);
+
+  slot[1].path.setText("");
+  slot[1].path.setEnabled(false);
+  slot[1].browse.setEnabled(false);
+
+  base.browse.onTick = [&] {
+    fileBrowser->open("Load BIOS - Super Game Boy", FileBrowser::Mode::SNES, [&](const string &filename) {
+      config->path.bios.superGameBoy = filename;
+      base.path.setText(filename);
+      synchronize();
+    });
+  };
+
+  slot[0].browse.onTick = [&] {
+    fileBrowser->open("Load Cartridge - Game Boy", FileBrowser::Mode::GameBoy, [&](const string &filename) {
+      slot[0].path.setText(filename);
+      synchronize();
+    });
+  };
+
+  loadButton.onTick = [&] {
+    this->setVisible(false);
+    interface->snes.loadSuperGameBoyCartridge(base.path.text(), slot[0].path.text());
+  };
+
+  synchronize();
+  setVisible();
 }

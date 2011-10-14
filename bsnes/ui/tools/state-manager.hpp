@@ -1,32 +1,38 @@
-struct StateManager : TopLevelWindow {
+struct StateManager : Window {
   VerticalLayout layout;
   ListView stateList;
   HorizontalLayout descLayout;
-  Label descLabel;
-  LineEdit descEdit;
+    Label descLabel;
+    LineEdit descEdit;
   HorizontalLayout controlLayout;
-  Label spacer;
-  Button loadButton;
-  Button saveButton;
-  Button eraseButton;
+    Widget spacer;
+    Button loadButton;
+    Button saveButton;
+    Button eraseButton;
 
-  void create();
   void synchronize();
   void refresh();
-  void load();
-  void save();
+
+  bool load(const string &filename, unsigned revision);
+  bool save(const string &filename, unsigned revision);
+
   void slotLoad();
   void slotSave();
   void slotErase();
-  string slotLoadDescription(unsigned slot);
+
+  string slotLoadDescription(unsigned n);
   void slotSaveDescription();
+
+  StateManager();
 
 private:
   enum : unsigned {
-    HeaderLength = 28,
+    //these valus are standardized across all emulated platforms:
+    //{ uint32 signature, version, checksum; char description[512]; ... }
+    HeaderLength = 12,
     DescriptionLength = 512,
   };
   serializer slot[32];
 };
 
-extern StateManager stateManager;
+extern StateManager *stateManager;

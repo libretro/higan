@@ -1,90 +1,66 @@
-struct InputMapper {
-  int16_t state[2][Scancode::Limit];
-  bool activeState;
+struct AbstractInput {
+  enum class Type : unsigned { Button, MouseButton, MouseAxis, HatUp, HatDown, HatLeft, HatRight, Axis, AxisLo, AxisHi } type;
+  string name;
+  string mapping;
+  unsigned scancode;
 
-  struct AbstractInput {
-    enum class Type : unsigned { Button, MouseAxis, MouseButton, HatUp, HatDown, HatLeft, HatRight, AxisLo, AxisHi } type;
-    string name;
-    string mapping;
-    unsigned scancode;
-    virtual void bind();
-  };
-
-  struct AnalogInput : AbstractInput {
-    int16_t poll();
-  };
-
-  struct DigitalInput : AbstractInput {
-    int16_t poll();
-  };
-
-  struct Controller : array<AbstractInput*> {
-    string name;
-  };
-
-  struct Gamepad : Controller {
-    DigitalInput up, down, left, right;
-    DigitalInput b, a, y, x;
-    DigitalInput l, r, select, start;
-    void create(const char *deviceName, const char *configName);
-    int16_t poll(unsigned id);
-  };
-
-  struct Mouse : Controller {
-    AnalogInput x, y;
-    DigitalInput left, right;
-    void create(const char *deviceName, const char *configName);
-    int16_t poll(unsigned id);
-  };
-
-  struct SuperScope : Controller {
-    AnalogInput x, y;
-    DigitalInput trigger, cursor, turbo, pause;
-    void create(const char *deviceName, const char *configName);
-    int16_t poll(unsigned id);
-  };
-
-  struct Justifier : Controller {
-    AnalogInput x, y;
-    DigitalInput trigger, start;
-    void create(const char *deviceName, const char *configName);
-    int16_t poll(unsigned id);
-  };
-
-  struct ControllerPort : array<Controller*> {
-    string name;
-  };
-
-  struct Port1 : ControllerPort {
-    Gamepad gamepad;
-    Gamepad multitapA;
-    Gamepad multitapB;
-    Gamepad multitapC;
-    Gamepad multitapD;
-    Mouse mouse;
-  } port1;
-
-  struct Port2 : ControllerPort {
-    Gamepad gamepad;
-    Gamepad multitapA;
-    Gamepad multitapB;
-    Gamepad multitapC;
-    Gamepad multitapD;
-    Mouse mouse;
-    SuperScope superScope;
-    Justifier justifierA;
-    Justifier justifierB;
-  } port2;
-
-  #include "hotkeys.hpp"
-
-  void create();
-  void bind();
-  void poll();
-  int16_t poll(bool port, SNES::Input::Device device, unsigned index, unsigned id);
-  void create_hotkeys();
-  void poll_hotkeys(unsigned scancode, int16_t value);
-  int16_t value(unsigned scancode);
+  virtual void attach(const string &primaryName, const string &secondaryName, const string &tertiaryName);
+  virtual void bind();
+  virtual bool bind(int16_t scancode, int16_t value) = 0;
+  virtual int16_t poll();
 };
 
-extern InputMapper inputMapper;
+struct AnalogInput : AbstractInput {
+  bool bind(int16_t scancode, int16_t value);
+  int16_t poll();
+};
+
+struct DigitalInput : AbstractInput {
+  bool bind(int16_t scancode, int16_t value);
+  int16_t poll();
+};
+
+struct TertiaryInput : reference_array<AbstractInput&> {
+  string name;
+
+  virtual void attach(const string &primaryName, const string &secondaryName);
+  virtual void bind();
+  virtual int16_t poll(unsigned n);
+};
+
+struct SecondaryInput : reference_array<TertiaryInput&> {
+  string name;
+
+  virtual void attach(const string &primaryName);
+  virtual void bind();
+};
+
+struct PrimaryInput : reference_array<SecondaryInput&> {
+  string name;
+
+  virtual void attach();
+  virtual void bind();
+};
+
+#include "nes.hpp"
+#include "snes.hpp"
+#include "gameboy.hpp"
+#include "user-interface.hpp"
+
+struct InputManager {
+  configuration config;
+  int16_t scancode[2][Scancode::Limit];
+  bool activeScancode;
+
+  reference_array<PrimaryInput&> inputList;
+  NesInput nes;
+  SnesInput snes;
+  GameBoyInput gameBoy;
+  UserInterfaceInput userInterface;
+
+  void scan();
+  InputManager();
+  ~InputManager();
+};
+
+extern InputManager *inputManager;

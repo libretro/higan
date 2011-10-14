@@ -1,93 +1,74 @@
-CheatDatabase cheatDatabase;
+CheatDatabase *cheatDatabase = 0;
 
-void CheatDatabase::create() {
-  application.addWindow(this, "CheatDatabase", "192,192");
-
-  listView.setCheckable(true);
-  selectAllButton.setText("Select All");
-  unselectAllButton.setText("Unselect All");
-  okButton.setText("Ok");
+CheatDatabase::CheatDatabase() {
+  setGeometry({ 128, 128, 640, 400 });
+  windowManager->append(this, "CheatDatabase");
 
   layout.setMargin(5);
-  layout.append(listView,                  ~0, ~0, 5);
-  controlLayout.append(selectAllButton,   100,  0, 5);
-  controlLayout.append(unselectAllButton, 100,  0   );
-  controlLayout.append(spacerWidget,       ~0,  0   );
-  controlLayout.append(okButton,           80,  0   );
-  layout.append(controlLayout                       );
+  cheatList.setCheckable();
+  selectAllButton.setText("Select All");
+  unselectAllButton.setText("Unselect All");
+  acceptButton.setText("Add Codes");
+
   append(layout);
-  setGeometry({ 0, 0, 600, layout.minimumGeometry().height + 350 });
+  layout.append(cheatList, ~0, ~0, 5);
+  layout.append(controlLayout, ~0, 0);
+    controlLayout.append(selectAllButton, 100, 0, 5);
+    controlLayout.append(unselectAllButton, 100, 0);
+    controlLayout.append(spacer, ~0, 0);
+    controlLayout.append(acceptButton, 80, 0);
 
-  selectAllButton.onTick = [this]() {
-    foreach(item, this->listData, n) this->listView.setChecked(n, true);
+  selectAllButton.onTick = [&] {
+    for(unsigned n = 0; n < cheatCode.size(); n++) cheatList.setChecked(n, true);
   };
 
-  unselectAllButton.onTick = [this]() {
-    foreach(item, this->listData, n) this->listView.setChecked(n, false);
+  unselectAllButton.onTick = [&] {
+    for(unsigned n = 0; n < cheatCode.size(); n++) cheatList.setChecked(n, false);
   };
 
-  okButton.onTick = { &CheatDatabase::addCodes, this };
+  acceptButton.onTick = { &CheatDatabase::addCodes, this };
 }
 
 void CheatDatabase::findCodes() {
+  cheatList.reset();
+  cheatCode.reset();
+
   string data;
-  data.readfile(path.home("cheats.xml"));
-  if(auto position = strpos(data, SNES::cartridge.sha256())) {
-    auto startPosition = strpos((const char*)data + position(), ">");
-    auto endPosition = strpos((const char*)data + position(), "</cartridge>");
-    string xmlData = {
-      "<cartridge>\n",
-      substr((const char*)data + position() + 1, startPosition(), endPosition() - startPosition() - 1),
-      "</cartridge>\n"
-    };
+  data.readfile(application->path("cheats.bml"));
+  BML::Document document(data);
+  for(auto &root : document) {
+    if(root.name != "cartridge") continue;
+    if(root["sha256"].value != interface->sha256()) continue;
 
-    setTitle("");
-    listView.reset();
-    listData.reset();
-
-    xml_element document = xml_parse(xmlData);
-    foreach(root, document.element) {
-      if(root.name == "cartridge") foreach(node, root.element) {
-        if(node.name == "name") setTitle(node.parse());
-        else if(node.name == "cheat") {
-          string description, code;
-          foreach(element, node.element) {
-            if(element.name == "description") description = element.parse();
-            else if(element.name == "code") code.append(element.parse(), "+");
-          }
-          code.rtrim<1>("+");
-          code.append("\t");
-          code.append(description);
-          listView.append(description);
-          listData.append(code);
-        }
-      }
+    setTitle(root["title"].value);
+    for(auto &cheat : root) {
+      if(cheat.name != "cheat") continue;
+      if(cheat["description"].exists() == false || cheat["code"].exists() == false) continue;
+      cheatList.append(cheat["description"].value);
+      cheatCode.append({ cheat["code"].value, "\t", cheat["description"].value });
     }
 
-    setVisible(true);
-  } else {
-    MessageWindow::information(cheatEditor, "Sorry, no cheat codes found for this cartridge.");
+    setVisible();
+    return;
   }
+
+  MessageWindow::information(*cheatEditor, "Sorry, no cheat codes were found for this cartridge.");
 }
 
 void CheatDatabase::addCodes() {
-  foreach(code, listData, n) {
-    if(listView.checked(n)) {
-      if(auto position = cheatEditor.findUnusedSlot()) {
-        lstring part;
-        part.split("\t", code);
-        SNES::cheat[position()].enabled = false;
-        SNES::cheat[position()] = part[0];
-        cheatEditor.cheatList.setChecked(position(), false);
-        cheatEditor.cheatText[position()][CheatEditor::CheatCode] = part[0];
-        cheatEditor.cheatText[position()][CheatEditor::CheatDesc] = part[1];
-      } else {
+  for(unsigned n = 0; n < cheatCode.size(); n++) {
+    if(cheatList.checked(n)) {
+      lstring part;
+      part.split<1>("\t", cheatCode[n]);
+      if(cheatEditor->addCode(part[0], part[1]) == false) {
         MessageWindow::warning(*this, "Ran out of empty slots for cheat codes.\nNot all cheat codes were added.");
         break;
       }
     }
   }
+
   setVisible(false);
-  cheatEditor.refresh();
-  cheatEditor.synchronize();
+  cheatEditor->updateUI();
+  cheatEditor->updateInterface();
+  cheatEditor->synchronize();
 }

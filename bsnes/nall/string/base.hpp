@@ -1,23 +1,27 @@
-#ifndef NALL_STRING_BASE_HPP
-#define NALL_STRING_BASE_HPP
-
-#include <stdarg.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <nall/concept.hpp>
-#include <nall/function.hpp>
-#include <nall/stdint.hpp>
-#include <nall/vector.hpp>
-#include <nall/windows/utf8.hpp>
+#ifdef NALL_STRING_INTERNAL_HPP
 
 namespace nall {
-  class string;
-  class lstring;
+  struct cstring;
+  struct string;
+  struct lstring;
   template<typename T> inline const char* to_string(T);
 
-  class string {
-  public:
+  struct cstring {
+    inline operator const char*() const;
+    inline unsigned length() const;
+    inline bool operator==(const char*) const;
+    inline bool operator!=(const char*) const;
+    inline optional<unsigned> position(const char *key) const;
+    inline optional<unsigned> iposition(const char *key) const;
+    inline cstring& operator=(const char *data);
+    inline cstring(const char *data);
+    inline cstring();
+
+  protected:
+    const char *data;
+  };
+
+  struct string {
     inline void reserve(unsigned);
 
     template<typename... Args> inline string& assign(Args&&... args);
@@ -77,6 +81,11 @@ namespace nall {
     inline string(string&&);
     inline ~string();
 
+    inline char* begin() { return &data[0]; }
+    inline char* end() { return &data[length()]; }
+    inline const char* begin() const { return &data[0]; }
+    inline const char* end() const { return &data[length()]; }
+
     //internal functions
     inline string& assign_(const char*);
     inline string& append_(const char*);
@@ -93,8 +102,7 @@ namespace nall {
   #endif
   };
 
-  class lstring : public linear_vector<string> {
-  public:
+  struct lstring : public linear_vector<string> {
     template<typename T> inline lstring& operator<<(T value);
 
     inline optional<unsigned> find(const char*) const;
@@ -103,8 +111,11 @@ namespace nall {
     template<unsigned Limit = 0> inline lstring& qsplit(const char*, const char*);
     template<unsigned Limit = 0> inline lstring& iqsplit(const char*, const char*);
 
-    lstring();
-    lstring(std::initializer_list<string>);
+    inline bool operator==(const lstring&) const;
+    inline bool operator!=(const lstring&) const;
+
+    inline lstring();
+    inline lstring(std::initializer_list<string>);
 
   protected:
     template<unsigned Limit, bool Insensitive, bool Quoted> inline lstring& usplit(const char*, const char*);
@@ -127,11 +138,6 @@ namespace nall {
   inline char* qstrlower(char *str);
   inline char* qstrupper(char *str);
   inline char* strtr(char *dest, const char *before, const char *after);
-  inline uintmax_t hex(const char *str);
-  inline intmax_t integer(const char *str);
-  inline uintmax_t decimal(const char *str);
-  inline uintmax_t binary(const char *str);
-  inline double fp(const char *str);
 
   //math.hpp
   inline bool strint(const char *str, int &result);

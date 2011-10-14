@@ -1,14 +1,13 @@
 #ifndef NALL_VECTOR_HPP
 #define NALL_VECTOR_HPP
 
+#include <algorithm>
 #include <initializer_list>
 #include <new>
 #include <type_traits>
 #include <utility>
 #include <nall/algorithm.hpp>
 #include <nall/bit.hpp>
-#include <nall/concept.hpp>
-#include <nall/foreach.hpp>
 #include <nall/utility.hpp>
 
 namespace nall {
@@ -38,7 +37,7 @@ namespace nall {
         for(unsigned i = 0; i < objectsize; i++) pool[i].~T();
         free(pool);
       }
-      pool = 0;
+      pool = nullptr;
       poolsize = 0;
       objectsize = 0;
     }
@@ -77,7 +76,7 @@ namespace nall {
     template<typename U> void insert(unsigned index, const U list) {
       linear_vector<T> merged;
       for(unsigned i = 0; i < index; i++) merged.append(pool[i]);
-      foreach(item, list) merged.append(item);
+      for(auto &item : list) merged.append(item);
       for(unsigned i = index; i < objectsize; i++) merged.append(pool[i]);
       operator=(merged);
     }
@@ -94,10 +93,10 @@ namespace nall {
       else resize(objectsize - count);
     }
 
-    linear_vector() : pool(0), poolsize(0), objectsize(0) {
+    linear_vector() : pool(nullptr), poolsize(0), objectsize(0) {
     }
 
-    linear_vector(std::initializer_list<T> list) : pool(0), poolsize(0), objectsize(0) {
+    linear_vector(std::initializer_list<T> list) : pool(nullptr), poolsize(0), objectsize(0) {
       for(const T *p = list.begin(); p != list.end(); ++p) append(*p);
     }
 
@@ -114,7 +113,7 @@ namespace nall {
       return *this;
     }
 
-    linear_vector(const linear_vector<T> &source) : pool(0), poolsize(0), objectsize(0) {
+    linear_vector(const linear_vector<T> &source) : pool(nullptr), poolsize(0), objectsize(0) {
       operator=(source);
     }
 
@@ -124,12 +123,12 @@ namespace nall {
       pool = source.pool;
       poolsize = source.poolsize;
       objectsize = source.objectsize;
-      source.pool = 0;
+      source.pool = nullptr;
       source.reset();
       return *this;
     }
 
-    linear_vector(linear_vector<T> &&source) : pool(0), poolsize(0), objectsize(0) {
+    linear_vector(linear_vector<T> &&source) : pool(nullptr), poolsize(0), objectsize(0) {
       operator=(std::move(source));
     }
 
@@ -175,7 +174,7 @@ namespace nall {
         for(unsigned i = 0; i < objectsize; i++) { if(pool[i]) delete pool[i]; }
         free(pool);
       }
-      pool = 0;
+      pool = nullptr;
       poolsize = 0;
       objectsize = 0;
     }
@@ -211,7 +210,7 @@ namespace nall {
     template<typename U> void insert(unsigned index, const U list) {
       pointer_vector<T> merged;
       for(unsigned i = 0; i < index; i++) merged.append(*pool[i]);
-      foreach(item, list) merged.append(item);
+      for(auto &item : list) merged.append(item);
       for(unsigned i = index; i < objectsize; i++) merged.append(*pool[i]);
       operator=(merged);
     }
@@ -228,10 +227,10 @@ namespace nall {
       else resize(objectsize - count);
     }
 
-    pointer_vector() : pool(0), poolsize(0), objectsize(0) {
+    pointer_vector() : pool(nullptr), poolsize(0), objectsize(0) {
     }
 
-    pointer_vector(std::initializer_list<T> list) : pool(0), poolsize(0), objectsize(0) {
+    pointer_vector(std::initializer_list<T> list) : pool(nullptr), poolsize(0), objectsize(0) {
       for(const T *p = list.begin(); p != list.end(); ++p) append(*p);
     }
 
@@ -248,7 +247,7 @@ namespace nall {
       return *this;
     }
 
-    pointer_vector(const pointer_vector<T> &source) : pool(0), poolsize(0), objectsize(0) {
+    pointer_vector(const pointer_vector<T> &source) : pool(nullptr), poolsize(0), objectsize(0) {
       operator=(source);
     }
 
@@ -258,12 +257,12 @@ namespace nall {
       pool = source.pool;
       poolsize = source.poolsize;
       objectsize = source.objectsize;
-      source.pool = 0;
+      source.pool = nullptr;
       source.reset();
       return *this;
     }
 
-    pointer_vector(pointer_vector<T> &&source) : pool(0), poolsize(0), objectsize(0) {
+    pointer_vector(pointer_vector<T> &&source) : pool(nullptr), poolsize(0), objectsize(0) {
       operator=(std::move(source));
     }
 
@@ -284,18 +283,17 @@ namespace nall {
       bool operator!=(const iterator &source) const { return index != source.index; }
       T& operator*() { return vector.operator[](index); }
       iterator& operator++() { index++; return *this; }
-      iterator(pointer_vector &vector, unsigned index) : vector(vector), index(index) {}
+      iterator(const pointer_vector &vector, unsigned index) : vector(vector), index(index) {}
     private:
-      pointer_vector &vector;
+      const pointer_vector &vector;
       unsigned index;
     };
 
     iterator begin() { return iterator(*this, 0); }
     iterator end() { return iterator(*this, objectsize); }
+    const iterator begin() const { return iterator(*this, 0); }
+    const iterator end() const { return iterator(*this, objectsize); }
   };
-
-  template<typename T> struct has_size<linear_vector<T>> { enum { value = true }; };
-  template<typename T> struct has_size<pointer_vector<T>> { enum { value = true }; };
 }
 
 #endif

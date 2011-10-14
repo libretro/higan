@@ -34,6 +34,7 @@ struct Cartridge : MMIO, property<Cartridge> {
   } info;
 
   readonly<bool> loaded;
+  readonly<string> sha256;
 
   uint8_t *romdata;
   unsigned romsize;
@@ -44,7 +45,7 @@ struct Cartridge : MMIO, property<Cartridge> {
   MMIO *mapper;
   bool bootrom_enable;
 
-  void load(const string &xml, const uint8_t *data, unsigned size);
+  void load(const string &markup, const uint8_t *data, unsigned size);
   void unload();
 
   uint8 rom_read(unsigned addr);

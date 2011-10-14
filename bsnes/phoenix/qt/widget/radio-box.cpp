@@ -3,14 +3,13 @@ bool pRadioBox::checked() {
 }
 
 Geometry pRadioBox::minimumGeometry() {
-  Font &font = this->font();
-  Geometry geometry = font.geometry(radioBox.state.text);
+  Geometry geometry = pFont::geometry(qtWidget->font(), radioBox.state.text);
   return { 0, 0, geometry.width + 26, geometry.height + 6 };
 }
 
 void pRadioBox::setChecked() {
   locked = true;
-  foreach(item, radioBox.state.group) {
+  for(auto &item : radioBox.state.group) {
     bool checkState = item.p.qtRadioBox == qtRadioBox;
     item.state.checked = checkState;
     item.p.qtRadioBox->setChecked(checkState);
@@ -24,9 +23,9 @@ void pRadioBox::setGroup(const reference_array<RadioBox&> &group) {
     delete qtGroup;
     qtGroup = 0;
   }
-  if(qtRadioBox == group[0].p.qtRadioBox) {
+  if(group.size() > 0 && qtRadioBox == group[0].p.qtRadioBox) {
     qtGroup = new QButtonGroup;
-    foreach(item, group) qtGroup->addButton(item.p.qtRadioBox);
+    for(auto &item : group) qtGroup->addButton(item.p.qtRadioBox);
     setChecked();
   }
   locked = false;
@@ -42,6 +41,22 @@ void pRadioBox::constructor() {
   qtGroup->addButton(qtRadioBox);
   qtRadioBox->setChecked(true);
   connect(qtRadioBox, SIGNAL(toggled(bool)), SLOT(onTick()));
+
+  pWidget::synchronizeState();
+  setGroup(radioBox.state.group);
+  setText(radioBox.state.text);
+}
+
+void pRadioBox::destructor() {
+  delete qtGroup;
+  delete qtRadioBox;
+  qtWidget = qtRadioBox = 0;
+  qtGroup = 0;
+}
+
+void pRadioBox::orphan() {
+  destructor();
+  constructor();
 }
 
 void pRadioBox::onTick() {

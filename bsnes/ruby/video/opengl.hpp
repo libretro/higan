@@ -33,6 +33,7 @@ public:
   GLuint gltexture;
   GLuint glprogram;
   GLuint fragmentshader;
+  unsigned fragmentfilter;
   GLuint vertexshader;
   bool shader_support;
 
@@ -40,19 +41,16 @@ public:
   unsigned iwidth, iheight;
 
   void resize(unsigned width, unsigned height) {
-    if(iwidth >= width && iheight >= height) return;
-
-    if(gltexture) glDeleteTextures(1, &gltexture);
+    if(gltexture == 0) glGenTextures(1, &gltexture);
     iwidth  = max(width,  iwidth );
     iheight = max(height, iheight);
     if(buffer) delete[] buffer;
-    buffer = new uint32_t[iwidth * iheight];
+    buffer = new uint32_t[iwidth * iheight]();
 
-    glGenTextures(1, &gltexture);
     glBindTexture(GL_TEXTURE_2D, gltexture);
     glPixelStorei(GL_UNPACK_ROW_LENGTH, iwidth);
     glTexImage2D(GL_TEXTURE_2D,
-      /* mip-map level = */ 0, /* internal format = */ GL_RGB,
+      /* mip-map level = */ 0, /* internal format = */ GL_RGBA,
       iwidth, iheight, /* border = */ 0, /* format = */ GL_BGRA,
       GL_UNSIGNED_INT_8_8_8_8_REV, buffer);
   }
@@ -142,25 +140,11 @@ public:
     }
 
     if(source) {
-      bool is_glsl = false;
-      string fragment_source;
-      string vertex_source;
-
-      xml_element document = xml_parse(source);
-      foreach(head, document.element) {
-        if(head.name == "shader") {
-          foreach(attribute, head.attribute) {
-            if(attribute.name == "language" && attribute.content == "GLSL") is_glsl = true;
-          }
-          foreach(element, head.element) {
-            if(element.name == "fragment") {
-              fragment_source = element.parse();
-            } else if(element.name == "vertex") {
-              vertex_source = element.parse();
-            }
-          }
-        }
-      }
+      BML::Document document(source);
+      bool is_glsl = document["shader"]["language"].value == "GLSL";
+      fragmentfilter = document["shader"]["fragment"]["filter"].value == "linear" ? 1 : 0;
+      string fragment_source = document["shader"]["fragment"].value;
+      string vertex_source = document["shader"]["vertex"].value;
 
       if(is_glsl) {
         if(fragment_source != "") set_fragment_shader(fragment_source);
@@ -276,6 +260,7 @@ public:
     gltexture = 0;
     glprogram = 0;
     fragmentshader = 0;
+    fragmentfilter = 0;
     vertexshader = 0;
 
     buffer = 0;

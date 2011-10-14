@@ -1,34 +1,20 @@
-struct AdvancedSettings {
-  HorizontalLayout panelLayout;
-  Widget panel;
-  VerticalLayout layout;
+struct AdvancedSettings : SettingsLayout {
   Label title;
-
-  Label driverSelectionLabel;
+  Label driverLabel;
   HorizontalLayout driverLayout;
-
-  Label videoDriverLabel;
-  ComboBox videoDriverBox;
-  Label audioDriverLabel;
-  ComboBox audioDriverBox;
-  Label inputDriverLabel;
-  ComboBox inputDriverBox;
-
+    Label videoLabel;
+    ComboBox videoDriver;
+    Label audioLabel;
+    ComboBox audioDriver;
+    Label inputLabel;
+    ComboBox inputDriver;
   Label focusPolicyLabel;
   HorizontalLayout focusPolicyLayout;
-  RadioBox focusPolicyPause;
-  RadioBox focusPolicyIgnore;
-  RadioBox focusPolicyAllow;
-
-  Label compositorPolicyLabel;
-  HorizontalLayout compositorPolicyLayout;
-  RadioBox compositorPolicyNever;
-  RadioBox compositorPolicyFullScreen;
-  RadioBox compositorPolicyAlways;
-
+    RadioBox focusPolicy[3];
   Widget spacer;
+  Label aboutLabel;
 
-  void create();
+  AdvancedSettings();
 };
 
-extern AdvancedSettings advancedSettings;
+extern AdvancedSettings *advancedSettings;

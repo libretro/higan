@@ -1,37 +1,20 @@
-struct Utility : property<Utility> {
-  void setTitle(const string &text);
+struct Utility {
+  void setMode(Interface::Mode mode);
+  void resizeMainWindow(bool shrink = false);
+  void toggleFullScreen();
+  void bindVideoFilter();
+  void bindVideoShader();
+
   void updateStatus();
-  void setStatus(const string &text);
+  void setStatusText(const string &text);
   void showMessage(const string &text);
-
-  void setControllers();
-
-  void setScale(unsigned scale = 0);
-  void setFullScreen(bool fullScreen = true);
-
-  void setFilter();
-  void setShader();
-
-  void cartridgeLoaded();
-  void cartridgeUnloaded();
-
-  SNES::Cartridge::Slot activeSlot();
-  string baseName(SNES::Cartridge::Slot slot);
-
-  void saveState(unsigned slot);
-  void loadState(unsigned slot);
 
   Utility();
 
-  bool fullScreen;
-  unsigned viewportX, viewportY;
-  unsigned viewportWidth, viewportHeight;
-
 private:
-  string statusCurrentText;
+  time_t statusTime;
   string statusText;
   string statusMessage;
-  time_t statusTime;
 };
 
-extern Utility utility;
+extern Utility *utility;

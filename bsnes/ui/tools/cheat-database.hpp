@@ -1,16 +1,18 @@
-struct CheatDatabase : TopLevelWindow {
+struct CheatDatabase : Window {
   VerticalLayout layout;
-  ListView listView;
+  ListView cheatList;
   HorizontalLayout controlLayout;
   Button selectAllButton;
   Button unselectAllButton;
-  Widget spacerWidget;
-  Button okButton;
-  lstring listData;
+  Widget spacer;
+  Button acceptButton;
 
-  void create();
   void findCodes();
   void addCodes();
+  CheatDatabase();
+
+private:
+  lstring cheatCode;
 };
 
-extern CheatDatabase cheatDatabase;
+extern CheatDatabase *cheatDatabase;

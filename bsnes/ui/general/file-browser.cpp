@@ -1,156 +1,145 @@
-FileBrowser fileBrowser;
+FileBrowser *fileBrowser = 0;
 
-void FileBrowser::create() {
-  application.addWindow(this, "FileBrowser", "160,160");
-
-  browseButton.setText("...");
-  upButton.setText("..");
-
-  const unsigned sq = browseButton.minimumGeometry().height;
+FileBrowser::FileBrowser() {
+  setGeometry({ 128, 128, 640, 400 });
+  windowManager->append(this, "FileBrowser");
 
   layout.setMargin(5);
-  pathLayout.append(pathBox,      ~0,  0, 5);
-  pathLayout.append(browseButton, sq, sq, 5);
-  pathLayout.append(upButton,     sq, sq   );
-  layout.append(pathLayout,               5);
-  layout.append(contentsBox,      ~0, ~0   );
-  append(layout);
-  setGeometry({ 0, 0, 640, layout.minimumGeometry().height + 400 });
+  pathBrowse.setText("Browse ...");
+  pathUp.setText("..");
+  openButton.setText("Open");
 
-  pathBox.onActivate = []() {
-    string path = fileBrowser.pathBox.text();
+  append(layout);
+    layout.append(pathLayout, ~0, 0, 5);
+      pathLayout.append(pathEdit, ~0, 0, 5);
+      pathLayout.append(pathBrowse, 0, 0, 5);
+      pathLayout.append(pathUp, 0, 0);
+    layout.append(fileList, ~0, ~0, 5);
+    layout.append(controlLayout, ~0, 0);
+      controlLayout.append(filterLabel, ~0, 0, 5);
+      controlLayout.append(openButton, 80, 0);
+
+  pathEdit.onActivate = [&] {
+    string path = pathEdit.text();
     path.transform("\\", "/");
-    if(strend(path, "/") == false) path.append("/");
-    fileBrowser.setFolder(path);
+    if(path.endswith("/") == false) path.append("/");
+    setPath(path);
   };
 
-  browseButton.onTick = { &FileBrowser::folderBrowse, this };
-  upButton.onTick = { &FileBrowser::folderUp, this };
-  contentsBox.onActivate = { &FileBrowser::fileActivate, this };
+  pathBrowse.onTick = [&] {
+    string path = OS::folderSelect(*this, mode->path);
+    if(path != "") setPath(path);
+  };
+
+  pathUp.onTick = [&] {
+    if(mode->path == "/") return;
+    string path = mode->path;
+    path.rtrim<1>("/");
+    path = dir(path);
+    setPath(path);
+  };
+
+  fileList.onActivate = openButton.onTick = { &FileBrowser::fileListActivate, this };
+
+  filterModes[Mode::Default    ] = { "Default",     "", { "*" } };
+  filterModes[Mode::NES        ] = { "NES",         "", { "*.fc", "*.nes" } };
+  filterModes[Mode::SNES       ] = { "SNES",        "", { "*.sfc" } };
+  filterModes[Mode::GameBoy    ] = { "GameBoy",     "", { "*.gb", "*.gbc" } };
+  filterModes[Mode::Satellaview] = { "Satellaview", "", { "*.bs" } };
+  filterModes[Mode::SufamiTurbo] = { "SufamiTurbo", "", { "*.st" } };
+  mode = &filterModes[Mode::Default];
+
+  for(auto &mode : filterModes) config.attach(mode.path, mode.name);
+  config.load(application->path("paths.cfg"));
+  config.save(application->path("paths.cfg"));
 }
 
-void FileBrowser::fileOpen(FileBrowser::Mode requestedMode, function<void (string)> requestedCallback) {
+FileBrowser::~FileBrowser() {
+  config.save(application->path("paths.cfg"));
+}
+
+void FileBrowser::open(const string &title, unsigned requestedMode, function<void (string)> requestedCallback) {
   callback = requestedCallback;
-
-  switch(requestedMode) {
-    case Mode::Cartridge:   folderPath = "sfc"; break;
-    case Mode::Satellaview: folderPath = "bs";  break;
-    case Mode::SufamiTurbo: folderPath = "st";  break;
-    case Mode::GameBoy:     folderPath = "gb";  break;
-  }
-  string activePath = path.load(folderPath);
-
-  //if path has not changed, do not reload list; this will preserve previously selected file
-  if(mode == requestedMode && folder == activePath) {
+  if(mode == &filterModes[requestedMode]) {
     setVisible();
-    contentsBox.setFocused();
+    fileList.setFocused();
     return;
   }
+  mode = &filterModes[requestedMode];
 
-  setVisible(false);
-  filters.reset();
+  setTitle(title);
+  setPath(mode->path);
 
-  switch(mode = requestedMode) {
-    case Mode::Cartridge: {
-      setTitle("Load Cartridge");
-      filters.append(".sfc");
-      break;
-    }
+  string filterText = "Files of type: ";
+  for(auto &filter : mode->filter) filterText.append(filter, ", ");
+  filterText.trim<1>(", ");
+  filterLabel.setText(filterText);
 
-    case Mode::Satellaview: {
-      setTitle("Load Satellaview Cartridge");
-      filters.append(".bs");
-      break;
-    }
-
-    case Mode::SufamiTurbo: {
-      setTitle("Load Sufami Turbo Cartridge");
-      filters.append(".st");
-      break;
-    }
-
-    case Mode::GameBoy: {
-      setTitle("Load Game Boy Cartridge");
-      filters.append(".gb");
-      filters.append(".gbc");
-      filters.append(".sgb");
-      break;
-    }
-  }
-
-  setFolder(activePath);
-  setVisible(true);
-  contentsBox.setFocused();
+  setVisible();
+  fileList.setFocused();
 }
 
-void FileBrowser::setFolder(const string &pathname) {
-  contentsBox.reset();
-  contents.reset();
+void FileBrowser::setPath(const string &path) {
+  mode->path = path;
+  if(mode->path == "") mode->path = application->basepath;
+  pathEdit.setText(mode->path);
 
-  folder = pathname;
-  folder.transform("\\", "/");
-  pathBox.setText(folder);
-  lstring contentsList = directory::contents(folder);
+  fileList.reset();
+  fileNameList.reset();
 
-  foreach(item, contentsList) {
-    if(strend(item, "/")) {
-      contents.append(item);
-    } else foreach(filter, filters) {
-      if(strend(item, filter)) {
-        contents.append(item);
+  lstring contentsList = directory::contents(path);
+  for(auto &fileName : contentsList) {
+    if(fileName.endswith("/")) {
+      fileNameList.append(fileName);
+    } else for(auto &filter : mode->filter) {
+      if(fileName.wildcard(filter)) {
+        fileNameList.append(fileName);
         break;
       }
     }
   }
 
-  foreach(item, contents) contentsBox.append(item);
-  contentsBox.setSelection(0);
-  contentsBox.setFocused();
+  for(auto &fileName : fileNameList) fileList.append(fileName);
+  fileList.setSelection(0);
+  fileList.setFocused();
 }
 
-void FileBrowser::folderBrowse() {
-  string pathname = OS::folderSelect(*this, folder);
-  if(pathname != "") setFolder(pathname);
+void FileBrowser::fileListActivate() {
+  unsigned selection = fileList.selection();
+  string fileName = fileNameList[selection];
+  if(fileName.endswith("/")) {
+    if(loadFolder({ mode->path, fileName })) return;
+    return setPath({ mode->path, fileName });
+  }
+  loadFile({ mode->path, fileName });
 }
 
-void FileBrowser::folderUp() {
-  string path = folder;
+bool FileBrowser::loadFolder(const string &requestedPath) {
+  bool accept = false;
+  string path = requestedPath;
   path.rtrim<1>("/");
-  if(path != "") setFolder(dir(path));
-}
-
-void FileBrowser::fileActivate() {
-  if(contentsBox.selected() == false) return;
-  string filename = contents[contentsBox.selection()];
-  if(strend(filename, "/")) {
-    string cartridgeName = cartridgeFolder(filename);
-    if(cartridgeName == "") {
-      setFolder({ folder, filename });
-    } else {
-      loadFile({ folder, cartridgeName });
-    }
-  } else {
-    loadFile({ folder, filename });
+  for(auto &filter : mode->filter) {
+    if(path.wildcard(filter)) accept = true;
   }
-}
+  if(accept == false) return false;
 
-string FileBrowser::cartridgeFolder(const string &pathname) {
-  if(strend(pathname, ".sfc/") == false) return "";
-
-  lstring list = directory::files({ folder, "/", pathname });
-  string filename;
-  foreach(item, list) {
-    if(strend(item, ".sfc")) {
-      if(filename != "") return "";  //more than one cartridge in this folder
-      filename = item;
+  lstring contentsList = directory::contents(requestedPath);
+  lstring fileNameList;
+  for(auto &fileName : contentsList) {
+    for(auto &filter : mode->filter) {
+      if(fileName.wildcard(filter)) {
+        fileNameList.append(fileName);
+        break;
+      }
     }
   }
 
-  return { pathname, filename };
+  if(fileNameList.size() != 1) return false;
+  loadFile({ requestedPath, fileNameList[0] });
+  return true;
 }
 
 void FileBrowser::loadFile(const string &filename) {
-  setVisible(false);
-  path.save(folderPath, folder);
   if(callback) callback(filename);
+  setVisible(false);
 }

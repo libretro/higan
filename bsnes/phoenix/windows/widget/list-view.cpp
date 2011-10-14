@@ -9,14 +9,14 @@ void pListView::append(const lstring &list) {
   locked = true;
   ListView_InsertItem(hwnd, &item);
   locked = false;
-  foreach(text, list, n) {
-    utf16_t wtext(text);
+  for(unsigned n = 0; n < list.size(); n++) {
+    utf16_t wtext(list[n]);
     ListView_SetItemText(hwnd, row, n, wtext);
   }
 }
 
 void pListView::autoSizeColumns() {
-  for(unsigned n = 0; n < listView.state.headerText.size(); n++) {
+  for(unsigned n = 0; n < max(1, listView.state.headerText.size()); n++) {
     ListView_SetColumnWidth(hwnd, n, LVSCW_AUTOSIZE_USEHEADER);
   }
 }
@@ -26,8 +26,8 @@ bool pListView::checked(unsigned row) {
 }
 
 void pListView::modify(unsigned row, const lstring &list) {
-  foreach(text, list, n) {
-    utf16_t wtext(text);
+  for(unsigned n = 0; n < list.size(); n++) {
+    utf16_t wtext(list[n]);
     ListView_SetItemText(hwnd, row, n, wtext);
   }
 }
@@ -68,12 +68,12 @@ void pListView::setHeaderText(const lstring &list) {
   lstring headers = list;
   if(headers.size() == 0) headers.append("");  //must have at least one column
 
-  foreach(text, headers, n) {
+  for(unsigned n = 0; n < headers.size(); n++) {
     LVCOLUMN column;
     column.mask = LVCF_FMT | LVCF_TEXT | LVCF_SUBITEM;
     column.fmt = LVCFMT_LEFT;
     column.iSubItem = n;
-    utf16_t headerText(text);
+    utf16_t headerText(headers[n]);
     column.pszText = headerText;
     ListView_InsertColumn(hwnd, n, &column);
   }
@@ -106,29 +106,33 @@ void pListView::setSelection(unsigned row) {
 
 void pListView::constructor() {
   lostFocus = false;
-  setParent(Window::None);
-  listView.setHeaderText("");
-}
-
-void pListView::setGeometry(const Geometry &geometry) {
-  pWidget::setGeometry(geometry);
-  autoSizeColumns();
-}
-
-void pListView::setParent(Window &parent) {
-  if(hwnd) DestroyWindow(hwnd);
   hwnd = CreateWindowEx(
     WS_EX_CLIENTEDGE, WC_LISTVIEW, L"",
-    WS_CHILD | WS_TABSTOP | WS_VISIBLE | LVS_REPORT | LVS_SINGLESEL | LVS_SHOWSELALWAYS | LVS_NOSORTHEADER | LVS_NOCOLUMNHEADER,
-    0, 0, 0, 0, parent.p.hwnd, (HMENU)id, GetModuleHandle(0), 0
+    WS_CHILD | WS_TABSTOP | LVS_REPORT | LVS_SINGLESEL | LVS_SHOWSELALWAYS | LVS_NOSORTHEADER | LVS_NOCOLUMNHEADER,
+    0, 0, 0, 0, parentWindow->p.hwnd, (HMENU)id, GetModuleHandle(0), 0
   );
   SetWindowLongPtr(hwnd, GWLP_USERDATA, (LONG_PTR)&listView);
   setDefaultFont();
   setHeaderText(listView.state.headerText);
   setHeaderVisible(listView.state.headerVisible);
   setCheckable(listView.state.checkable);
-  foreach(text, listView.state.text) append(text);
-  foreach(checked, listView.state.checked, n) setChecked(n, checked);
+  for(auto &text : listView.state.text) append(text);
+  for(unsigned n = 0; n < listView.state.checked.size(); n++) setChecked(n, listView.state.checked[n]);
   if(listView.state.selected) setSelection(listView.state.selection);
+  autoSizeColumns();
+  synchronize();
+}
+
+void pListView::destructor() {
+  DestroyWindow(hwnd);
+}
+
+void pListView::orphan() {
+  destructor();
+  constructor();
+}
+
+void pListView::setGeometry(const Geometry &geometry) {
+  pWidget::setGeometry(geometry);
   autoSizeColumns();
 }

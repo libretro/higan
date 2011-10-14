@@ -1,89 +1,83 @@
-VideoSettings videoSettings;
+VideoSettings *videoSettings = 0;
 
-void VideoSettings::create() {
-  title.setText("Video Settings");
-  title.setFont(application.titleFont);
+VideoSlider::VideoSlider() {
+  slider.setLength(201);
 
-  colorAdjustmentLabel.setText("Color adjustment:");
-  colorAdjustmentLabel.setFont(application.proportionalFontBold);
-  brightnessLabel.setText("Brightness:");
-  brightnessSlider.setLength(201);
-  contrastLabel.setText("Contrast:");
-  contrastSlider.setLength(201);
-  gammaLabel.setText("Gamma:");
-  gammaSlider.setLength(201);
-  gammaRampCheck.setText("Enable NTSC gamma ramp simulation");
-  fullscreenLabel.setText("Fullscreen:");
-  fullscreenLabel.setFont(application.proportionalFontBold);
-  fullscreenCenter.setText("Center");
-  fullscreenScale.setText("Scale");
-  fullscreenStretch.setText("Stretch");
-  RadioBox::group(fullscreenCenter, fullscreenScale, fullscreenStretch);
-
-  panelLayout.setMargin(5);
-  panelLayout.append(panel, SettingsWindow::PanelWidth, ~0, 5);
-  panelLayout.append(layout);
-
-  layout.append(title, ~0, 0, 5);
-
-  layout.append(colorAdjustmentLabel,        ~0, 0   );
-  brightnessLayout.append(brightnessLabel,   80, 0   );
-  brightnessLayout.append(brightnessValue,   50, 0   );
-  brightnessLayout.append(brightnessSlider,  ~0, 0   );
-  layout.append(brightnessLayout                     );
-  contrastLayout.append(contrastLabel,       80, 0   );
-  contrastLayout.append(contrastValue,       50, 0   );
-  contrastLayout.append(contrastSlider,      ~0, 0   );
-  layout.append(contrastLayout                       );
-  gammaLayout.append(gammaLabel,             80, 0   );
-  gammaLayout.append(gammaValue,             50, 0   );
-  gammaLayout.append(gammaSlider,            ~0, 0   );
-  layout.append(gammaLayout                          );
-  layout.append(gammaRampCheck,              ~0, 0, 5);
-  layout.append(fullscreenLabel,             ~0, 0   );
-  fullscreenLayout.append(fullscreenCenter,  ~0, 0, 5);
-  fullscreenLayout.append(fullscreenScale,   ~0, 0, 5);
-  fullscreenLayout.append(fullscreenStretch, ~0, 0   );
-  layout.append(fullscreenLayout);
-
-  layout.append(spacer, ~0, ~0);
-  settingsWindow.append(panelLayout);
-
-  brightnessSlider.setPosition(config.video.brightness);
-  brightnessValue.setText({ config.video.brightness, "%" });
-
-  contrastSlider.setPosition(config.video.contrast);
-  contrastValue.setText({ config.video.contrast, "%" });
-
-  gammaSlider.setPosition(config.video.gamma);
-  gammaValue.setText({ config.video.gamma, "%" });
-
-  gammaRampCheck.setChecked(config.video.useGammaRamp);
-
-  switch(config.video.fullscreenScale) { default:
-    case 0: fullscreenCenter.setChecked(); break;
-    case 1: fullscreenScale.setChecked(); break;
-    case 2: fullscreenStretch.setChecked(); break;
-  }
-
-  contrastSlider.onChange = brightnessSlider.onChange = gammaSlider.onChange = gammaRampCheck.onTick =
-  { &VideoSettings::adjust, this };
-
-  fullscreenCenter.onTick = [] { config.video.fullscreenScale = 0; };
-  fullscreenScale.onTick = [] { config.video.fullscreenScale = 1; };
-  fullscreenStretch.onTick = [] { config.video.fullscreenScale = 2; };
-
-  adjust();
+  append(name, 75, 0);
+  append(value, 75, 0);
+  append(slider, ~0, 0);
 }
 
-void VideoSettings::adjust() {
-  brightnessValue.setText({ brightnessSlider.position(), "%" });
-  contrastValue.setText({ contrastSlider.position(), "%" });
-  gammaValue.setText({ gammaSlider.position(), "%" });
+VideoSettings::VideoSettings() {
+  title.setFont(application->titleFont);
+  title.setText("Video Settings");
+  colorAdjustment.setFont(application->boldFont);
+  colorAdjustment.setText("Color adjustment:");
+  brightness.name.setText("Brightness:");
+  contrast.name.setText("Contrast:");
+  gamma.name.setText("Gamma:");
+  gammaRamp.setText("Enable gamma ramp simulation");
+  overscanAdjustment.setFont(application->boldFont);
+  overscanAdjustment.setText("Overscan mask:");
+  overscanHorizontal.name.setText("Horizontal:");
+  overscanHorizontal.slider.setLength(17);
+  overscanVertical.name.setText("Vertical:");
+  overscanVertical.slider.setLength(17);
+  fullScreenMode.setFont(application->boldFont);
+  fullScreenMode.setText("Fullscreen mode:");
+  fullScreen[0].setText("Center");
+  fullScreen[1].setText("Scale");
+  fullScreen[2].setText("Stretch");
+  RadioBox::group(fullScreen[0], fullScreen[1], fullScreen[2]);
 
-  config.video.brightness = brightnessSlider.position();
-  config.video.contrast = contrastSlider.position();
-  config.video.gamma = gammaSlider.position();
-  config.video.useGammaRamp = gammaRampCheck.checked();
+  append(title, ~0, 0, 5);
+  append(colorAdjustment, ~0, 0);
+  append(brightness, ~0, 0);
+  append(contrast, ~0, 0);
+  append(gamma, ~0, 0);
+  append(gammaRamp, ~0, 0, 5);
+  append(overscanAdjustment, ~0, 0);
+  append(overscanHorizontal, ~0, 0);
+  append(overscanVertical, ~0, 0, 5);
+  append(fullScreenMode, ~0, 0);
+  append(fullScreenLayout, ~0, 0);
+    fullScreenLayout.append(fullScreen[0], ~0, 0, 5);
+    fullScreenLayout.append(fullScreen[1], ~0, 0, 5);
+    fullScreenLayout.append(fullScreen[2], ~0, 0);
+
+  brightness.slider.setPosition(config->video.brightness);
+  contrast.slider.setPosition(config->video.contrast);
+  gamma.slider.setPosition(config->video.gamma);
+  gammaRamp.setChecked(config->video.gammaRamp);
+  overscanHorizontal.slider.setPosition(config->video.maskOverscanHorizontal);
+  overscanVertical.slider.setPosition(config->video.maskOverscanVertical);
+  fullScreen[config->video.fullScreenMode].setChecked();
+
+  synchronize();
+
+  brightness.slider.onChange = contrast.slider.onChange = gamma.slider.onChange = gammaRamp.onTick =
+  overscanHorizontal.slider.onChange = overscanVertical.slider.onChange =
+  fullScreen[0].onTick = fullScreen[1].onTick = fullScreen[2].onTick =
+  { &VideoSettings::synchronize, this };
+}
+
+void VideoSettings::synchronize() {
+  config->video.brightness = brightness.slider.position();
+  config->video.contrast = contrast.slider.position();
+  config->video.gamma = gamma.slider.position();
+  config->video.gammaRamp = gammaRamp.checked();
+  config->video.maskOverscanHorizontal = overscanHorizontal.slider.position();
+  config->video.maskOverscanVertical = overscanVertical.slider.position();
+  if(fullScreen[0].checked()) config->video.fullScreenMode = 0;
+  if(fullScreen[1].checked()) config->video.fullScreenMode = 1;
+  if(fullScreen[2].checked()) config->video.fullScreenMode = 2;
+
+  brightness.value.setText({ config->video.brightness, "%" });
+  contrast.value.setText({ config->video.contrast, "%" });
+  gamma.value.setText({ config->video.gamma, "%" });
+
+  overscanHorizontal.value.setText({ config->video.maskOverscanHorizontal, "px" });
+  overscanVertical.value.setText({ config->video.maskOverscanVertical, "px" });
+
   palette.update();
 }

@@ -1,8 +1,9 @@
-StateManager stateManager;
+StateManager *stateManager = 0;
 
-void StateManager::create() {
+StateManager::StateManager() {
   setTitle("State Manager");
-  application.addWindow(this, "StateManager", "160,160");
+  setGeometry({ 128, 128, 600, 360 });
+  windowManager->append(this, "StateManager");
 
   stateList.setHeaderText("Slot", "Description");
   stateList.setHeaderVisible();
@@ -11,18 +12,20 @@ void StateManager::create() {
   saveButton.setText("Save");
   eraseButton.setText("Erase");
 
-  layout.setMargin(5);
-  layout.append(stateList,          ~0, ~0, 5);
-  descLayout.append(descLabel,      80,  0, 5);
-  descLayout.append(descEdit,       ~0,  0   );
-  layout.append(descLayout,                 5);
-  controlLayout.append(spacer,       0,  0   );
-  controlLayout.append(loadButton,  80,  0, 5);
-  controlLayout.append(saveButton,  80,  0, 5);
-  controlLayout.append(eraseButton, 80,  0   );
-  layout.append(controlLayout                );
   append(layout);
-  setGeometry({ 0, 0, 480, layout.minimumGeometry().height + 250 });
+  layout.setMargin(5);
+  layout.append(stateList, ~0, ~0, 5);
+  layout.append(descLayout, ~0, 0, 5);
+    descLayout.append(descLabel, 0, 0, 5);
+    descLayout.append(descEdit, ~0, 0);
+  layout.append(controlLayout, ~0, 0);
+    controlLayout.append(spacer, ~0, 0);
+    controlLayout.append(loadButton, 80, 0, 5);
+    controlLayout.append(saveButton, 80, 0, 5);
+    controlLayout.append(eraseButton, 80, 0);
+
+  for(unsigned n = 0; n < 32; n++) stateList.append(decimal<2>(n + 1), "(empty)");
+  stateList.autoSizeColumns();
 
   synchronize();
 
@@ -35,14 +38,13 @@ void StateManager::create() {
 }
 
 void StateManager::synchronize() {
+  layout.setEnabled(interface->cartridgeLoaded());
+
   descEdit.setText("");
   descEdit.setEnabled(false);
-
-  loadButton.setEnabled(stateList.selected());
-  saveButton.setEnabled(stateList.selected());
-  eraseButton.setEnabled(stateList.selected());
-
+  controlLayout.setEnabled(stateList.selected());
   if(stateList.selected() == false) return;
+
   if(slot[stateList.selection()].capacity() > 0) {
     descEdit.setText(slotLoadDescription(stateList.selection()));
     descEdit.setEnabled(true);
@@ -50,60 +52,59 @@ void StateManager::synchronize() {
 }
 
 void StateManager::refresh() {
-  for(unsigned i = 0; i < 32; i++) {
-    stateList.modify(i, decimal<2>(i + 1), slotLoadDescription(i));
+  for(unsigned n = 0; n < 32; n++) {
+    stateList.modify(n, decimal<2>(n + 1), slotLoadDescription(n));
   }
   stateList.autoSizeColumns();
 }
 
-void StateManager::load() {
-  stateList.reset();
-  for(unsigned i = 0; i < 32; i++) {
-    slot[i] = serializer();
-    stateList.append("");
-  }
+bool StateManager::load(const string &filename, unsigned revision) {
+  for(unsigned n = 0; n < 32; n++) slot[n] = serializer();
+  synchronize();
 
   file fp;
-  if(fp.open(path.load(utility.activeSlot(), ".bsa"), file::mode::read)) {
-    if(fp.readl(4) == 0x31415342) {
-      if(fp.readl(4) == SNES::Info::SerializerVersion) {
-        for(unsigned i = 0; i < 32; i++) {
-          if(fp.read() == false) continue;
-          uint8_t *data = new uint8_t[SNES::system.serialize_size()];
-          fp.read(data, SNES::system.serialize_size());
-          slot[i] = serializer(data, SNES::system.serialize_size());
-          delete[] data;
-        }
+  if(fp.open(filename, file::mode::read) == false) return false;
+
+  if(fp.readl(4) == 0x31415342) {
+    if(fp.readl(4) == revision) {  //'BSA1'
+      for(unsigned n = 0; n < 32; n++) {
+        if(fp.read() == false) continue;
+        unsigned size = fp.readl(4);
+        uint8_t *data = new uint8_t[size];
+        fp.read(data, size);
+        slot[n] = serializer(data, size);
+        delete[] data;
       }
     }
   }
 
   refresh();
-  synchronize();
+  return true;
 }
 
-void StateManager::save() {
+bool StateManager::save(const string &filename, unsigned revision) {
   bool hasSave = false;
-  for(unsigned i = 0; i < 32; i++) {
-    if(slot[i].capacity() > 0) hasSave = true;
+  for(unsigned n = 0; n < 32; n++) {
+    if(slot[n].capacity() > 0) hasSave = true;
   }
 
   if(hasSave == false) {
-    unlink(path.load(utility.activeSlot(), ".bsa"));
-  } else {
-    file fp;
-    if(fp.open(path.load(utility.activeSlot(), ".bsa"), file::mode::write)) {
-      fp.writel(0x31415342, 4);  //'BSA1'
-      fp.writel(SNES::Info::SerializerVersion, 4);
+    unlink(filename);
+    return true;
+  }
 
-      for(unsigned i = 0; i < 32; i++) {
-        if(slot[i].capacity() == 0) {
-          fp.write(false);
-        } else {
-          fp.write(true);
-          fp.write(slot[i].data(), slot[i].capacity());
-        }
-      }
+  file fp;
+  if(fp.open(filename, file::mode::write) == false) return false;
+
+  fp.writel(0x31415342, 4);  //'BSA1'
+  fp.writel(revision, 4);
+  for(unsigned n = 0; n < 32; n++) {
+    if(slot[n].capacity() == 0) {
+      fp.write(false);
+    } else {
+      fp.write(true);
+      fp.writel(slot[n].size(), 4);
+      fp.write(slot[n].data(), slot[n].size());
     }
   }
 }
@@ -111,13 +112,12 @@ void StateManager::save() {
 void StateManager::slotLoad() {
   if(stateList.selected() == false) return;
   serializer s(slot[stateList.selection()].data(), slot[stateList.selection()].capacity());
-  SNES::system.unserialize(s);
+  interface->unserialize(s);
 }
 
 void StateManager::slotSave() {
   if(stateList.selected()) {
-    SNES::system.runtosave();
-    slot[stateList.selection()] = SNES::system.serialize();
+    slot[stateList.selection()] = interface->serialize();
   }
   refresh();
   synchronize();
@@ -132,10 +132,10 @@ void StateManager::slotErase() {
   synchronize();
 }
 
-string StateManager::slotLoadDescription(unsigned i) {
-  if(slot[i].capacity() == 0) return "(empty)";
-  char text[512];
-  strlcpy(text, (const char*)slot[i].data() + HeaderLength, 512);
+string StateManager::slotLoadDescription(unsigned n) {
+  if(slot[n].capacity() == 0) return "(empty)";
+  char text[DescriptionLength];
+  strlcpy(text, (const char*)slot[n].data() + HeaderLength, DescriptionLength);
   return text;
 }
 
@@ -143,7 +143,7 @@ void StateManager::slotSaveDescription() {
   if(stateList.selected() == false) return;
   string text = descEdit.text();
   if(slot[stateList.selection()].capacity() > 0) {
-    strlcpy((char*)slot[stateList.selection()].data() + HeaderLength, (const char*)text, 512);
+    strlcpy((char*)slot[stateList.selection()].data() + HeaderLength, (const char*)text, DescriptionLength);
   }
   refresh();
 }

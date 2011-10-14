@@ -96,6 +96,7 @@ public:
 
     if(name == Video::Shader) {
       OpenGL::set_shader(any_cast<const char*>(value));
+      settings.filter = OpenGL::fragmentfilter;
       return true;
     }
 

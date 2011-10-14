@@ -1,28 +1,36 @@
-struct FileBrowser : TopLevelWindow {
+struct FileBrowser : Window {
   VerticalLayout layout;
   HorizontalLayout pathLayout;
-  LineEdit pathBox;
-  Button browseButton;
-  Button upButton;
-  ListView contentsBox;
+    LineEdit pathEdit;
+    Button pathBrowse;
+    Button pathUp;
+  ListView fileList;
+  HorizontalLayout controlLayout;
+  Label filterLabel;
+  Button openButton;
 
-  enum class Mode : unsigned { Cartridge, Satellaview, SufamiTurbo, GameBoy } mode;
-  void fileOpen(Mode mode, function<void (string)> callback);
-  void create();
+  struct Mode { enum : unsigned { Default, NES, SNES, GameBoy, Satellaview, SufamiTurbo }; };
+  void open(const string &title, unsigned mode, function<void (string)> callback);
+
+  FileBrowser();
+  ~FileBrowser();
 
 private:
-  function<void (string)> callback;
-  string folder;
-  lstring filters;
-  lstring contents;
-  string folderPath;
+  configuration config;
+  struct FilterMode {
+    string name;
+    string path;
+    lstring filter;
+  } *mode;
+  linear_vector<FilterMode> filterModes;
 
-  void folderBrowse();
-  void folderUp();
-  void fileActivate();
-  void setFolder(const string &pathname);
-  string cartridgeFolder(const string &pathname);
+  lstring fileNameList;
+  function<void (string)> callback;
+
+  void setPath(const string &path);
+  void fileListActivate();
+  bool loadFolder(const string &path);
   void loadFile(const string &filename);
 };
 
-extern FileBrowser fileBrowser;
+extern FileBrowser *fileBrowser;

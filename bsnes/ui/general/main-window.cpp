@@ -1,476 +1,388 @@
-MainWindow mainWindow;
+MainWindow *mainWindow = 0;
 
-void MainWindow::create() {
-  setTitle({ SNES::Info::Name, " v", SNES::Info::Version });
-  setResizable(false);
-  setGeometry({ 0, 0, 595, 448 });
-  application.addWindow(this, "MainWindow", "128,128");
-  setMenuFont(application.proportionalFont);
-  setStatusFont(application.proportionalFontBold);
+MainWindow::MainWindow() {
+  setTitle(application->title);
+  setGeometry({ 256, 256, 626, 480 });
   setBackgroundColor({ 0, 0, 0 });
-
-  system.setText("System");
-
-  systemLoadCartridge.setText("Load Cartridge ...");
-  system.append(systemLoadCartridge);
-
-  systemLoadCartridgeSpecial.setText("Load Special");
-  system.append(systemLoadCartridgeSpecial);
-
-  systemLoadCartridgeBsxSlotted.setText("Load BS-X Slotted Cartridge ...");
-  systemLoadCartridgeSpecial.append(systemLoadCartridgeBsxSlotted);
-
-  systemLoadCartridgeBsx.setText("Load BS-X Cartridge ...");
-  systemLoadCartridgeSpecial.append(systemLoadCartridgeBsx);
-
-  systemLoadCartridgeSufamiTurbo.setText("Load Sufami Turbo Cartridge ...");
-  systemLoadCartridgeSpecial.append(systemLoadCartridgeSufamiTurbo);
-
-  systemLoadCartridgeSuperGameBoy.setText("Load Super Game Boy Cartridge ...");
-  systemLoadCartridgeSpecial.append(systemLoadCartridgeSuperGameBoy);
-
-  system.append(systemSeparator1);
-
-  systemPower.setText("Power Cycle");
-  system.append(systemPower);
-
-  systemReset.setText("Reset");
-  system.append(systemReset);
-
-  system.append(systemSeparator2);
-
-  systemPort1.setText("Controller Port 1");
-  system.append(systemPort1);
-
-  systemPort1None.setText("None");
-  systemPort1.append(systemPort1None);
-
-  systemPort1Gamepad.setText("Gamepad");
-  systemPort1.append(systemPort1Gamepad);
-
-  systemPort1Multitap.setText("Multitap");
-  systemPort1.append(systemPort1Multitap);
-
-  systemPort1Mouse.setText("Mouse");
-  systemPort1.append(systemPort1Mouse);
-
-  RadioItem::group(
-    systemPort1None, systemPort1Gamepad, systemPort1Multitap, systemPort1Mouse
-  );
-
-  systemPort2.setText("Controller Port 2");
-  system.append(systemPort2);
-
-  systemPort2None.setText("None");
-  systemPort2.append(systemPort2None);
-
-  systemPort2Gamepad.setText("Gamepad");
-  systemPort2.append(systemPort2Gamepad);
-
-  systemPort2Multitap.setText("Multitap");
-  systemPort2.append(systemPort2Multitap);
-
-  systemPort2Mouse.setText("Mouse");
-  systemPort2.append(systemPort2Mouse);
-
-  systemPort2SuperScope.setText("Super Scope");
-  systemPort2.append(systemPort2SuperScope);
-
-  systemPort2Justifier.setText("Justifier");
-  systemPort2.append(systemPort2Justifier);
-
-  systemPort2Justifiers.setText("Justifiers");
-  systemPort2.append(systemPort2Justifiers);
-
-  systemPort2Serial.setText("Serial Cable");
-  systemPort2.append(systemPort2Serial);
-
-  RadioItem::group(
-    systemPort2None, systemPort2Gamepad, systemPort2Multitap, systemPort2Mouse,
-    systemPort2SuperScope, systemPort2Justifier, systemPort2Justifiers,
-    systemPort2Serial
-  );
-
-  append(system);
-
-  settings.setText("Settings");
-
-  settingsVideoMode.setText("Video Mode");
-  settings.append(settingsVideoMode);
-
-  settingsVideoMode1x.setText("Scale 1x");
-  settingsVideoMode.append(settingsVideoMode1x);
-
-  settingsVideoMode2x.setText("Scale 2x");
-  settingsVideoMode.append(settingsVideoMode2x);
-
-  settingsVideoMode3x.setText("Scale 3x");
-  settingsVideoMode.append(settingsVideoMode3x);
-
-  settingsVideoMode4x.setText("Scale 4x");
-  settingsVideoMode.append(settingsVideoMode4x);
-
-  settingsVideoMode5x.setText("Scale 5x");
-  settingsVideoMode.append(settingsVideoMode5x);
-
-  RadioItem::group(
-    settingsVideoMode1x, settingsVideoMode2x, settingsVideoMode3x, settingsVideoMode4x, settingsVideoMode5x
-  );
-
-  settingsVideoMode.append(settingsVideoModeSeparator1);
-
-  settingsVideoModeAspectRatioCorrection.setText("Correct Aspect Ratio");
-  settingsVideoMode.append(settingsVideoModeAspectRatioCorrection);
-
-  settingsVideoModeSmoothVideo.setText("Smooth Video");
-  settingsVideoMode.append(settingsVideoModeSmoothVideo);
-
-  settingsVideoMode.append(settingsVideoModeSeparator2);
-
-  settingsVideoModeNTSC.setText("NTSC");
-  settingsVideoMode.append(settingsVideoModeNTSC);
-
-  settingsVideoModePAL.setText("PAL");
-  settingsVideoMode.append(settingsVideoModePAL);
-
-  setupFiltersAndShaders();
-
-  RadioItem::group(
-    settingsVideoModeNTSC, settingsVideoModePAL
-  );
-
-  settings.append(settingsSeparator1);
-
-  settingsSynchronizeVideo.setText("Synchronize Video");
-  settings.append(settingsSynchronizeVideo);
-
-  settingsSynchronizeAudio.setText("Synchronize Audio");
-  settings.append(settingsSynchronizeAudio);
-
-  settingsMuteAudio.setText("Mute Audio");
-  settings.append(settingsMuteAudio);
-
-  settings.append(settingsSeparator2);
-
-  settingsConfiguration.setText("Configuration Settings ...");
-  settings.append(settingsConfiguration);
-
-  append(settings);
-
-  tools.setText("Tools");
-
-  toolsStateSave.setText("Save State");
-  tools.append(toolsStateSave);
-
-  toolsStateSave1.setText("Slot 1");
-  toolsStateSave.append(toolsStateSave1);
-
-  toolsStateSave2.setText("Slot 2");
-  toolsStateSave.append(toolsStateSave2);
-
-  toolsStateSave3.setText("Slot 3");
-  toolsStateSave.append(toolsStateSave3);
-
-  toolsStateSave4.setText("Slot 4");
-  toolsStateSave.append(toolsStateSave4);
-
-  toolsStateSave5.setText("Slot 5");
-  toolsStateSave.append(toolsStateSave5);
-
-  toolsStateLoad.setText("Load State");
-  tools.append(toolsStateLoad);
-
-  toolsStateLoad1.setText("Slot 1");
-  toolsStateLoad.append(toolsStateLoad1);
-
-  toolsStateLoad2.setText("Slot 2");
-  toolsStateLoad.append(toolsStateLoad2);
-
-  toolsStateLoad3.setText("Slot 3");
-  toolsStateLoad.append(toolsStateLoad3);
-
-  toolsStateLoad4.setText("Slot 4");
-  toolsStateLoad.append(toolsStateLoad4);
-
-  toolsStateLoad5.setText("Slot 5");
-  toolsStateLoad.append(toolsStateLoad5);
-
-  tools.append(toolsSeparator1);
-
-  toolsCaptureScreenshot.setText("Capture Screenshot");
-  tools.append(toolsCaptureScreenshot);
-
-  toolsCheatEditor.setText("Cheat Editor ...");
-  tools.append(toolsCheatEditor);
-
-  toolsStateManager.setText("State Manager ...");
-  tools.append(toolsStateManager);
-
-  #if defined(DEBUGGER)
-  tools.append(toolsSeparator2);
-
-  toolsDebugger.setText("Debugger ...");
-  tools.append(toolsDebugger);
-  #endif
-
-  append(tools);
-
-  help.setText("Help");
-
-  helpAbout.setText("About ...");
-  help.append(helpAbout);
-
-  append(help);
-
-  if(config.controller.port1 == 0) systemPort1None.setChecked();
-  if(config.controller.port1 == 1) systemPort1Gamepad.setChecked();
-  if(config.controller.port1 == 2) systemPort1Multitap.setChecked();
-  if(config.controller.port1 == 3) systemPort1Mouse.setChecked();
-  if(config.controller.port2 == 0) systemPort2None.setChecked();
-  if(config.controller.port2 == 1) systemPort2Gamepad.setChecked();
-  if(config.controller.port2 == 2) systemPort2Multitap.setChecked();
-  if(config.controller.port2 == 3) systemPort2Mouse.setChecked();
-  if(config.controller.port2 == 4) systemPort2SuperScope.setChecked();
-  if(config.controller.port2 == 5) systemPort2Justifier.setChecked();
-  if(config.controller.port2 == 6) systemPort2Justifiers.setChecked();
-  if(config.controller.port2 == 7) systemPort2Serial.setChecked();
-
-  if(config.video.scale == 1) settingsVideoMode1x.setChecked();
-  if(config.video.scale == 2) settingsVideoMode2x.setChecked();
-  if(config.video.scale == 3) settingsVideoMode3x.setChecked();
-  if(config.video.scale == 4) settingsVideoMode4x.setChecked();
-  if(config.video.scale == 5) settingsVideoMode5x.setChecked();
-  settingsVideoModeAspectRatioCorrection.setChecked(config.video.aspectRatioCorrection);
-  settingsVideoModeSmoothVideo.setChecked(config.video.smooth);
-  if(config.video.region == 0) settingsVideoModeNTSC.setChecked();
-  if(config.video.region == 1) settingsVideoModePAL.setChecked();
-  settingsSynchronizeVideo.setChecked(config.video.synchronize);
-  settingsSynchronizeAudio.setChecked(config.audio.synchronize);
-  settingsMuteAudio.setChecked(config.audio.mute);
-
-  layout.append(viewport, { 0, 0, 595, 448 });
+  windowManager->append(this, "MainWindow");
+
+  cartridgeMenu.setText("Cartridge");
+    cartridgeLoadSNES.setText("Load SNES Cartridge ...");
+    cartridgeLoadNES.setText("Load NES Cartridge ...");
+    cartridgeLoadGameBoy.setText("Load Game Boy Cartridge ...");
+    cartridgeLoadSatellaviewSlotted.setText("Load Satellaview-Slotted Cartridge ...");
+    cartridgeLoadSatellaview.setText("Load Satellaview Cartridge ...");
+    cartridgeLoadSufamiTurbo.setText("Load Sufami Turbo Cartridge ...");
+    cartridgeLoadSuperGameBoy.setText("Load Super Game Boy Cartridge ...");
+
+  nesMenu.setText("NES");
+    nesPower.setText("Power Cycle");
+    nesReset.setText("Reset");
+    nesPort1.setText("Controller Port 1");
+      nesPort1Device[0].setText("None");
+      nesPort1Device[1].setText("Gamepad");
+      RadioItem::group(nesPort1Device[0], nesPort1Device[1]);
+      nesPort1Device[config->nes.controllerPort1Device].setChecked();
+    nesPort2.setText("Controller Port 2");
+      nesPort2Device[0].setText("None");
+      nesPort2Device[1].setText("Gamepad");
+      RadioItem::group(nesPort2Device[0], nesPort2Device[1]);
+      nesPort2Device[config->nes.controllerPort2Device].setChecked();
+    nesCartridgeUnload.setText("Unload Cartridge");
+
+  snesMenu.setText("SNES");
+    snesPower.setText("Power Cycle");
+    snesReset.setText("Reset");
+    snesPort1.setText("Controller Port 1");
+      snesPort1Device[0].setText("None");
+      snesPort1Device[1].setText("Gamepad");
+      snesPort1Device[2].setText("Multitap");
+      snesPort1Device[3].setText("Mouse");
+      RadioItem::group(snesPort1Device[0], snesPort1Device[1], snesPort1Device[2], snesPort1Device[3]);
+      snesPort1Device[config->snes.controllerPort1Device].setChecked();
+    snesPort2.setText("Controller Port 2");
+      snesPort2Device[0].setText("None");
+      snesPort2Device[1].setText("Gamepad");
+      snesPort2Device[2].setText("Multitap");
+      snesPort2Device[3].setText("Mouse");
+      snesPort2Device[4].setText("Super Scope");
+      snesPort2Device[5].setText("Justifier");
+      snesPort2Device[6].setText("Dual Justifiers");
+      snesPort2Device[7].setText("Serial Cable");
+      RadioItem::group(snesPort2Device[0], snesPort2Device[1], snesPort2Device[2], snesPort2Device[3],
+                       snesPort2Device[4], snesPort2Device[5], snesPort2Device[6], snesPort2Device[7]);
+      snesPort2Device[config->snes.controllerPort2Device].setChecked();
+    snesCartridgeUnload.setText("Unload Cartridge");
+
+  gameBoyMenu.setText("Game Boy");
+    gameBoyPower.setText("Power Cycle");
+    gameBoyCartridgeUnload.setText("Unload Cartridge");
+
+  settingsMenu.setText("Settings");
+    settingsVideoFilter.setText("Video Filter");
+      settingsVideoFilterNone.setText("None");
+      setupVideoFilters();
+    settingsVideoShader.setText("Video Shader");
+      settingsVideoShaderNone.setText("None");
+      settingsVideoShaderBlur.setText("Blur");
+      setupVideoShaders();
+    settingsSynchronizeVideo.setText("Synchronize Video");
+    settingsSynchronizeVideo.setChecked(config->video.synchronize);
+    settingsSynchronizeAudio.setText("Synchronize Audio");
+    settingsSynchronizeAudio.setChecked(config->audio.synchronize);
+    settingsCorrectAspectRatio.setText("Correct Aspect Ratio");
+    settingsCorrectAspectRatio.setChecked(config->video.correctAspectRatio);
+    settingsMaskOverscan.setText("Mask Overscan");
+    settingsMaskOverscan.setChecked(config->video.maskOverscan);
+    settingsMuteAudio.setText("Mute Audio");
+    settingsMuteAudio.setChecked(config->audio.mute);
+    settingsConfiguration.setText("Configuration ...");
+
+  toolsMenu.setText("Tools");
+    toolsStateSave.setText("Save State");
+      toolsStateSave1.setText("Slot 1");
+      toolsStateSave2.setText("Slot 2");
+      toolsStateSave3.setText("Slot 3");
+      toolsStateSave4.setText("Slot 4");
+      toolsStateSave5.setText("Slot 5");
+    toolsStateLoad.setText("Load State");
+      toolsStateLoad1.setText("Slot 1");
+      toolsStateLoad2.setText("Slot 2");
+      toolsStateLoad3.setText("Slot 3");
+      toolsStateLoad4.setText("Slot 4");
+      toolsStateLoad5.setText("Slot 5");
+    toolsShrinkWindow.setText("Shrink Window");
+    toolsCheatEditor.setText("Cheat Editor ...");
+    toolsStateManager.setText("State Manager ...");
+
+  append(cartridgeMenu);
+    cartridgeMenu.append(cartridgeLoadNES);
+    cartridgeMenu.append(cartridgeLoadSNES);
+    cartridgeMenu.append(cartridgeLoadGameBoy);
+    cartridgeMenu.append(cartridgeSeparator);
+    cartridgeMenu.append(cartridgeLoadSatellaviewSlotted);
+    cartridgeMenu.append(cartridgeLoadSatellaview);
+    cartridgeMenu.append(cartridgeLoadSufamiTurbo);
+    cartridgeMenu.append(cartridgeLoadSuperGameBoy);
+
+  append(nesMenu);
+    nesMenu.append(nesPower);
+    nesMenu.append(nesReset);
+    nesMenu.append(nesSeparator1);
+    nesMenu.append(nesPort1);
+      nesPort1.append(nesPort1Device[0]);
+      nesPort1.append(nesPort1Device[1]);
+    nesMenu.append(nesPort2);
+      nesPort2.append(nesPort2Device[0]);
+      nesPort2.append(nesPort2Device[1]);
+    nesMenu.append(nesSeparator2);
+    nesMenu.append(nesCartridgeUnload);
+
+  append(snesMenu);
+    snesMenu.append(snesPower);
+    snesMenu.append(snesReset);
+    snesMenu.append(snesSeparator1);
+    snesMenu.append(snesPort1);
+      snesPort1.append(snesPort1Device[0]);
+      snesPort1.append(snesPort1Device[1]);
+      snesPort1.append(snesPort1Device[2]);
+      snesPort1.append(snesPort1Device[3]);
+    snesMenu.append(snesPort2);
+      snesPort2.append(snesPort2Device[0]);
+      snesPort2.append(snesPort2Device[1]);
+      snesPort2.append(snesPort2Device[2]);
+      snesPort2.append(snesPort2Device[3]);
+      snesPort2.append(snesPort2Device[4]);
+      snesPort2.append(snesPort2Device[5]);
+      snesPort2.append(snesPort2Device[6]);
+      snesPort2.append(snesPort2Device[7]);
+    snesMenu.append(snesSeparator2);
+    snesMenu.append(snesCartridgeUnload);
+
+  append(gameBoyMenu);
+    gameBoyMenu.append(gameBoyPower);
+    gameBoyMenu.append(gameBoySeparator);
+    gameBoyMenu.append(gameBoyCartridgeUnload);
+
+  append(settingsMenu);
+    settingsMenu.append(settingsVideoFilter);
+      settingsVideoFilter.append(settingsVideoFilterNone);
+      if(videoFilterName.size())
+      settingsVideoFilter.append(settingsVideoFilterSeparator);
+      for(unsigned n = 0; n < videoFilterName.size(); n++)
+      settingsVideoFilter.append(settingsVideoFilterList[n]);
+    settingsMenu.append(settingsVideoShader);
+      settingsVideoShader.append(settingsVideoShaderNone);
+      settingsVideoShader.append(settingsVideoShaderBlur);
+      if(videoShaderName.size())
+      settingsVideoShader.append(settingsVideoShaderSeparator);
+      for(unsigned n = 0; n < videoShaderName.size(); n++)
+      settingsVideoShader.append(settingsVideoShaderList[n]);
+    settingsMenu.append(settingsSeparator1);
+    settingsMenu.append(settingsSynchronizeVideo);
+    settingsMenu.append(settingsSynchronizeAudio);
+    settingsMenu.append(settingsSeparator2);
+    settingsMenu.append(settingsCorrectAspectRatio);
+    settingsMenu.append(settingsMaskOverscan);
+    settingsMenu.append(settingsMuteAudio);
+    settingsMenu.append(settingsSeparator3);
+    settingsMenu.append(settingsConfiguration);
+
+  append(toolsMenu);
+    toolsMenu.append(toolsStateSave);
+      toolsStateSave.append(toolsStateSave1);
+      toolsStateSave.append(toolsStateSave2);
+      toolsStateSave.append(toolsStateSave3);
+      toolsStateSave.append(toolsStateSave4);
+      toolsStateSave.append(toolsStateSave5);
+    toolsMenu.append(toolsStateLoad);
+      toolsStateLoad.append(toolsStateLoad1);
+      toolsStateLoad.append(toolsStateLoad2);
+      toolsStateLoad.append(toolsStateLoad3);
+      toolsStateLoad.append(toolsStateLoad4);
+      toolsStateLoad.append(toolsStateLoad5);
+    toolsMenu.append(toolsSeparator);
+    toolsMenu.append(toolsShrinkWindow);
+    toolsMenu.append(toolsCheatEditor);
+    toolsMenu.append(toolsStateManager);
+
+  setMenuVisible();
+
+  setStatusText("No cartridge loaded");
+  setStatusVisible();
+
+  layout.append(viewport, { 0, 0, 512, 480 });
   append(layout);
 
-  utility.setStatus("");
-  setMenuVisible(true);
-  setStatusVisible(true);
+  onClose = [&] { application->quit = true; };
+  onSize = [&] { utility->resizeMainWindow(); };
 
-  systemLoadCartridge.onTick = [] {
-    fileBrowser.fileOpen(FileBrowser::Mode::Cartridge, [](string filename) {
-      cartridge.loadNormal(filename);
+  cartridgeLoadNES.onTick = [&] {
+    fileBrowser->open("Load Cartridge - NES", FileBrowser::Mode::NES, [](string filename) {
+      interface->nes.loadCartridge(filename);
     });
   };
 
-  systemLoadCartridgeBsxSlotted.onTick = [] { singleSlotLoader.loadCartridgeBsxSlotted(); };
-  systemLoadCartridgeBsx.onTick = [] { singleSlotLoader.loadCartridgeBsx(); };
-  systemLoadCartridgeSufamiTurbo.onTick = [] { doubleSlotLoader.loadCartridgeSufamiTurbo(); };
-  systemLoadCartridgeSuperGameBoy.onTick = [] { singleSlotLoader.loadCartridgeSuperGameBoy(); };
-
-  systemPower.onTick = [] {
-    SNES::system.power();
-    utility.showMessage("System was power cycled");
+  cartridgeLoadSNES.onTick = [&] {
+    fileBrowser->open("Load Cartridge - SNES", FileBrowser::Mode::SNES, [](string filename) {
+      interface->snes.loadCartridge(filename);
+    });
   };
 
-  systemReset.onTick = [] {
-    SNES::system.reset();
-    utility.showMessage("System was reset");
+  cartridgeLoadGameBoy.onTick = [&] {
+    fileBrowser->open("Load Cartridge - Game Boy", FileBrowser::Mode::GameBoy, [](string filename) {
+      interface->gameBoy.loadCartridge(filename);
+    });
   };
 
-  systemPort1None.onTick       = [] { config.controller.port1 = 0; utility.setControllers(); };
-  systemPort1Gamepad.onTick    = [] { config.controller.port1 = 1; utility.setControllers(); };
-  systemPort1Multitap.onTick   = [] { config.controller.port1 = 2; utility.setControllers(); };
-  systemPort1Mouse.onTick      = [] { config.controller.port1 = 3; utility.setControllers(); };
+  cartridgeLoadSatellaviewSlotted.onTick = [&] { slotLoader->loadSatellaviewSlotted(); };
+  cartridgeLoadSatellaview.onTick        = [&] { slotLoader->loadSatellaview(); };
+  cartridgeLoadSufamiTurbo.onTick        = [&] { slotLoader->loadSufamiTurbo(); };
+  cartridgeLoadSuperGameBoy.onTick       = [&] { slotLoader->loadSuperGameBoy(); };
 
-  systemPort2None.onTick       = [] { config.controller.port2 = 0; utility.setControllers(); };
-  systemPort2Gamepad.onTick    = [] { config.controller.port2 = 1; utility.setControllers(); };
-  systemPort2Multitap.onTick   = [] { config.controller.port2 = 2; utility.setControllers(); };
-  systemPort2Mouse.onTick      = [] { config.controller.port2 = 3; utility.setControllers(); };
-  systemPort2SuperScope.onTick = [] { config.controller.port2 = 4; utility.setControllers(); };
-  systemPort2Justifier.onTick  = [] { config.controller.port2 = 5; utility.setControllers(); };
-  systemPort2Justifiers.onTick = [] { config.controller.port2 = 6; utility.setControllers(); };
-  systemPort2Serial.onTick     = [] { config.controller.port2 = 7; utility.setControllers(); };
+  nesPower.onTick = { &Interface::power, interface };
+  nesReset.onTick = { &Interface::reset, interface };
 
-  settingsVideoMode1x.onTick = [] { utility.setScale(1); };
-  settingsVideoMode2x.onTick = [] { utility.setScale(2); };
-  settingsVideoMode3x.onTick = [] { utility.setScale(3); };
-  settingsVideoMode4x.onTick = [] { utility.setScale(4); };
-  settingsVideoMode5x.onTick = [] { utility.setScale(5); };
+  nesPort1Device[0].onTick = [&] { interface->setController(0, 0); };
+  nesPort1Device[1].onTick = [&] { interface->setController(0, 1); };
 
-  settingsVideoModeAspectRatioCorrection.onTick = [] {
-    config.video.aspectRatioCorrection = mainWindow.settingsVideoModeAspectRatioCorrection.checked();
-    utility.setScale();
+  nesPort2Device[0].onTick = [&] { interface->setController(1, 0); };
+  nesPort2Device[1].onTick = [&] { interface->setController(1, 1); };
+
+  nesCartridgeUnload.onTick = { &Interface::unloadCartridge, interface };
+
+  snesPower.onTick = { &Interface::power, interface };
+  snesReset.onTick = { &Interface::reset, interface };
+
+  snesPort1Device[0].onTick = [&] { interface->setController(0, 0); };
+  snesPort1Device[1].onTick = [&] { interface->setController(0, 1); };
+  snesPort1Device[2].onTick = [&] { interface->setController(0, 2); };
+  snesPort1Device[3].onTick = [&] { interface->setController(0, 3); };
+
+  snesPort2Device[0].onTick = [&] { interface->setController(1, 0); };
+  snesPort2Device[1].onTick = [&] { interface->setController(1, 1); };
+  snesPort2Device[2].onTick = [&] { interface->setController(1, 2); };
+  snesPort2Device[3].onTick = [&] { interface->setController(1, 3); };
+  snesPort2Device[4].onTick = [&] { interface->setController(1, 4); };
+  snesPort2Device[5].onTick = [&] { interface->setController(1, 5); };
+  snesPort2Device[6].onTick = [&] { interface->setController(1, 6); };
+  snesPort2Device[7].onTick = [&] { interface->setController(1, 7); };
+
+  snesCartridgeUnload.onTick = { &Interface::unloadCartridge, interface };
+
+  gameBoyPower.onTick = { &Interface::power, interface };
+  gameBoyCartridgeUnload.onTick = { &Interface::unloadCartridge, interface };
+
+  settingsVideoFilterNone.onTick = [&] {
+    config->video.filter = "None";
+    utility->bindVideoFilter();
   };
 
-  settingsVideoModeSmoothVideo.onTick = [] {
-    config.video.smooth = mainWindow.settingsVideoModeSmoothVideo.checked();
-    video.set(Video::Filter, (unsigned)config.video.smooth);
+  settingsVideoShaderNone.onTick = [&] {
+    config->video.shader = "None";
+    utility->bindVideoShader();
   };
 
-  settingsVideoModeNTSC.onTick = [] { config.video.region = 0; utility.setScale(); };
-  settingsVideoModePAL.onTick  = [] { config.video.region = 1; utility.setScale(); };
-
-  settingsVideoFilterNone.onTick = [] {
-    config.video.filter = "";
-    utility.setFilter();
+  settingsVideoShaderBlur.onTick = [&] {
+    config->video.shader = "Blur";
+    utility->bindVideoShader();
   };
 
-  settingsVideoShaderNone.onTick = [] {
-    config.video.shader = "";
-    utility.setShader();
+  settingsSynchronizeVideo.onTick = [&] {
+    config->video.synchronize = settingsSynchronizeVideo.checked();
+    video.set(Video::Synchronize, config->video.synchronize);
   };
 
-  settingsSynchronizeVideo.onTick = [] {
-    config.video.synchronize = mainWindow.settingsSynchronizeVideo.checked();
-    video.set(Video::Synchronize, config.video.synchronize);
+  settingsSynchronizeAudio.onTick = [&] {
+    config->audio.synchronize = settingsSynchronizeAudio.checked();
+    audio.set(Audio::Synchronize, config->audio.synchronize);
   };
 
-  settingsSynchronizeAudio.onTick = [] {
-    config.audio.synchronize = mainWindow.settingsSynchronizeAudio.checked();
-    audio.set(Audio::Synchronize, config.audio.synchronize);
+  settingsCorrectAspectRatio.onTick = [&] {
+    config->video.correctAspectRatio = settingsCorrectAspectRatio.checked();
+    utility->resizeMainWindow();
   };
 
-  settingsMuteAudio.onTick = [] { config.audio.mute = mainWindow.settingsMuteAudio.checked(); };
-
-  settingsConfiguration.onTick = [] {
-    settingsWindow.setVisible();
-    settingsWindow.panel.setFocused();
+  settingsMaskOverscan.onTick = [&] {
+    config->video.maskOverscan = settingsMaskOverscan.checked();
   };
 
-  toolsStateSave1.onTick = [] { utility.saveState(1); };
-  toolsStateSave2.onTick = [] { utility.saveState(2); };
-  toolsStateSave3.onTick = [] { utility.saveState(3); };
-  toolsStateSave4.onTick = [] { utility.saveState(4); };
-  toolsStateSave5.onTick = [] { utility.saveState(5); };
-
-  toolsStateLoad1.onTick = [] { utility.loadState(1); };
-  toolsStateLoad2.onTick = [] { utility.loadState(2); };
-  toolsStateLoad3.onTick = [] { utility.loadState(3); };
-  toolsStateLoad4.onTick = [] { utility.loadState(4); };
-  toolsStateLoad5.onTick = [] { utility.loadState(5); };
-
-  toolsCaptureScreenshot.onTick = [] { interface.captureScreenshot = true; };
-  toolsCheatEditor.onTick = [] { cheatEditor.setVisible(); };
-  toolsStateManager.onTick = [] { stateManager.setVisible(); };
-
-  #if defined(DEBUGGER)
-  toolsDebugger.onTick = [] { debugger.setVisible(); };
-  #endif
-
-  helpAbout.onTick = [] {
-    aboutWindow.show();
+  settingsMuteAudio.onTick = [&] {
+    config->audio.mute = settingsMuteAudio.checked();
+    dspaudio.setVolume(config->audio.mute == false ? 1.0 : 0.0);
   };
 
-  onClose = [] {
-    application.quit = true;
-  };
+  settingsConfiguration.onTick = [&] { settingsWindow->setVisible(); };
+
+  toolsStateSave1.onTick = [&] { interface->saveState(1); };
+  toolsStateSave2.onTick = [&] { interface->saveState(2); };
+  toolsStateSave3.onTick = [&] { interface->saveState(3); };
+  toolsStateSave4.onTick = [&] { interface->saveState(4); };
+  toolsStateSave5.onTick = [&] { interface->saveState(5); };
+
+  toolsStateLoad1.onTick = [&] { interface->loadState(1); };
+  toolsStateLoad2.onTick = [&] { interface->loadState(2); };
+  toolsStateLoad3.onTick = [&] { interface->loadState(3); };
+  toolsStateLoad4.onTick = [&] { interface->loadState(4); };
+  toolsStateLoad5.onTick = [&] { interface->loadState(5); };
+
+  toolsShrinkWindow.onTick = [&] { utility->resizeMainWindow(true); };
+  toolsCheatEditor.onTick = [&] { cheatEditor->setVisible(); };
+  toolsStateManager.onTick = [&] { stateManager->setVisible(); };
 
   synchronize();
 }
 
 void MainWindow::synchronize() {
-  bool loaded = SNES::cartridge.loaded();
-  systemPower.setEnabled(loaded);
-  systemReset.setEnabled(loaded);
-  toolsStateSave.setEnabled(loaded);
-  toolsStateLoad.setEnabled(loaded);
-  toolsCaptureScreenshot.setEnabled(loaded);
+  if(interface->cartridgeLoaded()) {
+    toolsStateSave.setEnabled(true);
+    toolsStateLoad.setEnabled(true);
+  } else {
+    toolsStateSave.setEnabled(false);
+    toolsStateLoad.setEnabled(false);
+  }
 }
 
-void MainWindow::setupFiltersAndShaders() {
-  string folderPath;
-  lstring files;
+void MainWindow::setupVideoFilters() {
+  string path = { application->basepath, "filters/" };
+  lstring files = directory::files(path, "*.filter");
+  if(files.size() == 0) {
+    path = { application->userpath, "filters/" };
+    files = directory::files(path, "*.filter");
+  }
   reference_array<RadioItem&> group;
-  signed active;
 
-  settingsVideoFilter.setText("Video Filter");
+  settingsVideoFilterList = new RadioItem[files.size()];
+  for(unsigned n = 0; n < files.size(); n++) {
+    string name = files[n];
+    videoFilterName.append({ path, name });
+    if(auto position = name.position(".filter")) name[position()] = 0;
 
-  settingsVideoFilterNone.setText("None");
-  settingsVideoFilter.append(settingsVideoFilterNone);
-
-  settingsVideoFilter.append(settingsVideoFilterSeparator);
+    settingsVideoFilterList[n].setText(name);
+    settingsVideoFilterList[n].onTick = [&, n] {
+      config->video.filter = videoFilterName[n];
+      utility->bindVideoFilter();
+    };
+  }
 
   group.append(settingsVideoFilterNone);
-  active = -1;
+  for(unsigned n = 0; n < files.size(); n++) group.append(settingsVideoFilterList[n]);
+  RadioItem::group(group);
 
-  folderPath = { path.base, "filters/" };
-  files = directory::files(folderPath, "*.filter");
+  if(config->video.filter == "None") settingsVideoFilterNone.setChecked();
+  for(unsigned n = 0; n < files.size(); n++)
+  if(config->video.filter == videoFilterName[n]) settingsVideoFilterList[n].setChecked();
+}
+
+void MainWindow::setupVideoShaders() {
+  string path = { application->basepath, "shaders/" };
+  lstring files = directory::files(path, { "*.", config->video.driver, ".shader" });
   if(files.size() == 0) {
-    #if defined(PLATFORM_X) || defined(PLATFORM_OSX)
-    folderPath = { path.user, ".config/bsnes/filters/" };
-    #else
-    folderPath = { path.user, "bsnes/filters/" };
-    #endif
-    files = directory::files(folderPath, "*.filter");
+    path = { application->userpath, "shaders/" };
+    files = directory::files(path, { "*.", config->video.driver, ".shader" });
   }
-  foreach(filename, files) {
-    settingsVideoFilterName.append({ folderPath, filename });
+  reference_array<RadioItem&> group;
+
+  settingsVideoShaderList = new RadioItem[files.size()];
+  for(unsigned n = 0; n < files.size(); n++) {
+    string name = files[n];
+    videoShaderName.append({ path, name });
+    if(auto position = name.position(string{ ".", config->video.driver, ".shader" })) name[position()] = 0;
+
+    settingsVideoShaderList[n].setText(name);
+    settingsVideoShaderList[n].onTick = [&, n] {
+      config->video.shader = videoShaderName[n];
+      utility->bindVideoShader();
+    };
   }
-
-  if(settingsVideoFilterName.size() == 0) {
-    config.video.filter = "";  //as the list (and thus the 'None' option) is invisible,
-    utility.setFilter();       //erase any previously saved filter name
-  } else {
-    settingsVideoFilterItem = new RadioItem[settingsVideoFilterName.size()];
-    foreach(filename, settingsVideoFilterName, n) {
-      settingsVideoFilterItem[n].onTick = [n]() {
-        config.video.filter = mainWindow.settingsVideoFilterName[n];
-        utility.setFilter();
-      };
-      settingsVideoFilterItem[n].setText(nall::basename(notdir(filename)));
-      settingsVideoFilter.append(settingsVideoFilterItem[n]);
-      group.append(settingsVideoFilterItem[n]);
-      if(filename == config.video.filter) active = n;
-    }
-
-    RadioItem::group(group);
-    group.reset();
-    active < 0 ? settingsVideoFilterNone.setChecked() : settingsVideoFilterItem[active].setChecked();
-    settings.append(settingsVideoFilter);
-  }
-
-  settingsVideoShader.setText("Video Shader");
-
-  settingsVideoShaderNone.setText("None");
-  settingsVideoShader.append(settingsVideoShaderNone);
-
-  settingsVideoShader.append(settingsVideoShaderSeparator);
 
   group.append(settingsVideoShaderNone);
-  active = -1;
+  group.append(settingsVideoShaderBlur);
+  for(unsigned n = 0; n < files.size(); n++) group.append(settingsVideoShaderList[n]);
+  RadioItem::group(group);
 
-  folderPath = { path.base, "shaders/" };
-  files = directory::files(folderPath, { "*.", config.video.driver, ".shader" });
-  if(files.size() == 0) {
-    #if defined(PLATFORM_X) || defined(PLATFORM_OSX)
-    folderPath = { path.user, ".config/bsnes/shaders/" };
-    #else
-    folderPath = { path.user, "bsnes/shaders/" };
-    #endif
-    files = directory::files(folderPath, { "*.", config.video.driver, ".shader" });
-  }
-  foreach(filename, files) {
-    settingsVideoShaderName.append({ folderPath, filename });
-  }
-
-  if(settingsVideoShaderName.size() == 0) {
-    config.video.shader = "";
-    utility.setShader();
-  } else {
-    settingsVideoShaderItem = new RadioItem[settingsVideoShaderName.size()];
-    foreach(filename, settingsVideoShaderName, n) {
-      settingsVideoShaderItem[n].onTick = [n]() {
-        config.video.shader = mainWindow.settingsVideoShaderName[n];
-        utility.setShader();
-      };
-      settingsVideoShaderItem[n].setText(nall::basename(nall::basename(notdir(filename))));
-      settingsVideoShader.append(settingsVideoShaderItem[n]);
-      group.append(settingsVideoShaderItem[n]);
-      if(filename == config.video.shader) active = n;
-    }
-
-    RadioItem::group(group);
-    group.reset();
-    active < 0 ? settingsVideoShaderNone.setChecked() : settingsVideoShaderItem[active].setChecked();
-    settings.append(settingsVideoShader);
-  }
+  if(config->video.shader == "None") settingsVideoShaderNone.setChecked();
+  if(config->video.shader == "Blur") settingsVideoShaderBlur.setChecked();
+  for(unsigned n = 0; n < files.size(); n++)
+  if(config->video.shader == videoShaderName[n]) settingsVideoShaderList[n].setChecked();
 }

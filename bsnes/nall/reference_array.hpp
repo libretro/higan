@@ -1,9 +1,9 @@
 #ifndef NALL_REFERENCE_ARRAY_HPP
 #define NALL_REFERENCE_ARRAY_HPP
 
+#include <algorithm>
 #include <type_traits>
 #include <nall/bit.hpp>
-#include <nall/concept.hpp>
 
 namespace nall {
   template<typename T> struct reference_array {
@@ -18,7 +18,7 @@ namespace nall {
 
     void reset() {
       if(pool) free(pool);
-      pool = 0;
+      pool = nullptr;
       poolsize = 0;
       buffersize = 0;
     }
@@ -36,13 +36,29 @@ namespace nall {
       buffersize = newsize;
     }
 
-    void append(const T data) {
+    bool append(const T data) {
+      for(unsigned index = 0; index < buffersize; index++) {
+        if(pool[index] == &data) return false;
+      }
+
       unsigned index = buffersize++;
       if(index >= poolsize) resize(index + 1);
       pool[index] = &data;
+      return true;
     }
 
-    template<typename... Args> reference_array(Args&... args) : pool(0), poolsize(0), buffersize(0) {
+    bool remove(const T data) {
+      for(unsigned index = 0; index < buffersize; index++) {
+        if(pool[index] == &data) {
+          for(unsigned i = index; i < buffersize - 1; i++) pool[i] = pool[i + 1];
+          resize(buffersize - 1);
+          return true;
+        }
+      }
+      return false;
+    }
+
+    template<typename... Args> reference_array(Args&... args) : pool(nullptr), poolsize(0), buffersize(0) {
       construct(args...);
     }
 
@@ -64,7 +80,7 @@ namespace nall {
       pool = source.pool;
       poolsize = source.poolsize;
       buffersize = source.buffersize;
-      source.pool = 0;
+      source.pool = nullptr;
       source.reset();
       return *this;
     }
@@ -78,6 +94,22 @@ namespace nall {
       if(index >= buffersize) throw "reference_array[] out of bounds";
       return *pool[index];
     }
+
+    //iteration
+    struct iterator {
+      bool operator!=(const iterator &source) const { return index != source.index; }
+      T& operator*() { return array.operator[](index); }
+      iterator& operator++() { index++; return *this; }
+      iterator(const reference_array &array, unsigned index) : array(array), index(index) {}
+    private:
+      const reference_array &array;
+      unsigned index;
+    };
+
+    iterator begin() { return iterator(*this, 0); }
+    iterator end() { return iterator(*this, buffersize); }
+    const iterator begin() const { return iterator(*this, 0); }
+    const iterator end() const { return iterator(*this, buffersize); }
 
   private:
     void construct() {
@@ -96,8 +128,6 @@ namespace nall {
       construct(args...);
     }
   };
-
-  template<typename T> struct has_size<reference_array<T>> { enum { value = true }; };
 }
 
 #endif

@@ -1,64 +1,84 @@
-AudioSettings audioSettings;
+AudioSettings *audioSettings = 0;
 
-void AudioSettings::create() {
+AudioSlider::AudioSlider() {
+  append(name, 75, 0);
+  append(value, 75, 0);
+  append(slider, ~0, 0);
+}
+
+unsigned AudioSlider::position() {
+  unsigned value = slider.position(), center = slider.length() >> 1;
+  if(value > center) return base + (value - center) * step;
+  if(value < center) return base - (center - value) * step;
+  return base;
+}
+
+void AudioSlider::setPosition(unsigned position) {
+  signed value = position - base, center = slider.length() >> 1;
+  if(value < 0) return slider.setPosition(center - (abs(value) / step));
+  if(value > 0) return slider.setPosition((abs(value) / step) + center);
+  return slider.setPosition(center);
+}
+
+AudioSettings::AudioSettings() {
+  title.setFont(application->titleFont);
   title.setText("Audio Settings");
-  title.setFont(application.titleFont);
+  frequencyAdjustmentLabel.setFont(application->boldFont);
+  frequencyAdjustmentLabel.setText("Frequency: (lower to reduce audio crackling; raise to reduce video tearing)");
 
-  frequencyLabel.setText("Frequency:");
-  frequencySlider.setLength(2001);
-  volumeLabel.setText("Volume:");
-  volumeSlider.setLength(201);
-  balanceLabel.setText("Balance:");
-  balanceSlider.setLength(201);
+  nes.name.setText("NES:");
+  nes.slider.setLength(2001);
+  nes.base = 1789772;
+  nes.step = 56;
 
-  panelLayout.setMargin(5);
-  panelLayout.append(panel, SettingsWindow::PanelWidth, ~0, 5);
-  panelLayout.append(layout);
+  snes.name.setText("SNES:");
+  snes.slider.setLength(2001);
+  snes.base = 32000;
+  snes.step = 1;
 
-  layout.append(title, ~0, 0, 5);
+  gameBoy.name.setText("Game Boy:");
+  gameBoy.slider.setLength(2001);
+  gameBoy.base = 4194304;
+  gameBoy.step = 131;
 
-  frequencyLayout.append(frequencyLabel, 70, 0);
-  frequencyLayout.append(frequencyValue, 60, 0);
-  frequencyLayout.append(frequencySlider, ~0, 0);
-  layout.append(frequencyLayout);
+  outputAdjustmentLabel.setFont(application->boldFont);
+  outputAdjustmentLabel.setText("Output:");
 
-  volumeLayout.append(volumeLabel, 70, 0);
-  volumeLayout.append(volumeValue, 60, 0);
-  volumeLayout.append(volumeSlider, ~0, 0);
-  layout.append(volumeLayout);
+  volume.name.setText("Volume:");
+  volume.slider.setLength(201);
+  volume.base = 100;
+  volume.step = 1;
 
-  balanceLayout.append(balanceLabel, 70, 0);
-  balanceLayout.append(balanceValue, 60, 0);
-  balanceLayout.append(balanceSlider, ~0, 0);
-  layout.append(balanceLayout);
+  append(title, ~0, 0, 5);
+  append(frequencyAdjustmentLabel, ~0, 0);
+  append(nes, ~0, 0);
+  append(snes, ~0, 0);
+  append(gameBoy, ~0, 0, 5);
+  append(outputAdjustmentLabel, ~0, 0);
+  append(volume, ~0, 0);
 
-  layout.append(spacer, ~0, ~0);
-  settingsWindow.append(panelLayout);
+  nes.setPosition(config->audio.frequencyNES);
+  snes.setPosition(config->audio.frequencySNES);
+  gameBoy.setPosition(config->audio.frequencyGameBoy);
+  volume.setPosition(config->audio.volume);
 
-  frequencySlider.onChange = [this] {
-    config.audio.inputFrequency = frequencySlider.position() + 31000;
-    dspaudio.setFrequency(config.audio.inputFrequency);
-    frequencyValue.setText({ config.audio.inputFrequency, "hz" });
-  };
+  nes.slider.onChange = snes.slider.onChange = gameBoy.slider.onChange =
+  volume.slider.onChange =
+  { &AudioSettings::synchronize, this };
 
-  volumeSlider.onChange = [this] {
-    config.audio.volume = volumeSlider.position();
-    dspaudio.setVolume((double)config.audio.volume / 100.0);
-    volumeValue.setText({ config.audio.volume, "%" });
-  };
+  synchronize();
+}
 
-  balanceSlider.onChange = [this] {
-    config.audio.balance = balanceSlider.position();
-    dspaudio.setBalance((double)((signed)config.audio.balance - 100) / 100.0);
-    balanceValue.setText({ (signed)config.audio.balance - 100 });
-  };
+void AudioSettings::synchronize() {
+  config->audio.frequencyNES = nes.position();
+  config->audio.frequencySNES = snes.position();
+  config->audio.frequencyGameBoy = gameBoy.position();
+  config->audio.volume = volume.position();
 
-  frequencySlider.setPosition(config.audio.inputFrequency - 31000);
-  frequencyValue.setText({ config.audio.inputFrequency, "hz" });
+  nes.value.setText({ nes.position(), "hz" });
+  snes.value.setText({ snes.position(), "hz" });
+  gameBoy.value.setText({ gameBoy.position(), "hz" });
+  volume.value.setText({ volume.position(), "%" });
 
-  volumeSlider.setPosition(config.audio.volume);
-  volumeValue.setText({ config.audio.volume, "%" });
-
-  balanceSlider.setPosition(config.audio.balance);
-  balanceValue.setText({ (signed)config.audio.balance - 100 });
+  interface->updateDSP();
 }

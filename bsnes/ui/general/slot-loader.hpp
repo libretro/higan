@@ -1,49 +1,29 @@
-struct SingleSlotLoader : TopLevelWindow {
-  VerticalLayout layout;
-  HorizontalLayout baseLayout;
-  Label baseLabel;
-  LineEdit basePath;
-  Button baseBrowse;
-  HorizontalLayout slotLayout;
-  Label slotLabel;
-  LineEdit slotPath;
-  Button slotBrowse;
-  HorizontalLayout controlLayout;
-  Label spacer;
-  Button okButton;
+struct SlotLoaderPath : HorizontalLayout {
+  Label label;
+  LineEdit path;
+  Button browse;
 
-  void create();
-  void loadCartridgeBsxSlotted();
-  void loadCartridgeBsx();
-  void loadCartridgeSuperGameBoy();
+  string name;
+  lstring filter;
 
-  enum class Mode : unsigned { BsxSlotted, Bsx, SuperGameBoy } mode;
-  void load();
+  SlotLoaderPath();
 };
 
-struct DoubleSlotLoader : TopLevelWindow {
+struct SlotLoader : Window {
   VerticalLayout layout;
-  HorizontalLayout baseLayout;
-  Label baseLabel;
-  LineEdit basePath;
-  Button baseBrowse;
-  HorizontalLayout slotALayout;
-  Label slotALabel;
-  LineEdit slotAPath;
-  Button slotABrowse;
-  HorizontalLayout slotBLayout;
-  Label slotBLabel;
-  LineEdit slotBPath;
-  Button slotBBrowse;
+  SlotLoaderPath base;
+  SlotLoaderPath slot[2];
   HorizontalLayout controlLayout;
-  Label spacer;
-  Button okButton;
+    Widget spacer;
+    Button loadButton;
 
-  void create();
-  void loadCartridgeSufamiTurbo();
+  void synchronize();
+  void loadSatellaviewSlotted();
+  void loadSatellaview();
+  void loadSufamiTurbo();
+  void loadSuperGameBoy();
 
-  void load();
+  SlotLoader();
 };
 
-extern SingleSlotLoader singleSlotLoader;
-extern DoubleSlotLoader doubleSlotLoader;
+extern SlotLoader *slotLoader;

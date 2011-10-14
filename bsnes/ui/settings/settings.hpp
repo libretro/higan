@@ -1,16 +1,24 @@
-struct SettingsWindow : TopLevelWindow {
-  enum : unsigned { PanelWidth = 120 };
+struct SettingsLayout : HorizontalLayout {
+  Widget spacer;
+  VerticalLayout layout;
 
-  HorizontalLayout layout;
-  ListView panel;
-
-  void create();
-  void change();
+  void append(Sizable &widget, unsigned width, unsigned height, unsigned spacing = 0);
+  SettingsLayout();
 };
-
-extern SettingsWindow settingsWindow;
 
 #include "video.hpp"
 #include "audio.hpp"
 #include "input.hpp"
 #include "advanced.hpp"
+
+struct SettingsWindow : Window {
+  HorizontalLayout layout;
+  ListView panelList;
+
+  void setPanel(unsigned);
+
+  SettingsWindow();
+  ~SettingsWindow();
+};
+
+extern SettingsWindow *settingsWindow;

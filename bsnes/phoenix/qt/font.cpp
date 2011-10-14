@@ -1,33 +1,35 @@
-Geometry pFont::geometry(const string &text) {
-  QFontMetrics metrics(*qtFont);
+Geometry pFont::geometry(const string &description, const string &text) {
+  return pFont::geometry(pFont::create(description), text);
+}
+
+QFont pFont::create(const string &description) {
+  lstring part;
+  part.split(",", description);
+  for(auto &item : part) item.trim(" ");
+
+  string name = part[0] != "" ? part[0] : "Sans";
+  unsigned size = part.size() >= 2 ? decimal(part[1]) : 8u;
+  bool bold = part[2].position("Bold");
+  bool italic = part[2].position("Italic");
+
+  QFont qtFont;
+  qtFont.setFamily(name);
+  qtFont.setPointSize(size);
+  if(bold) qtFont.setBold(true);
+  if(italic) qtFont.setItalic(true);
+  return qtFont;
+}
+
+Geometry pFont::geometry(const QFont &qtFont, const string &text) {
+  QFontMetrics metrics(qtFont);
 
   lstring lines;
   lines.split("\n", text);
 
   unsigned maxWidth = 0;
-  foreach(line, lines) {
+  for(auto &line : lines) {
     maxWidth = max(maxWidth, metrics.width(line));
   }
 
   return { 0, 0, maxWidth, metrics.height() * lines.size() };
-}
-
-void pFont::setBold(bool bold) { update(); }
-void pFont::setFamily(const string &family) { update(); }
-void pFont::setItalic(bool italic) { update(); }
-void pFont::setSize(unsigned size) { update(); }
-void pFont::setUnderline(bool underline) { update(); }
-
-void pFont::constructor() {
-  qtFont = new QFont;
-  font.setFamily("Sans");
-  font.setSize(8);
-}
-
-void pFont::update() {
-  qtFont->setFamily(QString::fromUtf8(font.state.family));
-  qtFont->setPointSize(font.state.size);
-  qtFont->setBold(font.state.bold);
-  qtFont->setItalic(font.state.italic);
-  qtFont->setUnderline(font.state.underline);
 }

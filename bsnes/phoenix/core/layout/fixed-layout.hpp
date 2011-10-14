@@ -1,14 +1,26 @@
 struct FixedLayout : Layout {
-  void append(Widget &widget, const Geometry &geometry);
+  void append(Sizable &sizable, const Geometry &geometry);
+  void append(Sizable &sizable);
+  bool enabled();
+  Geometry minimumGeometry();
+  void remove(Sizable &sizable);
+  void reset();
+  void setEnabled(bool enabled = true);
   void setGeometry(const Geometry &geometry);
-  void setParent(Window &parent);
-  void setVisible(bool visible);
+  void setVisible(bool visible = true);
+  void synchronizeLayout();
+  bool visible();
   FixedLayout();
+  ~FixedLayout();
 
 //private:
-  Window *parent;
+  struct State {
+    bool enabled;
+    bool visible;
+  } state;
+
   struct Children {
-    Widget *widget;
+    Sizable *sizable;
     Geometry geometry;
   };
   nall::linear_vector<Children> children;
