@@ -29,12 +29,12 @@ obj/libsnes.o: $(ui)/libsnes.cpp $(ui)/*
 build: $(objects)
 ifeq ($(platform),x)
 	ar rcs out/libsnes.a $^
-	$(cpp) -o out/libsnes.so -shared -Wl,-soname,libsnes.so.$(libsnesRevisionMajor) $^
+	$(cpp) -o out/libsnes.so -shared -Wl,-soname,libsnes.so.$(libsnesRevisionMajor) -Wl,--version-script=$(ui)/version-script $^
 else ifeq ($(platform),osx)
 	ar rcs out/libsnes.a $^
 	$(cpp) -o out/libsnes.dylib -install_name @executable_path/../Libraries/libsnes.dylib -shared -dynamiclib $^
 else ifeq ($(platform),win)
-	$(cpp) -o out/snes.dll -shared -Wl,--out-implib,libsnes.a $^
+	$(cpp) -o out/snes.dll -shared -Wl,--out-implib,libsnes.a -Wl,--version-script=$(ui)/version-script $^
 endif
 
 install: build
