@@ -10,6 +10,7 @@ MainWindow::MainWindow() {
     cartridgeLoadSNES.setText("Load SNES Cartridge ...");
     cartridgeLoadNES.setText("Load NES Cartridge ...");
     cartridgeLoadGameBoy.setText("Load Game Boy Cartridge ...");
+    cartridgeLoadGameBoyColor.setText("Load Game Boy Color Cartridge ...");
     cartridgeLoadSatellaviewSlotted.setText("Load Satellaview-Slotted Cartridge ...");
     cartridgeLoadSatellaview.setText("Load Satellaview Cartridge ...");
     cartridgeLoadSufamiTurbo.setText("Load Sufami Turbo Cartridge ...");
@@ -99,6 +100,7 @@ MainWindow::MainWindow() {
     cartridgeMenu.append(cartridgeLoadNES);
     cartridgeMenu.append(cartridgeLoadSNES);
     cartridgeMenu.append(cartridgeLoadGameBoy);
+    cartridgeMenu.append(cartridgeLoadGameBoyColor);
     cartridgeMenu.append(cartridgeSeparator);
     cartridgeMenu.append(cartridgeLoadSatellaviewSlotted);
     cartridgeMenu.append(cartridgeLoadSatellaview);
@@ -211,7 +213,13 @@ MainWindow::MainWindow() {
 
   cartridgeLoadGameBoy.onTick = [&] {
     fileBrowser->open("Load Cartridge - Game Boy", FileBrowser::Mode::GameBoy, [](string filename) {
-      interface->gameBoy.loadCartridge(filename);
+      interface->gameBoy.loadCartridge(GameBoy::System::Revision::GameBoy, filename);
+    });
+  };
+
+  cartridgeLoadGameBoyColor.onTick = [&] {
+    fileBrowser->open("Load Cartridge - Game Boy Color", FileBrowser::Mode::GameBoyColor, [](string filename) {
+      interface->gameBoy.loadCartridge(GameBoy::System::Revision::GameBoyColor, filename);
     });
   };
 
@@ -289,7 +297,7 @@ MainWindow::MainWindow() {
 
   settingsMuteAudio.onTick = [&] {
     config->audio.mute = settingsMuteAudio.checked();
-    dspaudio.setVolume(config->audio.mute == false ? 1.0 : 0.0);
+    dspaudio.setVolume(config->audio.mute == false ? (double)config->audio.volume / 100.0 : 0.0);
   };
 
   settingsConfiguration.onTick = [&] { settingsWindow->setVisible(); };

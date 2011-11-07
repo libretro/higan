@@ -13,8 +13,9 @@ struct Config : public configuration {
     unsigned brightness;
     unsigned contrast;
     unsigned gamma;
-    bool gammaRamp;
+
     unsigned fullScreenMode;
+    unsigned compositionMode;
 
     bool startFullScreen;
   } video;
@@ -24,7 +25,10 @@ struct Config : public configuration {
     bool synchronize;
     bool mute;
     unsigned volume;
+    unsigned latency;
+    string resampler;
 
+    unsigned frequency;
     unsigned frequencyNES;
     unsigned frequencySNES;
     unsigned frequencyGameBoy;

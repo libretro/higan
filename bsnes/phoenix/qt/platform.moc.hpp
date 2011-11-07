@@ -45,6 +45,7 @@ struct pOS : public pObject {
   static bool pendingEvents();
   static void processEvents();
   static void quit();
+  static void syncX();
 
   static void initialize();
 };
@@ -281,8 +282,7 @@ public:
     QtCanvas(pCanvas &self);
   } *qtCanvas;
 
-  uint32_t* buffer();
-  void setGeometry(const Geometry &geometry);
+  void setSize(const Size &size);
   void update();
 
   pCanvas(Canvas &canvas) : pWidget(canvas), canvas(canvas) {}

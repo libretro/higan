@@ -1,17 +1,26 @@
 #include "palette.hpp"
 
-#include "nes.hpp"
-#include "snes.hpp"
-#include "gameboy.hpp"
+struct InterfaceCore {
+  virtual void power() = 0;
+  virtual void reset() = 0;
+  virtual void run() = 0;
+
+  virtual serializer serialize() = 0;
+  virtual bool unserialize(serializer&) = 0;
+};
+
+#include "nes/nes.hpp"
+#include "snes/snes.hpp"
+#include "gameboy/gameboy.hpp"
 
 struct Filter : public library {
   function<void (unsigned&, unsigned&)> dl_size;
-  function<void (uint16_t*, unsigned, const uint16_t*, unsigned, unsigned, unsigned)> dl_render;
-  void render(const uint16_t*, unsigned, unsigned, unsigned);
+  function<void (uint32_t*, unsigned, const uint32_t*, unsigned, unsigned, unsigned)> dl_render;
+  void render(const uint32_t*, unsigned, unsigned, unsigned);
   Filter();
   ~Filter();
 
-  uint16_t *data;
+  uint32_t *data;
   unsigned pitch;
   unsigned width;
   unsigned height;
@@ -47,11 +56,12 @@ struct Interface : property<Interface> {
   Interface();
 
   bool loadFile(const string &filename, uint8_t *&data, unsigned &size);
-  void videoRefresh(const uint16_t *input, unsigned inputPitch, unsigned width, unsigned height);
+  void videoRefresh(const uint32_t *input, unsigned inputPitch, unsigned width, unsigned height);
 
   string baseName;  // = "/path/to/cartridge" (no extension)
   lstring slotName;
 
+  InterfaceCore *core;
   InterfaceNES nes;
   InterfaceSNES snes;
   InterfaceGameBoy gameBoy;

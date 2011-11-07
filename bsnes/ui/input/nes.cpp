@@ -1,7 +1,7 @@
 int16_t NesGamepad::poll(unsigned n) {
   switch(n) {
-  case 0: return a.poll();
-  case 1: return b.poll();
+  case 0: return a.poll() | aTurbo.poll();
+  case 1: return b.poll() | bTurbo.poll();
   case 2: return select.poll();
   case 3: return start.poll();
   case 4: return up.poll() & !down.poll();
@@ -23,6 +23,8 @@ NesGamepad::NesGamepad() {
   a.name = "A";
   select.name = "Select";
   start.name = "Start";
+  bTurbo.name = "Turbo B";
+  aTurbo.name = "Turbo A";
 
   up.mapping = "KB0::Up";
   down.mapping = "KB0::Down";
@@ -33,8 +35,7 @@ NesGamepad::NesGamepad() {
   select.mapping = "KB0::Apostrophe";
   start.mapping = "KB0::Return";
 
-  append(up); append(down); append(left); append(right);
-  append(b); append(a); append(select); append(start);
+  append(up, down, left, right, b,a, select, start, bTurbo, aTurbo);
 }
 
 //
@@ -55,6 +56,5 @@ NesPort2Input::NesPort2Input() {
 
 NesInput::NesInput() {
   name = "NES";
-  append(port1);
-  append(port2);
+  append(port1, port1);
 }

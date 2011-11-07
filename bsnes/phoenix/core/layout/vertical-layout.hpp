@@ -1,5 +1,5 @@
 struct VerticalLayout : public Layout {
-  void append(Sizable &sizable, unsigned width, unsigned height, unsigned spacing = 0);
+  void append(Sizable &sizable, const Size &size, unsigned spacing = 0);
   void append(Sizable &sizable);
   bool enabled();
   Geometry minimumGeometry();
@@ -27,5 +27,5 @@ struct VerticalLayout : public Layout {
     Sizable *sizable;
     unsigned width, height, spacing;
   };
-  nall::linear_vector<Children> children;
+  nall::vector<Children> children;
 };

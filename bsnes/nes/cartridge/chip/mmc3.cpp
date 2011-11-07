@@ -89,6 +89,55 @@ void ram_write(unsigned addr, uint8 data) {
   if(ram_enable && !ram_write_protect) board.prgram.data[addr & 0x1fff] = data;
 }
 
+void reg_write(unsigned addr, uint8 data) {
+  switch(addr & 0xe001) {
+  case 0x8000:
+    chr_mode = data & 0x80;
+    prg_mode = data & 0x40;
+    bank_select = data & 0x07;
+    break;
+
+  case 0x8001:
+    switch(bank_select) {
+    case 0: chr_bank[0] = data & ~1; break;
+    case 1: chr_bank[1] = data & ~1; break;
+    case 2: chr_bank[2] = data; break;
+    case 3: chr_bank[3] = data; break;
+    case 4: chr_bank[4] = data; break;
+    case 5: chr_bank[5] = data; break;
+    case 6: prg_bank[0] = data & 0x3f; break;
+    case 7: prg_bank[1] = data & 0x3f; break;
+    }
+    break;
+
+  case 0xa000:
+    mirror = data & 0x01;
+    break;
+
+  case 0xa001:
+    ram_enable = data & 0x80;
+    ram_write_protect = data & 0x40;
+    break;
+
+  case 0xc000:
+    irq_latch = data;
+    break;
+
+  case 0xc001:
+    irq_counter = 0;
+    break;
+
+  case 0xe000:
+    irq_enable = false;
+    irq_line = 0;
+    break;
+
+  case 0xe001:
+    irq_enable = true;
+    break;
+  }
+}
+
 void power() {
 }
 

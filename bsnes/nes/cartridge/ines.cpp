@@ -41,9 +41,14 @@ static string iNES(const uint8_t *data, unsigned size) {
     break;
 
   case   4:
+    //MMC3
     output.append("\tboard type:NES-TLROM\n");
     output.append("\t\tchip type:MMC3B\n");
     prgram = 8192;
+    //MMC6
+    //output.append("\tboard type:NES-HKROM\n");
+    //output.append("\t\tchip type:MMC6\n");
+    //prgram = 1024;
     break;
 
   case   5:
@@ -76,10 +81,18 @@ static string iNES(const uint8_t *data, unsigned size) {
   case  21:
   case  23:
   case  25:
+    //VRC4
     output.append("\tboard type:KONAMI-VRC-4\n");
     output.append("\t\tchip type:VRC4\n");
     output.append("\t\t\tpinout a0=1 a1=0\n");
     prgram = 8192;
+    break;
+
+  case  22:
+    //VRC2
+    output.append("\tboard type:KONAMI-VRC-2\n");
+    output.append("\t\tchip type:VRC2\n");
+    output.append("\t\t\tpinout a0=0 a1=1\n");
     break;
 
   case  24:
@@ -107,6 +120,18 @@ static string iNES(const uint8_t *data, unsigned size) {
     output.append("\tboard type:SUNSOFT-5B\n");
     output.append("\t\tchip type:5B\n");
     prgram = 8192;
+    break;
+
+  case  73:
+    output.append("\tboard type:KONAMI-VRC-3\n");
+    output.append("\t\tchip type:VRC3\n");
+    output.append("\t\tmirror:", mirror == 0 ? "horizontal" : "vertical", "\n");
+    prgram = 8192;
+    break;
+
+  case  75:
+    output.append("\tboard type:KONAMI-VRC-1\n");
+    output.append("\t\tchip type:VRC1\n");
     break;
 
   case  85:

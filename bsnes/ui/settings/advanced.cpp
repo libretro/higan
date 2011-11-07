@@ -16,7 +16,7 @@ AdvancedSettings::AdvancedSettings() {
   RadioBox::group(focusPolicy[0], focusPolicy[1], focusPolicy[2]);
   focusPolicy[config->input.focusPolicy].setChecked();
   aboutLabel.setFont(application->boldFont);
-  aboutLabel.setText("bsnes    author: byuu    license: GPLv3    website: http://byuu.org/");
+  aboutLabel.setText("bsnes    author: byuu    license: GPLv3    website: byuu.org");
 
   lstring list;
 
@@ -41,22 +41,22 @@ AdvancedSettings::AdvancedSettings() {
     if(list[n] == input.default_driver() && config->input.driver == "") inputDriver.setSelection(n);
   }
 
-  append(title, ~0, 0, 5);
-  append(driverLabel, ~0, 0);
-  append(driverLayout, ~0, 0, 5);
-    driverLayout.append(videoLabel, 0, 0, 5);
-    driverLayout.append(videoDriver, ~0, 0, 5);
-    driverLayout.append(audioLabel, 0, 0, 5);
-    driverLayout.append(audioDriver, ~0, 0, 5);
-    driverLayout.append(inputLabel, 0, 0, 5);
-    driverLayout.append(inputDriver, ~0, 0);
-  append(focusPolicyLabel, ~0, 0);
-  append(focusPolicyLayout, ~0, 0, 5);
-    focusPolicyLayout.append(focusPolicy[0], ~0, 0, 5);
-    focusPolicyLayout.append(focusPolicy[1], ~0, 0, 5);
-    focusPolicyLayout.append(focusPolicy[2], ~0, 0);
-  append(spacer, ~0, ~0);
-  append(aboutLabel, ~0, 0);
+  append(title,                              { ~0,  0 }, 5);
+  append(driverLabel,                        { ~0,  0 }, 0);
+  append(driverLayout,                       { ~0,  0 }, 5);
+    driverLayout.append(videoLabel,          {  0,  0 }, 5);
+    driverLayout.append(videoDriver,         { ~0,  0 }, 5);
+    driverLayout.append(audioLabel,          {  0,  0 }, 5);
+    driverLayout.append(audioDriver,         { ~0,  0 }, 5);
+    driverLayout.append(inputLabel,          {  0,  0 }, 5);
+    driverLayout.append(inputDriver,         { ~0,  0 }, 0);
+  append(focusPolicyLabel,                   { ~0,  0 }, 0);
+  append(focusPolicyLayout,                  { ~0,  0 }, 5);
+    focusPolicyLayout.append(focusPolicy[0], { ~0,  0 }, 5);
+    focusPolicyLayout.append(focusPolicy[1], { ~0,  0 }, 5);
+    focusPolicyLayout.append(focusPolicy[2], { ~0,  0 }, 0);
+  append(spacer,                             { ~0, ~0 }, 0);
+  append(aboutLabel,                         { ~0,  0 }, 0);
 
   videoDriver.onChange = [&] {
     lstring list;

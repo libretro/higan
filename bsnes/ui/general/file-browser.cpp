@@ -10,14 +10,14 @@ FileBrowser::FileBrowser() {
   openButton.setText("Open");
 
   append(layout);
-    layout.append(pathLayout, ~0, 0, 5);
-      pathLayout.append(pathEdit, ~0, 0, 5);
-      pathLayout.append(pathBrowse, 0, 0, 5);
-      pathLayout.append(pathUp, 0, 0);
-    layout.append(fileList, ~0, ~0, 5);
-    layout.append(controlLayout, ~0, 0);
-      controlLayout.append(filterLabel, ~0, 0, 5);
-      controlLayout.append(openButton, 80, 0);
+    layout.append(pathLayout, { ~0, 0 }, 5);
+      pathLayout.append(pathEdit, { ~0, 0 }, 5);
+      pathLayout.append(pathBrowse, { 0, 0 }, 5);
+      pathLayout.append(pathUp, { 0, 0 });
+    layout.append(fileList, { ~0, ~0 }, 5);
+    layout.append(controlLayout, { ~0, 0 });
+      controlLayout.append(filterLabel, { ~0, 0 }, 5);
+      controlLayout.append(openButton, { 80, 0 });
 
   pathEdit.onActivate = [&] {
     string path = pathEdit.text();
@@ -39,19 +39,26 @@ FileBrowser::FileBrowser() {
     setPath(path);
   };
 
+  fileList.onChange = { &FileBrowser::synchronize, this };
   fileList.onActivate = openButton.onTick = { &FileBrowser::fileListActivate, this };
 
-  filterModes[Mode::Default    ] = { "Default",     "", { "*" } };
-  filterModes[Mode::NES        ] = { "NES",         "", { "*.fc", "*.nes" } };
-  filterModes[Mode::SNES       ] = { "SNES",        "", { "*.sfc" } };
-  filterModes[Mode::GameBoy    ] = { "GameBoy",     "", { "*.gb", "*.gbc" } };
-  filterModes[Mode::Satellaview] = { "Satellaview", "", { "*.bs" } };
-  filterModes[Mode::SufamiTurbo] = { "SufamiTurbo", "", { "*.st" } };
+  filterModes.append({ "Default",      "", { "*" } });
+  filterModes.append({ "NES",          "", { "*.fc", "*.nes" } });
+  filterModes.append({ "SNES",         "", { "*.sfc" } });
+  filterModes.append({ "GameBoy",      "", { "*.gb", "*.gbc" } });
+  filterModes.append({ "GameBoyColor", "", { "*.gbc" } });
+  filterModes.append({ "Satellaview",  "", { "*.bs" } });
+  filterModes.append({ "SufamiTurbo",  "", { "*.st" } });
   mode = &filterModes[Mode::Default];
 
   for(auto &mode : filterModes) config.attach(mode.path, mode.name);
   config.load(application->path("paths.cfg"));
   config.save(application->path("paths.cfg"));
+  synchronize();
+}
+
+void FileBrowser::synchronize() {
+  openButton.setEnabled(fileList.selected());
 }
 
 FileBrowser::~FileBrowser() {
@@ -102,6 +109,7 @@ void FileBrowser::setPath(const string &path) {
   for(auto &fileName : fileNameList) fileList.append(fileName);
   fileList.setSelection(0);
   fileList.setFocused();
+  synchronize();
 }
 
 void FileBrowser::fileListActivate() {

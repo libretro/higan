@@ -9,7 +9,7 @@ struct FileBrowser : Window {
   Label filterLabel;
   Button openButton;
 
-  struct Mode { enum : unsigned { Default, NES, SNES, GameBoy, Satellaview, SufamiTurbo }; };
+  struct Mode { enum : unsigned { Default, NES, SNES, GameBoy, GameBoyColor, Satellaview, SufamiTurbo }; };
   void open(const string &title, unsigned mode, function<void (string)> callback);
 
   FileBrowser();
@@ -22,11 +22,12 @@ private:
     string path;
     lstring filter;
   } *mode;
-  linear_vector<FilterMode> filterModes;
+  vector<FilterMode> filterModes;
 
   lstring fileNameList;
   function<void (string)> callback;
 
+  void synchronize();
   void setPath(const string &path);
   void fileListActivate();
   bool loadFolder(const string &path);

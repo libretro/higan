@@ -36,6 +36,11 @@ namespace nall {
 
     inline unsigned length() const;
 
+    template<unsigned Limit = 0> inline lstring split(const char*) const;
+    template<unsigned Limit = 0> inline lstring isplit(const char*) const;
+    template<unsigned Limit = 0> inline lstring qsplit(const char*) const;
+    template<unsigned Limit = 0> inline lstring iqsplit(const char*) const;
+
     inline bool equals(const char*) const;
     inline bool iequals(const char*) const;
 
@@ -102,9 +107,7 @@ namespace nall {
   #endif
   };
 
-  struct lstring : public linear_vector<string> {
-    template<typename T> inline lstring& operator<<(T value);
-
+  struct lstring : vector<string> {
     inline optional<unsigned> find(const char*) const;
     template<unsigned Limit = 0> inline lstring& split(const char*, const char*);
     template<unsigned Limit = 0> inline lstring& isplit(const char*, const char*);
@@ -172,6 +175,9 @@ namespace nall {
   inline unsigned strlcat(string &dest, const char *src, unsigned length);
   inline string substr(const char *src, unsigned start = 0, unsigned length = ~0u);
   inline string sha256(const uint8_t *data, unsigned size);
+
+  inline char* integer(char *result, intmax_t value);
+  inline char* decimal(char *result, uintmax_t value);
 
   template<unsigned length = 0, char padding = ' '> inline string integer(intmax_t value);
   template<unsigned length = 0, char padding = ' '> inline string linteger(intmax_t value);

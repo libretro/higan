@@ -53,7 +53,7 @@ static string pOS_fileDialog(bool save, Window &parent, const string &path, cons
   for(auto &filterItem : filter) {
     lstring part;
     part.split("(", filterItem);
-    if(part.size() != 2) { print("--", filterItem, "\n"); continue; }
+    if(part.size() != 2) continue;
     part[1].rtrim<1>(")");
     part[1].replace(" ", "");
     part[1].transform(",", ";");
@@ -153,23 +153,10 @@ void OS_processDialogMessage(MSG &msg) {
     OS_keyboardProc(msg.hwnd, msg.message, msg.wParam, msg.lParam);
   }
 
-  wchar_t className[256];
-  GetClassName(msg.hwnd, className, 255);
-
-  //if this HWND accepts tabs to move between controls ...
-  if(!wcscmp(className, L"BUTTON")       //Button, CheckBox, RadioBox
-  || !wcscmp(className, L"COMBOBOX")     //ComboBox
-  || !wcscmp(className, L"EDIT")         //HexEdit, LineEdit, TextEdit
-  || !wcscmp(className, L"SCROLLBAR")    //HorizontalScrollBar, VerticalScrollBar
-  || !wcscmp(className, TRACKBAR_CLASS)  //HorizontalSlider, VerticalSlider
-  || !wcscmp(className, WC_LISTVIEW)     //ListView
-  ) {
-    //... return if the message is a dialog command
-    if(IsDialogMessage(msg.hwnd, &msg)) return;
+  if(!IsDialogMessage(GetForegroundWindow(), &msg)) {
+    TranslateMessage(&msg);
+    DispatchMessage(&msg);
   }
-
-  TranslateMessage(&msg);
-  DispatchMessage(&msg);
 }
 
 void pOS::quit() {
@@ -195,7 +182,7 @@ void pOS::initialize() {
 
   wc.cbClsExtra = 0;
   wc.cbWndExtra = 0;
-  wc.hbrBackground = CreateSolidBrush(RGB(0, 0, 0));
+  wc.hbrBackground = GetSysColorBrush(COLOR_3DFACE);
   wc.hCursor = LoadCursor(0, IDC_ARROW);
   wc.hIcon = LoadIcon(0, IDI_APPLICATION);
   wc.hInstance = GetModuleHandle(0);
@@ -299,6 +286,7 @@ static LRESULT CALLBACK OS_windowProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM
     //mmi->ptMinTrackSize.x = 256 + window.p.frameMargin().width;
     //mmi->ptMinTrackSize.y = 256 + window.p.frameMargin().height;
     //return TRUE;
+      break;
     }
 
     case WM_ERASEBKGND: {
@@ -320,6 +308,7 @@ static LRESULT CALLBACK OS_windowProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM
         SetBkColor((HDC)wparam, window.p.brushColor);
         return (INT_PTR)window.p.brush;
       }
+      break;
     }
 
     case WM_COMMAND: {
@@ -378,6 +367,7 @@ static LRESULT CALLBACK OS_windowProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM
           }
         }
       }
+      break;
     }
 
     case WM_NOTIFY: {
@@ -397,22 +387,22 @@ static LRESULT CALLBACK OS_windowProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM
             if(listView.p.locked == false && listView.onTick) listView.onTick(nmlistview->iItem);
           } else if((nmlistview->uOldState & LVIS_FOCUSED) && !(nmlistview->uNewState & LVIS_FOCUSED)) {
             listView.p.lostFocus = true;
-          } else {
-            if(!(nmlistview->uOldState & LVIS_SELECTED) && (nmlistview->uNewState & LVIS_SELECTED)) {
-              listView.state.selected = true;
-              listView.state.selection = listView.selection();
-              if(listView.p.locked == false && listView.onChange) listView.onChange();
-            } else if(listView.p.lostFocus == false && listView.selected() == false) {
-              listView.state.selected = true;
-              listView.state.selection = listView.selection();
-              if(listView.p.locked == false && listView.onChange) listView.onChange();
-            }
+          } else if(!(nmlistview->uOldState & LVIS_SELECTED) && (nmlistview->uNewState & LVIS_SELECTED)) {
             listView.p.lostFocus = false;
+            listView.state.selected = true;
+            listView.state.selection = listView.selection();
+            if(listView.p.locked == false && listView.onChange) listView.onChange();
+          } else if(listView.p.lostFocus == false && listView.selected() == false) {
+            listView.p.lostFocus = false;
+            listView.state.selected = false;
+            listView.state.selection = 0;
+            if(listView.p.locked == false && listView.onChange) listView.onChange();
           }
         } else if(nmhdr->code == LVN_ITEMACTIVATE) {
           if(listView.onActivate) listView.onActivate();
         }
       }
+      break;
     }
 
     case WM_HSCROLL:
@@ -482,6 +472,8 @@ static LRESULT CALLBACK OS_windowProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM
           if(verticalSlider.onChange) verticalSlider.onChange();
         }
       }
+
+      break;
     }
   }
 

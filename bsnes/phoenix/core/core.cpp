@@ -13,6 +13,7 @@
   #include "../reference/platform.cpp"
 #endif
 
+static bool OS_quit = false;
 Window Window::None;
 
 //Font
@@ -24,6 +25,85 @@ Geometry Font::geometry(const string &text) {
 
 Font::Font(const string &description):
 description(description) {
+}
+
+//Image
+//=====
+
+bool Image::load(const string &filename, const Color &alpha) {
+  if(data) { delete[] data; data = nullptr; }
+
+  file fp;
+  if(fp.open(filename, file::mode::read) == false) return false;
+  uint8_t d0 = fp.read();
+  uint8_t d1 = fp.read();
+  uint8_t d2 = fp.read();
+  uint8_t d3 = fp.read();
+  fp.close();
+
+  if(d0 == 'B' && d1 == 'M') {
+    bmp::read(filename, data, width, height);
+  }
+
+  if(d0 == 0x89 && d1 == 'P' && d2 == 'N' && d3 == 'G') {
+    png image;
+    if(image.decode(filename)) {
+      image.alphaTransform((alpha.red << 16) + (alpha.green << 8) + (alpha.blue << 0));
+      width = image.info.width, height = image.info.height;
+      data = new uint32_t[width * height];
+      memcpy(data, image.data, width * height * sizeof(uint32_t));
+    }
+  }
+
+  return data;
+}
+
+void Image::load(const uint32_t *data, const Size &size) {
+  if(data) { delete[] data; data = nullptr; }
+  width = size.width, height = size.height;
+  this->data = new uint32_t[width * height];
+  memcpy(this->data, data, width * height * sizeof(uint32_t));
+}
+
+Image& Image::operator=(const Image &source) {
+  if(this == &source) return *this;
+  if(data) { delete[] data; data = nullptr; }
+  if(source.data == nullptr) return *this;
+  width = source.width, height = source.height;
+  data = new uint32_t[width * height];
+  memcpy(data, source.data, width * height * sizeof(uint32_t));
+  return *this;
+}
+
+Image& Image::operator=(Image &&source) {
+  if(this == &source) return *this;
+  if(data) { delete[] data; data = nullptr; }
+  data = source.data, width = source.width, height = source.height;
+  source.data = nullptr;
+  return *this;
+}
+
+Image::Image() : data(nullptr) {
+}
+
+Image::Image(const string &filename, const Color &alpha) : data(nullptr) {
+  load(filename, alpha);
+}
+
+Image::Image(const uint32_t *data, const Size &size) {
+  load(data, size);
+}
+
+Image::Image(const Image &source) : data(nullptr) {
+  operator=(source);
+}
+
+Image::Image(Image &&source) : data(nullptr) {
+  operator=(std::forward<Image>(source));
+}
+
+Image::~Image() {
+  if(data) delete[] data;
 }
 
 //Object
@@ -80,6 +160,7 @@ void OS::processEvents() {
 }
 
 void OS::quit() {
+  OS_quit = true;
   return pOS::quit();
 }
 
@@ -159,7 +240,6 @@ void Window::append(Widget &widget) {
   if(state.widget.append(widget)) {
     ((Sizable&)widget).state.window = this;
     p.append(widget);
-    synchronizeLayout();
   }
 }
 
@@ -282,6 +362,7 @@ void Window::setTitle(const string &text) {
 
 void Window::setVisible(bool visible) {
   state.visible = visible;
+  synchronizeLayout();
   return p.setVisible(visible);
 }
 
@@ -295,7 +376,11 @@ string Window::statusText() {
 }
 
 void Window::synchronizeLayout() {
-  setGeometry(geometry());
+  if(visible() && OS_quit == false) setGeometry(geometry());
+}
+
+bool Window::visible() {
+  return state.visible;
 }
 
 Window::Window():
@@ -524,8 +609,6 @@ void Layout::append(Sizable &sizable) {
     Widget &widget = (Widget&)sizable;
     if(sizable.window()) sizable.window()->append(widget);
   }
-
-  if(window()) window()->synchronizeLayout();
 }
 
 void Layout::remove(Sizable &sizable) {
@@ -536,8 +619,6 @@ void Layout::remove(Sizable &sizable) {
 
   sizable.state.layout = 0;
   sizable.state.window = 0;
-
-  if(window()) window()->synchronizeLayout();
 }
 
 Layout::Layout():
@@ -654,8 +735,29 @@ Button::~Button() {
 //Canvas
 //======
 
-uint32_t* Canvas::buffer() {
-  return p.buffer();
+uint32_t* Canvas::data() {
+  return state.data;
+}
+
+bool Canvas::setImage(const Image &image) {
+  if(image.data == nullptr || image.width == 0 || image.height == 0) return false;
+  state.width = image.width;
+  state.height = image.height;
+  setSize({ state.width, state.height });
+  memcpy(state.data, image.data, state.width * state.height * sizeof(uint32_t));
+  return true;
+}
+
+void Canvas::setSize(const Size &size) {
+  state.width = size.width;
+  state.height = size.height;
+  delete[] state.data;
+  state.data = new uint32_t[size.width * size.height];
+  return p.setSize(size);
+}
+
+Size Canvas::size() {
+  return { state.width, state.height };
 }
 
 void Canvas::update() {
@@ -663,14 +765,18 @@ void Canvas::update() {
 }
 
 Canvas::Canvas():
+state(*new State),
 base_from_member<pCanvas&>(*new pCanvas(*this)),
 Widget(base_from_member<pCanvas&>::value),
 p(base_from_member<pCanvas&>::value) {
+  state.data = new uint32_t[state.width * state.height];
   p.constructor();
 }
 
 Canvas::~Canvas() {
   p.destructor();
+  delete[] state.data;
+  delete &state;
 }
 
 //CheckBox

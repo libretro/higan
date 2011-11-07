@@ -1,21 +1,21 @@
 #include "../base.hpp"
 #include "palette.cpp"
-#include "nes.cpp"
-#include "snes.cpp"
-#include "gameboy.cpp"
-Interface *interface = 0;
+#include "nes/nes.cpp"
+#include "snes/snes.cpp"
+#include "gameboy/gameboy.cpp"
+Interface *interface = nullptr;
 
 Filter filter;
 
-void Filter::render(const uint16_t *input, unsigned inputPitch, unsigned inputWidth, unsigned inputHeight) {
+void Filter::render(const uint32_t *input, unsigned inputPitch, unsigned inputWidth, unsigned inputHeight) {
   width = inputWidth, height = inputHeight;
   dl_size(width, height);
   dl_render(data, pitch, input, inputPitch, inputWidth, inputHeight);
 }
 
 Filter::Filter() {
-  data = new uint16_t[2048 * 2048];
-  pitch = 2048 * sizeof(uint16_t);
+  data = new uint32_t[2048 * 2048];
+  pitch = 2048 * sizeof(uint32_t);
 }
 
 Filter::~Filter() {
@@ -44,7 +44,15 @@ void Interface::setController(unsigned port, unsigned device) {
 }
 
 void Interface::updateDSP() {
+  audio.set(Audio::Frequency, config->audio.frequency);
+  audio.set(Audio::Latency, config->audio.latency);
+
+  if(config->audio.resampler == "linear" ) dspaudio.setResampler(DSP::ResampleEngine::Linear);
+  if(config->audio.resampler == "hermite") dspaudio.setResampler(DSP::ResampleEngine::Hermite);
+  if(config->audio.resampler == "sinc"   ) dspaudio.setResampler(DSP::ResampleEngine::Sinc);
+  dspaudio.setResamplerFrequency(config->audio.frequency);
   dspaudio.setVolume(config->audio.mute == false ? (double)config->audio.volume / 100.0 : 0.0);
+
   switch(mode()) {
   case Mode::NES:     return dspaudio.setFrequency(config->audio.frequencyNES);
   case Mode::SNES:    return dspaudio.setFrequency(config->audio.frequencySNES);
@@ -63,6 +71,13 @@ bool Interface::cartridgeLoaded() {
 
 void Interface::loadCartridge(Mode mode) {
   utility->setMode(this->mode = mode);
+  switch(mode) {
+  case Mode::NES: core = &nes; break;
+  case Mode::SNES: core = &snes; break;
+  case Mode::GameBoy: core = &gameBoy; break;
+  default: core = nullptr; break;
+  }
+
   bindControllers();
   cheatEditor->load({ baseName, ".cht" });
   stateManager->load({ baseName, ".bsa" }, 0u);
@@ -74,8 +89,8 @@ bool Interface::loadCartridge(const string &filename) {
   bool result = false;
   if(filename.endswith(".nes")) result = nes.loadCartridge(filename);
   if(filename.endswith(".sfc")) result = snes.loadCartridge(filename);
-  if(filename.endswith(".gb" )) result = gameBoy.loadCartridge(filename);
-  if(filename.endswith(".gbc")) result = gameBoy.loadCartridge(filename);
+  if(filename.endswith(".gb" )) result = gameBoy.loadCartridge(GameBoy::System::Revision::GameBoy, filename);
+  if(filename.endswith(".gbc")) result = gameBoy.loadCartridge(GameBoy::System::Revision::GameBoyColor, filename);
   return result;
 }
 
@@ -98,69 +113,50 @@ void Interface::unloadCartridge() {
 }
 
 void Interface::power() {
-  switch(mode()) {
-  case Mode::NES:     nes.power(); break;
-  case Mode::SNES:    snes.power(); break;
-  case Mode::GameBoy: gameBoy.power(); break;
-  }
+  if(core == nullptr) return;
+  core->power();
   utility->showMessage("System power was cycled");
 }
 
 void Interface::reset() {
-  switch(mode()) {
-  case Mode::NES:     nes.reset(); break;
-  case Mode::SNES:    snes.reset(); break;
-  case Mode::GameBoy: gameBoy.power(); break;  //Game Boy lacks reset button
-  }
+  if(core == nullptr) return;
+  core->reset();
   utility->showMessage("System was reset");
 }
 
 void Interface::run() {
-  switch(mode()) {
-  case Mode::NES:     return nes.run();
-  case Mode::SNES:    return snes.run();
-  case Mode::GameBoy: return gameBoy.run();
-  }
+  if(core == nullptr) return;
+  core->run();
 }
 
 serializer Interface::serialize() {
-  switch(mode()) {
-  case Mode::NES:     return nes.serialize();
-  case Mode::SNES:    return snes.serialize();
-  case Mode::GameBoy: return gameBoy.serialize();
-  }
-  return serializer();
+  if(core == nullptr) return serializer();
+  return core->serialize();
 }
 
 bool Interface::unserialize(serializer &s) {
-  switch(mode()) {
-  case Mode::NES:     return nes.unserialize(s);
-  case Mode::SNES:    return snes.unserialize(s);
-  case Mode::GameBoy: return gameBoy.unserialize(s);
-  }
-  return false;
+  if(core == nullptr) return false;
+  return core->unserialize(s);
 }
 
 bool Interface::saveState(unsigned slot) {
   string filename = { baseName, "-", slot, ".bst" };
-  bool result = false;
-  switch(mode()) {
-  case Mode::NES:     result = nes.saveState(filename); break;
-  case Mode::SNES:    result = snes.saveState(filename); break;
-  case Mode::GameBoy: result = gameBoy.saveState(filename); break;
-  }
+  serializer s = serialize();
+  bool result = file::write(filename, s.data(), s.size());
   utility->showMessage(result == true ? string{ "Saved state ", slot } : "Failed to save state");
   return result;
 }
 
 bool Interface::loadState(unsigned slot) {
   string filename = { baseName, "-", slot, ".bst" };
-  bool result = false;
-  switch(mode()) {
-  case Mode::NES:     result = nes.loadState(filename); break;
-  case Mode::SNES:    result = snes.loadState(filename); break;
-  case Mode::GameBoy: result = gameBoy.loadState(filename); break;
+  uint8_t *data;
+  unsigned size;
+  if(file::read(filename, data, size) == false) {
+    utility->showMessage(string{ "Slot ", slot, " save file not found" });
+    return false;
   }
+  serializer s(data, size);
+  bool result = unserialize(s);
   utility->showMessage(result == true ? string{ "Loaded state ", slot } : "Failed to load state");
   return result;
 }
@@ -182,12 +178,12 @@ string Interface::sha256() {
   return "{None}";
 }
 
-Interface::Interface() {
+Interface::Interface() : core(nullptr) {
   mode = Mode::None;
   palette.update();
-  nes.initialize(&nes);
-  snes.initialize(&snes);
-  gameBoy.initialize(&gameBoy);
+  nes.initialize();
+  snes.initialize();
+  gameBoy.initialize();
 }
 
 //internal
@@ -215,8 +211,7 @@ bool Interface::loadFile(const string &filename, uint8_t *&data, unsigned &size)
   return true;
 }
 
-//RGB555 input
-void Interface::videoRefresh(const uint16_t *input, unsigned inputPitch, unsigned width, unsigned height) {
+void Interface::videoRefresh(const uint32_t *input, unsigned inputPitch, unsigned width, unsigned height) {
   uint32_t *output;
   unsigned outputPitch;
 
@@ -229,13 +224,14 @@ void Interface::videoRefresh(const uint16_t *input, unsigned inputPitch, unsigne
   }
 
   if(video.lock(output, outputPitch, width, height)) {
-    inputPitch >>= 1, outputPitch >>= 2;
+    inputPitch >>= 2, outputPitch >>= 2;
 
     for(unsigned y = 0; y < height; y++) {
-      const uint16_t *sp = input + y * inputPitch;
+      const uint32_t *sp = input + y * inputPitch;
       uint32_t *dp = output + y * outputPitch;
       for(unsigned x = 0; x < width; x++) {
-        *dp++ = palette[*sp++];
+        uint32_t color = *sp++;
+        *dp++ = (palette[color >> 16] << 16) + (palette[color >> 8] << 8) + (palette[color >> 0] << 0);
       }
     }
 

@@ -12,13 +12,15 @@ struct VideoSettings : SettingsLayout {
   VideoSlider brightness;
   VideoSlider contrast;
   VideoSlider gamma;
-  CheckBox gammaRamp;
   Label overscanAdjustment;
   VideoSlider overscanHorizontal;
   VideoSlider overscanVertical;
   Label fullScreenMode;
   HorizontalLayout fullScreenLayout;
   RadioBox fullScreen[3];
+  Label compositorLabel;
+  HorizontalLayout compositorLayout;
+  RadioBox compositor[3];
 
   void synchronize();
   VideoSettings();

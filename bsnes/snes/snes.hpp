@@ -106,10 +106,10 @@ namespace SNES {
     unsigned frequency;
     int64 clock;
 
-    inline void create(void (*entrypoint_)(), unsigned frequency_) {
+    inline void create(void (*entrypoint)(), unsigned frequency) {
       if(thread) co_delete(thread);
-      thread = co_create(65536 * sizeof(void*), entrypoint_);
-      frequency = frequency_;
+      thread = co_create(65536 * sizeof(void*), entrypoint);
+      this->frequency = frequency;
       clock = 0;
     }
 
@@ -118,12 +118,11 @@ namespace SNES {
       s.integer(clock);
     }
 
-    inline Processor() : thread(nullptr) {}
+    inline Processor() : thread(nullptr) {
+    }
 
     inline ~Processor() {
-      if (thread) {
-        co_delete(thread);
-      }
+      if(thread) co_delete(thread);
     }
   };
 
