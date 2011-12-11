@@ -17,6 +17,9 @@ objects += out/Scale2x.filter
 objects += out/LQ2x.filter
 objects += out/HQ2x.filter
 objects += out/Phosphor3x.filter
+objects += out/NTSC-Composite.filter
+objects += out/NTSC-RGB.filter
+objects += out/NTSC-SVideo.filter
 
 compile = $(cpp) $(link) $(flags) -o $@ -shared $<
 
@@ -31,6 +34,9 @@ out/Scale2x.filter: Scale2x/Scale2x.cpp Scale2x/*
 out/LQ2x.filter: LQ2x/LQ2x.cpp LQ2x/*
 out/HQ2x.filter: HQ2x/HQ2x.cpp HQ2x/*
 out/Phosphor3x.filter: Phosphor3x/Phosphor3x.cpp Phosphor3x/*
+out/NTSC-Composite.filter: NTSC/NTSC-Composite.cpp NTSC/* NTSC/snes_ntsc/*
+out/NTSC-RGB.filter: NTSC/NTSC-RGB.cpp NTSC/* NTSC/snes_ntsc/*
+out/NTSC-SVideo.filter: NTSC/NTSC-SVideo.cpp NTSC/* NTSC/snes_ntsc/*
 
 build: $(objects)
 
