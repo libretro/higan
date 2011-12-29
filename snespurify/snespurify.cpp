@@ -8,7 +8,6 @@ void MainWindow::create() {
   setTitle("SNES Purify v11");
 
   navigationLabel.setText("Path to scan:");
-  navigationScan.setEnabled(false);
   navigationScan.setText("Scan");
   navigationBrowse.setText("Browse ...");
 
@@ -19,7 +18,6 @@ void MainWindow::create() {
   controlSelectAll.setText("Select All");
   controlClearAll.setText("Clear All");
   controlDeleteFiles.setText("Delete ZIP, IPS, UPS files after conversion");
-  controlCorrect.setEnabled(false);
   controlCorrect.setText("Correct");
 
   layout.setMargin(5);
@@ -36,6 +34,10 @@ void MainWindow::create() {
   controlLayout.append(controlCorrect, 80, 0);
   layout.append(controlLayout);
   append(layout);
+
+  /* On Windows, setEnabled only works after a control is added to a layout. */
+  navigationScan.setEnabled(false);
+  controlCorrect.setEnabled(false);
 
   onClose = &OS::quit;
 
