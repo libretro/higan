@@ -6,6 +6,7 @@ static gint Window_close(GtkWidget *widget, GdkEvent *event, Window *window) {
 }
 
 static gboolean Window_expose(GtkWidget *widget, GdkEvent *event, Window *window) {
+  if(window->state.backgroundColorOverride == false) return false;
   cairo_t *context = gdk_cairo_create(widget->window);
 
   Color color = window->backgroundColor();
@@ -42,6 +43,7 @@ static gboolean Window_configure(GtkWidget *widget, GdkEvent *event, Window *win
     settings->frameGeometryY = client.y - border.y;
     settings->frameGeometryWidth = border.width - client.width;
     settings->frameGeometryHeight = border.height - client.height;
+    settings->save();
   }
 
   //move
@@ -240,6 +242,10 @@ void pWindow::constructor() {
   }
 
   gtk_window_set_resizable(GTK_WINDOW(widget), true);
+  #if GTK_MAJOR_VERSION >= 3
+  gtk_window_set_has_resize_grip(GTK_WINDOW(widget), false);
+  #endif
+
   gtk_widget_set_app_paintable(widget, true);
   gtk_widget_add_events(widget, GDK_CONFIGURE);
 

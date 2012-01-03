@@ -45,6 +45,9 @@ ifeq ($(arch),)
     arch := $(shell $(compiler) -dumpmachine)
 endif
 
+c := $(compiler) -std=gnu99
+cpp := $(subst cc,++,$(compiler)) -std=gnu++0x
+
 ifeq ($(prefix),)
   prefix := /usr/local
 endif

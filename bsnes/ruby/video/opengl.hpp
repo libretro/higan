@@ -38,7 +38,7 @@ public:
   bool shader_support;
 
   uint32_t *buffer;
-  unsigned iwidth, iheight;
+  unsigned iwidth, iheight, iformat, ibpp;
 
   void resize(unsigned width, unsigned height) {
     if(gltexture == 0) glGenTextures(1, &gltexture);
@@ -50,18 +50,18 @@ public:
     glBindTexture(GL_TEXTURE_2D, gltexture);
     glPixelStorei(GL_UNPACK_ROW_LENGTH, iwidth);
     glTexImage2D(GL_TEXTURE_2D,
-      /* mip-map level = */ 0, /* internal format = */ GL_RGBA,
+      /* mip-map level = */ 0, /* internal format = */ GL_RGB10_A2,
       iwidth, iheight, /* border = */ 0, /* format = */ GL_BGRA,
-      GL_UNSIGNED_INT_8_8_8_8_REV, buffer);
+      iformat, buffer);
   }
 
   bool lock(uint32_t *&data, unsigned &pitch) {
-    pitch = iwidth * sizeof(uint32_t);
+    pitch = iwidth * ibpp;
     return data = buffer;
   }
 
   void clear() {
-    memset(buffer, 0, iwidth * iheight * sizeof(uint32_t));
+    memset(buffer, 0, iwidth * iheight * ibpp);
     glClearColor(0.0, 0.0, 0.0, 1.0);
     glClear(GL_COLOR_BUFFER_BIT);
     glFlush();
@@ -100,7 +100,7 @@ public:
     glPixelStorei(GL_UNPACK_ROW_LENGTH, iwidth);
     glTexSubImage2D(GL_TEXTURE_2D,
       /* mip-map level = */ 0, /* x = */ 0, /* y = */ 0,
-      inwidth, inheight, GL_BGRA, GL_UNSIGNED_INT_8_8_8_8_REV, buffer);
+      inwidth, inheight, GL_BGRA, iformat, buffer);
 
     //OpenGL projection sets 0,0 as *bottom-left* of screen.
     //therefore, below vertices flip image to support top-left source.
@@ -140,11 +140,11 @@ public:
     }
 
     if(source) {
-      BML::Document document(source);
-      bool is_glsl = document["shader"]["language"].value == "GLSL";
-      fragmentfilter = document["shader"]["fragment"]["filter"].value == "linear" ? 1 : 0;
-      string fragment_source = document["shader"]["fragment"].value;
-      string vertex_source = document["shader"]["vertex"].value;
+      XML::Document document(source);
+      bool is_glsl = document["shader"]["language"].data == "GLSL";
+      fragmentfilter = document["shader"]["fragment"]["filter"].data == "linear" ? 1 : 0;
+      string fragment_source = document["shader"]["fragment"].data;
+      string vertex_source = document["shader"]["vertex"].data;
 
       if(is_glsl) {
         if(fragment_source != "") set_fragment_shader(fragment_source);

@@ -7,7 +7,7 @@ static void istring(string &output) {
 
 template<typename T, typename... Args>
 static void istring(string &output, const T &value, Args&&... args) {
-  output.append_(to_string(value));
+  output.append_(make_string(value));
   istring(output, std::forward<Args>(args)...);
 }
 
@@ -17,6 +17,10 @@ void string::reserve(unsigned size_) {
     data = (char*)realloc(data, size + 1);
     data[size] = 0;
   }
+}
+
+bool string::empty() const {
+  return !*data;
 }
 
 template<typename... Args> string& string::assign(Args&&... args) {

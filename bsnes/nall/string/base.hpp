@@ -23,6 +23,7 @@ namespace nall {
 
   struct string {
     inline void reserve(unsigned);
+    inline bool empty() const;
 
     template<typename... Args> inline string& assign(Args&&... args);
     template<typename... Args> inline string& append(Args&&... args);
@@ -35,6 +36,7 @@ namespace nall {
     template<unsigned Limit = 0> inline string& iqreplace(const char*, const char*);
 
     inline unsigned length() const;
+    inline unsigned capacity() const;
 
     template<unsigned Limit = 0> inline lstring split(const char*) const;
     template<unsigned Limit = 0> inline lstring isplit(const char*) const;
@@ -128,8 +130,6 @@ namespace nall {
   inline char chrlower(char c);
   inline char chrupper(char c);
   inline int istrcmp(const char *str1, const char *str2);
-  inline bool wildcard(const char *str, const char *pattern);
-  inline bool iwildcard(const char *str, const char *pattern);
   inline bool strbegin(const char *str, const char *key);
   inline bool istrbegin(const char *str, const char *key);
   inline bool strend(const char *str, const char *key);
@@ -185,11 +185,15 @@ namespace nall {
   template<unsigned length = 0, char padding = ' '> inline string ldecimal(uintmax_t value);
   template<unsigned length = 0, char padding = '0'> inline string hex(uintmax_t value);
   template<unsigned length = 0, char padding = '0'> inline string binary(uintmax_t value);
-  inline unsigned fp(char *str, double value);
-  inline string fp(double value);
+  inline unsigned fp(char *str, long double value);
+  inline string fp(long double value);
 
   //variadic.hpp
   template<typename... Args> inline void print(Args&&... args);
+
+  //wildcard.hpp
+  inline bool wildcard(const char *str, const char *pattern);
+  inline bool iwildcard(const char *str, const char *pattern);
 };
 
 #endif

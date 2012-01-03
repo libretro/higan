@@ -40,7 +40,7 @@ bool InterfaceSNES::loadCartridge(const string &basename) {
   interface->slotName = { nall::basename(basename) };
 
   string markup;
-  markup.readfile({ interface->baseName, ".bml" });
+  markup.readfile({ interface->baseName, ".xml" });
   if(markup == "") markup = SnesCartridge(data, size).markup;
 
   SNES::cartridge.rom.copy(data, size);
@@ -51,7 +51,7 @@ bool InterfaceSNES::loadCartridge(const string &basename) {
 
   loadMemory();
   interface->loadCartridge(::Interface::Mode::SNES);
-  SNES::video.generate(SNES::Video::Format::RGB24);
+  SNES::video.generate(SNES::Video::Format::RGB30);
   return true;
 }
 
@@ -67,7 +67,7 @@ bool InterfaceSNES::loadSatellaviewSlottedCartridge(const string &basename, cons
   interface->slotName = { nall::basename(basename), nall::basename(slotname) };
 
   string markup;
-  markup.readfile({ interface->baseName, ".bml" });
+  markup.readfile({ interface->baseName, ".xml" });
   if(markup == "") markup = SnesCartridge(data[0], size[0]).markup;
 
   SNES::cartridge.rom.copy(data[0], size[0]);
@@ -80,7 +80,7 @@ bool InterfaceSNES::loadSatellaviewSlottedCartridge(const string &basename, cons
 
   loadMemory();
   interface->loadCartridge(::Interface::Mode::SNES);
-  SNES::video.generate(SNES::Video::Format::RGB24);
+  SNES::video.generate(SNES::Video::Format::RGB30);
   return true;
 }
 
@@ -96,7 +96,7 @@ bool InterfaceSNES::loadSatellaviewCartridge(const string &basename, const strin
   interface->slotName = { nall::basename(basename), nall::basename(slotname) };
 
   string markup;
-  markup.readfile({ interface->baseName, ".bml" });
+  markup.readfile({ interface->baseName, ".xml" });
   if(markup == "") markup = SnesCartridge(data[0], size[0]).markup;
 
   SNES::cartridge.rom.copy(data[0], size[0]);
@@ -109,7 +109,7 @@ bool InterfaceSNES::loadSatellaviewCartridge(const string &basename, const strin
 
   loadMemory();
   interface->loadCartridge(::Interface::Mode::SNES);
-  SNES::video.generate(SNES::Video::Format::RGB24);
+  SNES::video.generate(SNES::Video::Format::RGB30);
   return true;
 }
 
@@ -128,7 +128,7 @@ bool InterfaceSNES::loadSufamiTurboCartridge(const string &basename, const strin
   interface->slotName = { nall::basename(basename), nall::basename(slotAname), nall::basename(slotBname) };
 
   string markup;
-  markup.readfile({ interface->baseName, ".bml" });
+  markup.readfile({ interface->baseName, ".xml" });
   if(markup == "") markup = SnesCartridge(data[0], size[0]).markup;
 
   SNES::cartridge.rom.copy(data[0], size[0]);
@@ -143,7 +143,7 @@ bool InterfaceSNES::loadSufamiTurboCartridge(const string &basename, const strin
 
   loadMemory();
   interface->loadCartridge(::Interface::Mode::SNES);
-  SNES::video.generate(SNES::Video::Format::RGB24);
+  SNES::video.generate(SNES::Video::Format::RGB30);
   return true;
 }
 
@@ -159,11 +159,11 @@ bool InterfaceSNES::loadSuperGameBoyCartridge(const string &basename, const stri
   interface->slotName = { nall::basename(basename), nall::basename(slotname) };
 
   string markup;
-  markup.readfile({ interface->baseName, ".bml" });
+  markup.readfile({ interface->baseName, ".xml" });
   if(markup == "") markup = SnesCartridge(data[0], size[0]).markup;
 
   string gbMarkup;
-  gbMarkup.readfile({ nall::basename(slotname), ".bml" });
+  gbMarkup.readfile({ nall::basename(slotname), ".xml" });
   if(gbMarkup == "") gbMarkup = GameBoyCartridge(data[1], size[1]).markup;
 
   SNES::cartridge.rom.copy(data[0], size[0]);
@@ -176,7 +176,7 @@ bool InterfaceSNES::loadSuperGameBoyCartridge(const string &basename, const stri
 
   loadMemory();
   interface->loadCartridge(::Interface::Mode::SNES);
-  SNES::video.generate(SNES::Video::Format::RGB24);
+  SNES::video.generate(SNES::Video::Format::RGB30);
   return true;
 }
 

@@ -34,12 +34,12 @@ CheatEditor::CheatEditor() {
   synchronize();
 
   cheatList.onChange = { &CheatEditor::synchronize, this };
-  cheatList.onTick = [&](unsigned) { updateInterface(); };
+  cheatList.onToggle = [&](unsigned) { updateInterface(); };
   codeEdit.onChange = { &CheatEditor::updateCode, this };
   descEdit.onChange = { &CheatEditor::updateDesc, this };
-  findButton.onTick = { &CheatDatabase::findCodes, cheatDatabase };
-  clearAllButton.onTick = { &CheatEditor::clearAll, this };
-  clearButton.onTick = { &CheatEditor::clearSelected, this };
+  findButton.onActivate = { &CheatDatabase::findCodes, cheatDatabase };
+  clearAllButton.onActivate = { &CheatEditor::clearAll, this };
+  clearButton.onActivate = { &CheatEditor::clearSelected, this };
 }
 
 void CheatEditor::synchronize() {
@@ -129,12 +129,12 @@ bool CheatEditor::load(const string &filename) {
   if(data.readfile(filename) == false) return false;
 
   unsigned n = 0;
-  BML::Document document(data);
+  XML::Document document(data);
   for(auto &cheat : document["cartridge"]) {
     if(cheat.name != "cheat") continue;
-    cheatList.setChecked(n, cheat["enable"].exists());
-    cheatText[n][Code] = cheat["code"].value;
-    cheatText[n][Desc] = cheat["description"].value;
+    cheatList.setChecked(n, cheat["enable"].data == "true");
+    cheatText[n][Code] = cheat["code"].data;
+    cheatText[n][Desc] = cheat["description"].data;
     if(++n >= 128) break;
   }
 
@@ -161,12 +161,15 @@ bool CheatEditor::save(const string &filename) {
   file fp;
   if(fp.open(filename, file::mode::write) == false) return false;
 
-  fp.print("cartridge sha256:", interface->sha256(), "\n");
+  fp.print("<?xml version='1.0' encoding='UTF-8'?>\n");
+  fp.print("<cartridge sha256='", interface->sha256(), "'>\n");
   for(unsigned n = 0; n <= lastSave; n++) {
-    fp.print("\tcheat", cheatList.checked(n) ? " enable" : "", "\n");
-    fp.print("\t\tdescription:", cheatText[n][Desc], "\n");
-    fp.print("\t\tcode:", cheatText[n][Code], "\n");
+    fp.print("  <cheat enable='", cheatList.checked(n) ? "true" : "false", "'>\n");
+    fp.print("    <description><![CDATA[", cheatText[n][Desc], "]]></description>\n");
+    fp.print("    <code><![CDATA[", cheatText[n][Code], "]]></code>\n");
+    fp.print("  </cheat>\n");
   }
+  fp.print("</cartridge>\n");
 
   fp.close();
   return true;

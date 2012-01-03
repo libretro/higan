@@ -1,16 +1,17 @@
 void pCanvas::setSize(const Size &size) {
   delete qtImage;
-  qtImage = new QImage(size.width, size.height, QImage::Format_RGB32);
+  qtImage = new QImage(size.width, size.height, QImage::Format_ARGB32);
 }
 
 void pCanvas::update() {
-  memcpy(qtImage->bits(), canvas.state.data, canvas.state.width * canvas.state.height * sizeof(uint32_t));
+  uint32_t *dp = (uint32_t*)qtImage->bits(), *sp = (uint32_t*)canvas.state.data;
+  for(unsigned n = 0; n < canvas.state.width * canvas.state.height; n++) *dp++ = 0xff000000 | *sp++;
   qtCanvas->update();
 }
 
 void pCanvas::constructor() {
   qtWidget = qtCanvas = new QtCanvas(*this);
-  qtImage = new QImage(canvas.state.width, canvas.state.height, QImage::Format_RGB32);
+  qtImage = new QImage(canvas.state.width, canvas.state.height, QImage::Format_ARGB32);
   memcpy(qtImage->bits(), canvas.state.data, canvas.state.width * canvas.state.height * sizeof(uint32_t));
 
   pWidget::synchronizeState();

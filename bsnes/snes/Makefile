@@ -30,7 +30,7 @@ else ifeq ($(profile),performance)
 endif
 
 obj/snes-interface.o : $(snes)/interface/interface.cpp $(call rwildcard,$(snes)/interface)
-obj/snes-system.o    : $(snes)/system/system.cpp $(call rwildcard,$(snes)/system/) $(call rwildcard,$(snes)/video/) $(call rwildcard,$(snes)/audio/) $(call rwildcard,$(snes)/input/)
+obj/snes-system.o    : $(snes)/system/system.cpp $(call rwildcard,$(snes)/system/)
 obj/snes-controller.o: $(snes)/controller/controller.cpp $(call rwildcard,$(snes)/controller/)
 obj/snes-memory.o    : $(snes)/memory/memory.cpp $(call rwildcard,$(snes)/memory/)
 obj/snes-cpucore.o   : $(snes)/cpu/core/core.cpp $(call rwildcard,$(snes)/cpu/core/)

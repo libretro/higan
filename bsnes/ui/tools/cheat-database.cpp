@@ -18,15 +18,15 @@ CheatDatabase::CheatDatabase() {
     controlLayout.append(spacer,            {  ~0,  0 }, 0);
     controlLayout.append(acceptButton,      {  80,  0 }, 0);
 
-  selectAllButton.onTick = [&] {
+  selectAllButton.onActivate = [&] {
     for(unsigned n = 0; n < cheatCode.size(); n++) cheatList.setChecked(n, true);
   };
 
-  unselectAllButton.onTick = [&] {
+  unselectAllButton.onActivate = [&] {
     for(unsigned n = 0; n < cheatCode.size(); n++) cheatList.setChecked(n, false);
   };
 
-  acceptButton.onTick = { &CheatDatabase::addCodes, this };
+  acceptButton.onActivate = { &CheatDatabase::addCodes, this };
 }
 
 void CheatDatabase::findCodes() {
@@ -34,18 +34,25 @@ void CheatDatabase::findCodes() {
   cheatCode.reset();
 
   string data;
-  data.readfile(application->path("cheats.bml"));
-  BML::Document document(data);
-  for(auto &root : document) {
-    if(root.name != "cartridge") continue;
-    if(root["sha256"].value != interface->sha256()) continue;
+  data.readfile(application->path("cheats.xml"));
+  XML::Document document(data);
+  for(auto &node : document["database"]) {
+    if(node.name != "cartridge") continue;
+    if(node["sha256"].data != interface->sha256()) continue;
 
-    setTitle(root["title"].value);
-    for(auto &cheat : root) {
+    setTitle(node["title"].data);
+    for(auto &cheat : node) {
       if(cheat.name != "cheat") continue;
-      if(cheat["description"].exists() == false || cheat["code"].exists() == false) continue;
-      cheatList.append(cheat["description"].value);
-      cheatCode.append({ cheat["code"].value, "\t", cheat["description"].value });
+      cheatList.append(cheat["description"].data);
+
+      string codeList;
+      for(auto &code : cheat) {
+        if(code.name != "code") continue;
+        codeList.append(code.data, "+");
+      }
+      codeList.rtrim<1>("+");
+
+      cheatCode.append({ codeList, "\t", cheat["description"].data });
     }
 
     setVisible();

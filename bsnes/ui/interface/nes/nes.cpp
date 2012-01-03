@@ -31,7 +31,7 @@ bool InterfaceNES::loadCartridge(const string &filename) {
   interface->baseName = nall::basename(filename);
 
   string markup;
-  markup.readfile({ interface->baseName, ".bml" });
+  markup.readfile({ interface->baseName, ".xml" });
 
   NES::cartridge.load(markup, data, size);
   NES::system.power();
@@ -45,7 +45,7 @@ bool InterfaceNES::loadCartridge(const string &filename) {
   }
 
   interface->loadCartridge(::Interface::Mode::NES);
-  NES::video.generate(NES::Video::Format::RGB24);
+  NES::video.generate(NES::Video::Format::RGB30);
   return true;
 }
 
