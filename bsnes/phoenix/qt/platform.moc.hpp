@@ -1,3 +1,6 @@
+#ifndef PHOENIX_PLATFORM_QT_HPP
+#define PHOENIX_PLATFORM_QT_HPP
+
 static QApplication *qtApplication = 0;
 
 struct Settings : public configuration {
@@ -585,3 +588,6 @@ struct pViewport : public pWidget {
   void destructor();
   void orphan();
 };
+
+#endif
+

@@ -11,6 +11,7 @@ ifeq ($(platform),x)
   ifeq ($(phoenix),qt)
     phoenixflags := -DPHOENIX_QT `pkg-config --cflags QtCore QtGui`
     phoenixlink := `pkg-config --libs QtCore QtGui`
+    phoenixdep := phoenix/qt/platform.moc
   endif
 else ifeq ($(platform),win)
   phoenixflags := -DPHOENIX_WINDOWS
