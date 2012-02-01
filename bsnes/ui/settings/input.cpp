@@ -88,7 +88,7 @@ void InputSettings::assignInput() {
   TertiaryInput &tinput = sinput[tertiary.selection()];
   activeInput = &tinput[inputList.selection()];
 
-  settingsWindow->setStatusText({ "Set asssignment for [", tinput.name, "::", activeInput->name, "] ..." });
+  settingsWindow->setStatusText({ "Set assignment for [", tinput.name, "::", activeInput->name, "] ..." });
   settingsWindow->panelList.setEnabled(false);
   primary.setEnabled(false);
   secondary.setEnabled(false);
