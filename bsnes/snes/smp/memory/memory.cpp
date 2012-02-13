@@ -19,7 +19,7 @@ void SMP::port_write(uint2 port, uint8 data) {
   apuram[0xf4 + port] = data;
 }
 
-alwaysinline uint8 SMP::op_busread(uint16 addr) {
+uint8 SMP::op_busread(uint16 addr) {
   unsigned result;
 
   switch(addr) {
@@ -73,7 +73,7 @@ alwaysinline uint8 SMP::op_busread(uint16 addr) {
   return ram_read(addr);
 }
 
-alwaysinline void SMP::op_buswrite(uint16 addr, uint8 data) {
+void SMP::op_buswrite(uint16 addr, uint8 data) {
   switch(addr) {
   case 0xf0:  //TEST
     if(regs.p.p) break;  //writes only valid when P flag is clear
@@ -181,6 +181,8 @@ void SMP::op_io() {
 }
 
 uint8 SMP::op_read(uint16 addr) {
+  debugger.op_read(addr);
+
   add_clocks(12);
   uint8 r = op_busread(addr);
   add_clocks(12);
@@ -189,6 +191,8 @@ uint8 SMP::op_read(uint16 addr) {
 }
 
 void SMP::op_write(uint16 addr, uint8 data) {
+  debugger.op_write(addr, data);
+
   add_clocks(24);
   op_buswrite(addr, data);
   cycle_edge();

@@ -25,7 +25,7 @@ struct CPU : public Processor, public CPUcore, public PPUcounter {
   CPU();
   ~CPU();
 
-private:
+privileged:
   #include "dma/dma.hpp"
   #include "memory/memory.hpp"
   #include "mmio/mmio.hpp"
@@ -132,14 +132,15 @@ private:
   } alu;
 
   static void Enter();
-  debugvirtual void op_step();
+  void op_step();
 
-  friend class CPUDebugger;
+  struct Debugger {
+    hook<void (uint24)> op_exec;
+    hook<void (uint24)> op_read;
+    hook<void (uint24, uint8)> op_write;
+    hook<void ()> op_nmi;
+    hook<void ()> op_irq;
+  } debugger;
 };
 
-#if defined(DEBUGGER)
-  #include "debugger/debugger.hpp"
-  extern CPUDebugger cpu;
-#else
-  extern CPU cpu;
-#endif
+extern CPU cpu;

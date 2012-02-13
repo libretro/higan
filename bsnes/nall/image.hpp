@@ -2,6 +2,7 @@
 #define NALL_IMAGE_HPP
 
 #include <nall/bmp.hpp>
+#include <nall/filemap.hpp>
 #include <nall/interpolation.hpp>
 #include <nall/png.hpp>
 #include <nall/stdint.hpp>
@@ -35,6 +36,7 @@ struct image {
   inline image(const image &source);
   inline image(image &&source);
   inline image(bool endian, unsigned depth, uint64_t alphaMask, uint64_t redMask, uint64_t greenMask, uint64_t blueMask);
+  inline image();
   inline ~image();
 
   inline uint64_t read(const uint8_t *data) const;
@@ -44,6 +46,8 @@ struct image {
   inline void allocate(unsigned width, unsigned height);
   inline void clear(uint64_t color);
   inline bool load(const string &filename);
+//inline bool loadBMP(const uint8_t *data, unsigned size);
+  inline bool loadPNG(const uint8_t *data, unsigned size);
   inline void scale(unsigned width, unsigned height, interpolation op);
   inline void transform(bool endian, unsigned depth, uint64_t alphaMask, uint64_t redMask, uint64_t greenMask, uint64_t blueMask);
   inline void alphaBlend(uint64_t alphaColor);
@@ -142,6 +146,20 @@ image::image(bool endian, unsigned depth, uint64_t alphaMask, uint64_t redMask, 
   blue.depth = bitDepth(blue.mask), blue.shift = bitShift(blue.mask);
 }
 
+image::image() : data(nullptr) {
+  width = 0, height = 0, pitch = 0;
+
+  this->endian = 0;
+  this->depth = 32;
+  this->stride = 4;
+
+  alpha.mask = 255u << 24, red.mask = 255u << 16, green.mask = 255u << 8, blue.mask = 255u << 0;
+  alpha.depth = bitDepth(alpha.mask), alpha.shift = bitShift(alpha.mask);
+  red.depth = bitDepth(red.mask), red.shift = bitShift(red.mask);
+  green.depth = bitDepth(green.mask), green.shift = bitShift(green.mask);
+  blue.depth = bitDepth(blue.mask), blue.shift = bitShift(blue.mask);
+}
+
 image::~image() {
   free();
 }
@@ -193,8 +211,8 @@ bool image::load(const string &filename) {
 }
 
 void image::scale(unsigned outputWidth, unsigned outputHeight, interpolation op) {
-  scaleX(outputWidth, op);
-  scaleY(outputHeight, op);
+  if(width != outputWidth) scaleX(outputWidth, op);
+  if(height != outputHeight) scaleY(outputHeight, op);
 }
 
 void image::transform(bool outputEndian, unsigned outputDepth, uint64_t outputAlphaMask, uint64_t outputRedMask, uint64_t outputGreenMask, uint64_t outputBlueMask) {
@@ -284,6 +302,7 @@ void image::scaleX(unsigned outputWidth, interpolation op) {
   uint8_t *outputData = new uint8_t[outputWidth * height * stride];
   unsigned outputPitch = outputWidth * stride;
   double step = (double)width / (double)outputWidth;
+  const uint8_t *terminal = data + pitch * height;
 
   #pragma omp parallel for
   for(unsigned y = 0; y < height; y++) {
@@ -291,15 +310,12 @@ void image::scaleX(unsigned outputWidth, interpolation op) {
     uint8_t *sp = data + pitch * y;
 
     double fraction = 0.0;
-    uint64_t s[4] = { read(sp), read(sp), read(sp), read(sp) };
+    uint64_t s[4] = { sp < terminal ? read(sp) : 0 };  //B,C (0,1) = center of kernel { 0, 0, 1, 2 }
+    s[1] = s[0];
+    s[2] = sp + stride < terminal ? read(sp += stride) : s[1];
+    s[3] = sp + stride < terminal ? read(sp += stride) : s[2];
 
     for(unsigned x = 0; x < width; x++) {
-      if(sp >= data + pitch * height) break;
-      s[0] = s[1];
-      s[1] = s[2];
-      s[2] = s[3];
-      s[3] = read(sp);
-
       while(fraction <= 1.0) {
         if(dp >= outputData + outputPitch * height) break;
         write(dp, interpolate(fraction, (const uint64_t*)&s, op));
@@ -307,7 +323,8 @@ void image::scaleX(unsigned outputWidth, interpolation op) {
         fraction += step;
       }
 
-      sp += stride;
+      s[0] = s[1]; s[1] = s[2]; s[2] = s[3];
+      if(sp + stride < terminal) s[3] = read(sp += stride);
       fraction -= 1.0;
     }
   }
@@ -321,6 +338,7 @@ void image::scaleX(unsigned outputWidth, interpolation op) {
 void image::scaleY(unsigned outputHeight, interpolation op) {
   uint8_t *outputData = new uint8_t[width * outputHeight * stride];
   double step = (double)height / (double)outputHeight;
+  const uint8_t *terminal = data + pitch * height;
 
   #pragma omp parallel for
   for(unsigned x = 0; x < width; x++) {
@@ -328,15 +346,12 @@ void image::scaleY(unsigned outputHeight, interpolation op) {
     uint8_t *sp = data + stride * x;
 
     double fraction = 0.0;
-    uint64_t s[4] = { read(sp), read(sp), read(sp), read(sp) };
+    uint64_t s[4] = { sp < terminal ? read(sp) : 0 };
+    s[1] = s[0];
+    s[2] = sp + pitch < terminal ? read(sp += pitch) : s[1];
+    s[3] = sp + pitch < terminal ? read(sp += pitch) : s[2];
 
     for(unsigned y = 0; y < height; y++) {
-      if(sp >= data + pitch * height) break;
-      s[0] = s[1];
-      s[1] = s[2];
-      s[2] = s[3];
-      s[3] = read(sp);
-
       while(fraction <= 1.0) {
         if(dp >= outputData + pitch * outputHeight) break;
         write(dp, interpolate(fraction, (const uint64_t*)&s, op));
@@ -344,7 +359,8 @@ void image::scaleY(unsigned outputHeight, interpolation op) {
         fraction += step;
       }
 
-      sp += pitch;
+      s[0] = s[1]; s[1] = s[2]; s[2] = s[3];
+      if(sp + pitch < terminal) s[3] = read(sp += pitch);
       fraction -= 1.0;
     }
   }
@@ -379,9 +395,9 @@ bool image::loadBMP(const string &filename) {
   return true;
 }
 
-bool image::loadPNG(const string &filename) {
+bool image::loadPNG(const uint8_t *pngData, unsigned pngSize) {
   png source;
-  if(source.decode(filename) == false) return false;
+  if(source.decode(pngData, pngSize) == false) return false;
 
   allocate(source.info.width, source.info.height);
   const uint8_t *sp = source.data;
@@ -436,6 +452,12 @@ bool image::loadPNG(const string &filename) {
   }
 
   return true;
+}
+
+bool image::loadPNG(const string &filename) {
+  filemap map;
+  if(map.open(filename, filemap::mode::read) == false) return false;
+  return loadPNG(map.data(), map.size());
 }
 
 }

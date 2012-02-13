@@ -7,7 +7,7 @@ serializer System::serialize() {
   char description[512], profile[16];
   memset(&description, 0, sizeof description);
   memset(&profile, 0, sizeof profile);
-  strlcpy(profile, Info::Profile, sizeof profile);
+  strmcpy(profile, Info::Profile, sizeof profile);
 
   s.integer(signature);
   s.integer(version);
@@ -58,7 +58,9 @@ void System::serialize_all(serializer &s) {
   dsp.serialize(s);
 
   if(cartridge.mode() == Cartridge::Mode::SufamiTurbo) sufamiturbo.serialize(s);
+  #if defined(GAMEBOY)
   if(cartridge.mode() == Cartridge::Mode::SuperGameBoy) icd2.serialize(s);
+  #endif
   if(cartridge.has_superfx()) superfx.serialize(s);
   if(cartridge.has_sa1()) sa1.serialize(s);
   if(cartridge.has_necdsp()) necdsp.serialize(s);

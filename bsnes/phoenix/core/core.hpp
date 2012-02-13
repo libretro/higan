@@ -43,6 +43,8 @@ enum : unsigned {
 
 struct Color {
   uint8_t red, green, blue, alpha;
+  uint32_t rgb() const;
+  uint32_t rgba() const;
   inline Color() : red(0), green(0), blue(0), alpha(255) {}
   inline Color(uint8_t red, uint8_t green, uint8_t blue, uint8_t alpha = 255) : red(red), green(green), blue(blue), alpha(alpha) {}
 };
@@ -66,9 +68,12 @@ struct Geometry {
   Size size() const;
   nall::string text() const;
   inline Geometry() : x(0), y(0), width(0), height(0) {}
+  inline Geometry(const Position& position, const Size& size) : x(position.x), y(position.y), width(size.width), height(size.height) {}
   inline Geometry(signed x, signed y, unsigned width, unsigned height) : x(x), y(y), width(width), height(height) {}
   Geometry(const nall::string &text);
 };
+
+enum class Orientation : unsigned { Horizontal, Vertical };
 
 struct Font {
   nall::string description;
@@ -76,47 +81,40 @@ struct Font {
   Font(const nall::string &description = "");
 };
 
-struct Object {
-  Object(pObject &p);
-  Object& operator=(const Object&) = delete;
-  Object(const Object&) = delete;
-  virtual ~Object();
-  pObject &p;
+struct Desktop {
+  static Size size();
+  static Geometry workspace();
+  Desktop() = delete;
 };
 
-struct OS : Object {
-  static Geometry availableGeometry();
-  static Geometry desktopGeometry();
-  template<typename... Args> static nall::string fileLoad(Window &parent, const nall::string &path, const Args&... args) { return fileLoad_(parent, path, { args... }); }
+struct Keyboard {
+  #include "keyboard.hpp"
+  static bool pressed(Scancode scancode);
+  static bool released(Scancode scancode);
+  static nall::array<bool> state();
+  Keyboard() = delete;
+};
+
+struct Mouse {
+  enum class Button : unsigned { Left, Middle, Right };
+  static Position position();
+  static bool pressed(Button);
+  static bool released(Button);
+  Mouse() = delete;
+};
+
+struct DialogWindow {
+  template<typename... Args> static nall::string fileOpen(Window &parent, const nall::string &path, const Args&... args) { return fileOpen_(parent, path, { args... }); }
   template<typename... Args> static nall::string fileSave(Window &parent, const nall::string &path, const Args&... args) { return fileSave_(parent, path, { args... }); }
   static nall::string folderSelect(Window &parent, const nall::string &path);
-  static void main();
-  static bool pendingEvents();
-  static void processEvents();
-  static void quit();
-
-  OS();
-  static void initialize();
+  DialogWindow() = delete;
 
 private:
-  static nall::string fileLoad_(Window &parent, const nall::string &path, const nall::lstring& filter);
+  static nall::string fileOpen_(Window &parent, const nall::string &path, const nall::lstring& filter);
   static nall::string fileSave_(Window &parent, const nall::string &path, const nall::lstring& filter);
 };
 
-struct Timer : private nall::base_from_member<pTimer&>, Object {
-  nall::function<void ()> onTimeout;
-
-  void setEnabled(bool enabled = true);
-  void setInterval(unsigned milliseconds);
-
-  Timer();
-  ~Timer();
-  struct State;
-  State &state;
-  pTimer &p;
-};
-
-struct MessageWindow : Object {
+struct MessageWindow {
   enum class Buttons : unsigned {
     Ok,
     OkCancel,
@@ -134,17 +132,56 @@ struct MessageWindow : Object {
   static Response question(Window &parent, const nall::string &text, Buttons = Buttons::YesNo);
   static Response warning(Window &parent, const nall::string &text, Buttons = Buttons::Ok);
   static Response critical(Window &parent, const nall::string &text, Buttons = Buttons::Ok);
+  MessageWindow() = delete;
+};
+
+struct Object {
+  Object(pObject &p);
+  Object& operator=(const Object&) = delete;
+  Object(const Object&) = delete;
+  virtual ~Object();
+  pObject &p;
+};
+
+struct OS : Object {
+  static void main();
+  static bool pendingEvents();
+  static void processEvents();
+  static void quit();
+
+  OS();
+  static void initialize();
+};
+
+struct Timer : private nall::base_from_member<pTimer&>, Object {
+  nall::function<void ()> onTimeout;
+
+  void setEnabled(bool enabled = true);
+  void setInterval(unsigned milliseconds);
+
+  Timer();
+  ~Timer();
+  struct State;
+  State &state;
+  pTimer &p;
 };
 
 struct Window : private nall::base_from_member<pWindow&>, Object {
   static Window None;
   nall::function<void ()> onClose;
+  nall::function<void (Keyboard::Keycode)> onKeyPress;
+  nall::function<void (Keyboard::Keycode)> onKeyRelease;
   nall::function<void ()> onMove;
   nall::function<void ()> onSize;
 
-  void append(Layout &layout);
-  void append(Menu &menu);
-  void append(Widget &widget);
+  inline void append() {}
+  inline void remove() {}
+  template<typename T, typename... Args> void append(T &arg, Args&... args) { append_(arg); append(args...); }
+  template<typename T, typename... Args> void remove(T &arg, Args&... args) { remove_(arg); remove(args...); }
+
+  void append_(Layout &layout);
+  void append_(Menu &menu);
+  void append_(Widget &widget);
   Color backgroundColor();
   Geometry frameGeometry();
   Geometry frameMargin();
@@ -152,9 +189,9 @@ struct Window : private nall::base_from_member<pWindow&>, Object {
   bool fullScreen();
   Geometry geometry();
   void ignore();
-  void remove(Layout &layout);
-  void remove(Menu &menu);
-  void remove(Widget &widget);
+  void remove_(Layout &layout);
+  void remove_(Menu &menu);
+  void remove_(Widget &widget);
   void setBackgroundColor(const Color &color);
   void setFrameGeometry(const Geometry &geometry);
   void setFocused();
@@ -194,8 +231,12 @@ struct Action : Object {
 };
 
 struct Menu : private nall::base_from_member<pMenu&>, Action {
-  void append(Action &action);
-  void remove(Action &action);
+  template<typename... Args> void append(Args&... args) { append({ args... }); }
+  template<typename... Args> void remove(Args&... args) { remove({ args... }); }
+
+  void append(const nall::array<Action&> &list);
+  void remove(const nall::array<Action&> &list);
+  void setImage(const nall::image &image);
   void setText(const nall::string &text);
 
   Menu();
@@ -214,6 +255,7 @@ struct Separator : private nall::base_from_member<pSeparator&>, Action {
 struct Item : private nall::base_from_member<pItem&>, Action {
   nall::function<void ()> onActivate;
 
+  void setImage(const nall::image &image);
   void setText(const nall::string &text);
 
   Item();
@@ -239,7 +281,7 @@ struct CheckItem : private nall::base_from_member<pCheckItem&>, Action {
 
 struct RadioItem : private nall::base_from_member<pRadioItem&>, Action {
   template<typename... Args> static void group(Args&... args) { group({ args... }); }
-  static void group(const nall::reference_array<RadioItem&> &list);
+  static void group(const nall::array<RadioItem&> &list);
 
   nall::function<void ()> onActivate;
 
@@ -308,6 +350,7 @@ struct Widget : private nall::base_from_member<pWidget&>, Sizable {
 struct Button : private nall::base_from_member<pButton&>, Widget {
   nall::function<void ()> onActivate;
 
+  void setImage(const nall::image &image, Orientation = Orientation::Horizontal);
   void setText(const nall::string &text);
 
   Button();
@@ -318,6 +361,11 @@ struct Button : private nall::base_from_member<pButton&>, Widget {
 };
 
 struct Canvas : private nall::base_from_member<pCanvas&>, Widget {
+  nall::function<void ()> onMouseLeave;
+  nall::function<void (Position)> onMouseMove;
+  nall::function<void (Mouse::Button)> onMousePress;
+  nall::function<void (Mouse::Button)> onMouseRelease;
+
   uint32_t* data();
   bool setImage(const nall::image &image);
   void setSize(const Size &size);
@@ -348,7 +396,9 @@ struct CheckBox : private nall::base_from_member<pCheckBox&>, Widget {
 struct ComboBox : private nall::base_from_member<pComboBox&>, Widget {
   nall::function<void ()> onChange;
 
-  void append(const nall::string &text);
+  template<typename... Args> void append(const Args&... args) { append_({ args... }); }
+
+  void append_(const nall::lstring &list);
   void reset();
   unsigned selection();
   void setSelection(unsigned row);
@@ -438,15 +488,19 @@ struct ListView : private nall::base_from_member<pListView&>, Widget {
   nall::function<void (unsigned)> onToggle;
 
   template<typename... Args> void append(const Args&... args) { append_({ args... }); }
+  template<typename... Args> void modify(unsigned row, const Args&... args) { modify_(row, { args... }); }
+  template<typename... Args> void setHeaderText(const Args&... args) { setHeaderText_({ args... }); }
+
+  void append_(const nall::lstring &list);
   void autoSizeColumns();
   bool checked(unsigned row);
-  template<typename... Args> void modify(unsigned row, const Args&... args) { modify_(row, { args... }); }
+  void modify_(unsigned row, const nall::lstring &list);
   void reset();
   bool selected();
   unsigned selection();
   void setCheckable(bool checkable = true);
   void setChecked(unsigned row, bool checked = true);
-  template<typename... Args> void setHeaderText(const Args&... args) { setHeaderText_({ args... }); }
+  void setHeaderText_(const nall::lstring &list);
   void setHeaderVisible(bool visible = true);
   void setSelected(bool selected = true);
   void setSelection(unsigned row);
@@ -456,11 +510,6 @@ struct ListView : private nall::base_from_member<pListView&>, Widget {
   struct State;
   State &state;
   pListView &p;
-
-private:
-  void append_(const nall::lstring &list);
-  void modify_(unsigned row, const nall::lstring &list);
-  void setHeaderText_(const nall::lstring &list);
 };
 
 struct ProgressBar : private nall::base_from_member<pProgressBar&>, Widget {
@@ -475,7 +524,7 @@ struct ProgressBar : private nall::base_from_member<pProgressBar&>, Widget {
 
 struct RadioBox : private nall::base_from_member<pRadioBox&>, Widget {
   template<typename... Args> static void group(Args&... args) { group({ args... }); }
-  static void group(const nall::reference_array<RadioBox&> &list);
+  static void group(const nall::array<RadioBox&> &list);
 
   nall::function<void ()> onActivate;
 
@@ -537,6 +586,11 @@ struct VerticalSlider : private nall::base_from_member<pVerticalSlider&>, Widget
 };
 
 struct Viewport : private nall::base_from_member<pViewport&>, Widget {
+  nall::function<void ()> onMouseLeave;
+  nall::function<void (Position)> onMouseMove;
+  nall::function<void (Mouse::Button)> onMousePress;
+  nall::function<void (Mouse::Button)> onMouseRelease;
+
   uintptr_t handle();
 
   Viewport();

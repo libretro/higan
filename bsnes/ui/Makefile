@@ -1,6 +1,6 @@
 include $(nes)/Makefile
-include $(snes)/Makefile
 include $(gameboy)/Makefile
+include $(snes)/Makefile
 name := bsnes
 
 ui_objects := ui-main ui-config ui-interface ui-input ui-utility

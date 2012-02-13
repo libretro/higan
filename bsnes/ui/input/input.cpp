@@ -3,7 +3,7 @@
 #include "snes.cpp"
 #include "gameboy.cpp"
 #include "user-interface.cpp"
-InputManager *inputManager = 0;
+InputManager *inputManager = nullptr;
 
 void AbstractInput::attach(const string &primaryName, const string &secondaryName, const string &tertiaryName) {
   string name = { primaryName, "::", secondaryName, "::", tertiaryName, "::", this->name };
@@ -38,6 +38,7 @@ int16_t AbstractInput::poll() {
 //
 
 bool AnalogInput::bind(int16_t scancode, int16_t value) {
+  using nall::Mouse;
   string encode = Scancode::encode(scancode);
   Type type = Type::Button;
 
@@ -66,6 +67,8 @@ int16_t AnalogInput::poll() {
 //
 
 bool DigitalInput::bind(int16_t scancode, int16_t value) {
+  using nall::Keyboard;
+  using nall::Mouse;
   string encode = Scancode::encode(scancode);
   Type type = Type::Button;
 

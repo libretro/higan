@@ -4,6 +4,8 @@
 static QApplication *qtApplication = 0;
 
 struct Settings : public configuration {
+  bidirectional_map<Keyboard::Scancode, unsigned> keymap;
+
   unsigned frameGeometryX;
   unsigned frameGeometryY;
   unsigned frameGeometryWidth;
@@ -28,6 +30,36 @@ struct pFont {
   static Geometry geometry(const QFont &qtFont, const string &text);
 };
 
+struct pDesktop {
+  static Size size();
+  static Geometry workspace();
+};
+
+struct pKeyboard {
+  static bool pressed(Keyboard::Scancode scancode);
+  static array<bool> state();
+
+  static void initialize();
+};
+
+struct pMouse {
+  static Position position();
+  static bool pressed(Mouse::Button button);
+};
+
+struct pDialogWindow {
+  static string fileOpen(Window &parent, const string &path, const lstring &filter);
+  static string fileSave(Window &parent, const string &path, const lstring &filter);
+  static string folderSelect(Window &parent, const string &path);
+};
+
+struct pMessageWindow {
+  static MessageWindow::Response information(Window &parent, const string &text, MessageWindow::Buttons buttons);
+  static MessageWindow::Response question(Window &parent, const string &text, MessageWindow::Buttons buttons);
+  static MessageWindow::Response warning(Window &parent, const string &text, MessageWindow::Buttons buttons);
+  static MessageWindow::Response critical(Window &parent, const string &text, MessageWindow::Buttons buttons);
+};
+
 struct pObject {
   Object &object;
   bool locked;
@@ -39,18 +71,15 @@ struct pObject {
 };
 
 struct pOS : public pObject {
-  static Geometry availableGeometry();
-  static Geometry desktopGeometry();
-  static string fileLoad(Window &parent, const string &path, const lstring &filter);
-  static string fileSave(Window &parent, const string &path, const lstring &filter);
-  static string folderSelect(Window &parent, const string &path);
+  static XlibDisplay *display;
+
   static void main();
   static bool pendingEvents();
   static void processEvents();
   static void quit();
-  static void syncX();
 
   static void initialize();
+  static void syncX();
 };
 
 struct pTimer : public QObject, public pObject {
@@ -71,13 +100,6 @@ public slots:
   void onTimeout();
 };
 
-struct pMessageWindow : public pObject {
-  static MessageWindow::Response information(Window &parent, const string &text, MessageWindow::Buttons buttons);
-  static MessageWindow::Response question(Window &parent, const string &text, MessageWindow::Buttons buttons);
-  static MessageWindow::Response warning(Window &parent, const string &text, MessageWindow::Buttons buttons);
-  static MessageWindow::Response critical(Window &parent, const string &text, MessageWindow::Buttons buttons);
-};
-
 struct pWindow : public QObject, public pObject {
   Q_OBJECT
 
@@ -86,6 +108,8 @@ public:
   struct QtWindow : public QWidget {
     pWindow &self;
     void closeEvent(QCloseEvent*);
+    void keyPressEvent(QKeyEvent*);
+    void keyReleaseEvent(QKeyEvent*);
     void moveEvent(QMoveEvent*);
     void resizeEvent(QResizeEvent*);
     QSize sizeHint() const;
@@ -145,6 +169,7 @@ struct pMenu : public pAction {
   void append(Action &action);
   void remove(Action &action);
   void setFont(const string &font);
+  void setImage(const image &image);
   void setText(const string &text);
 
   pMenu(Menu &menu) : pAction(menu), menu(menu) {}
@@ -168,6 +193,7 @@ public:
   Item &item;
   QAction *qtAction;
 
+  void setImage(const image &image);
   void setText(const string &text);
 
   pItem(Item &item) : pAction(item), item(item) {}
@@ -207,7 +233,7 @@ public:
 
   bool checked();
   void setChecked();
-  void setGroup(const reference_array<RadioItem&> &group);
+  void setGroup(const array<RadioItem&> &group);
   void setText(const string &text);
 
   pRadioItem(RadioItem &radioItem) : pAction(radioItem), radioItem(radioItem) {}
@@ -259,9 +285,10 @@ struct pButton : public QObject, public pWidget {
 
 public:
   Button &button;
-  QPushButton *qtButton;
+  QToolButton *qtButton;
 
   Geometry minimumGeometry();
+  void setImage(const image &image, Orientation orientation);
   void setText(const string &text);
 
   pButton(Button &button) : pWidget(button), button(button) {}
@@ -281,6 +308,10 @@ public:
   QImage *qtImage;
   struct QtCanvas : public QWidget {
     pCanvas &self;
+    void leaveEvent(QEvent*);
+    void mouseMoveEvent(QMouseEvent*);
+    void mousePressEvent(QMouseEvent*);
+    void mouseReleaseEvent(QMouseEvent*);
     void paintEvent(QPaintEvent*);
     QtCanvas(pCanvas &self);
   } *qtCanvas;
@@ -502,7 +533,7 @@ public:
   bool checked();
   Geometry minimumGeometry();
   void setChecked();
-  void setGroup(const reference_array<RadioBox&> &group);
+  void setGroup(const array<RadioBox&> &group);
   void setText(const string &text);
 
   pRadioBox(RadioBox &radioBox) : pWidget(radioBox), radioBox(radioBox) {}
@@ -580,6 +611,14 @@ public slots:
 
 struct pViewport : public pWidget {
   Viewport &viewport;
+  struct QtViewport : public QWidget {
+    pViewport &self;
+    void leaveEvent(QEvent*);
+    void mouseMoveEvent(QMouseEvent*);
+    void mousePressEvent(QMouseEvent*);
+    void mouseReleaseEvent(QMouseEvent*);
+    QtViewport(pViewport &self);
+  } *qtViewport;
 
   uintptr_t handle();
 

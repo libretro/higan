@@ -14,7 +14,7 @@ struct DSP : public Processor {
   DSP();
   ~DSP();
 
-private:
+privileged:
   //global registers
   enum global_reg_t {
     r_mvoll = 0x0c, r_mvolr = 0x1c,
@@ -167,13 +167,6 @@ private:
   //dsp
   static void Enter();
   void tick();
-
-  friend class DSPDebugger;
 };
 
-#if defined(DEBUGGER)
-  #include "debugger/debugger.hpp"
-  extern DSPDebugger dsp;
-#else
-  extern DSP dsp;
-#endif
+extern DSP dsp;

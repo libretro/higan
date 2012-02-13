@@ -43,6 +43,13 @@ static gboolean Window_configure(GtkWidget *widget, GdkEvent *event, Window *win
     settings->frameGeometryY = client.y - border.y;
     settings->frameGeometryWidth = border.width - client.width;
     settings->frameGeometryHeight = border.height - client.height;
+    if(window->state.backgroundColorOverride == false) {
+      GdkColor color = widget->style->bg[GTK_STATE_NORMAL];
+      settings->windowBackgroundColor
+      = ((uint8_t)(color.red   >> 8) << 16)
+      + ((uint8_t)(color.green >> 8) <<  8)
+      + ((uint8_t)(color.blue  >> 8) <<  0);
+    }
     settings->save();
   }
 
@@ -79,6 +86,18 @@ static gboolean Window_configure(GtkWidget *widget, GdkEvent *event, Window *win
   return false;
 }
 
+static gboolean Window_keyPressEvent(GtkWidget *widget, GdkEventKey *event, Window *window) {
+  Keyboard::Keycode key = Keysym(event->keyval);
+  if(key != Keyboard::Keycode::None && window->onKeyPress) window->onKeyPress(key);
+  return false;
+}
+
+static gboolean Window_keyReleaseEvent(GtkWidget *widget, GdkEventKey *event, Window *window) {
+  Keyboard::Keycode key = Keysym(event->keyval);
+  if(key != Keyboard::Keycode::None && window->onKeyRelease) window->onKeyRelease(key);
+  return false;
+}
+
 void pWindow::append(Layout &layout) {
   Geometry geometry = this->geometry();
   geometry.x = geometry.y = 0;
@@ -103,8 +122,12 @@ void pWindow::append(Widget &widget) {
 
 Color pWindow::backgroundColor() {
   if(window.state.backgroundColorOverride) return window.state.backgroundColor;
-  GdkColor color = widget->style->bg[GTK_STATE_NORMAL];
-  return { (uint8_t)(color.red >> 8), (uint8_t)(color.green >> 8), (uint8_t)(color.blue >> 8), 255 };
+  return {
+    (uint8_t)(settings->windowBackgroundColor >> 16),
+    (uint8_t)(settings->windowBackgroundColor >>  8),
+    (uint8_t)(settings->windowBackgroundColor >>  0),
+    255
+  };
 }
 
 Geometry pWindow::frameMargin() {
@@ -123,7 +146,7 @@ bool pWindow::focused() {
 
 Geometry pWindow::geometry() {
   if(window.state.fullScreen == true) {
-    return { 0, menuHeight(), OS::desktopGeometry().width, OS::desktopGeometry().height - menuHeight() - statusHeight() };
+    return { 0, menuHeight(), Desktop::size().width, Desktop::size().height - menuHeight() - statusHeight() };
   };
   return window.state.geometry;
 }
@@ -161,7 +184,7 @@ void pWindow::setFullScreen(bool fullScreen) {
     setGeometry(window.state.geometry);
   } else {
     gtk_window_fullscreen(GTK_WINDOW(widget));
-    gtk_widget_set_size_request(widget, OS::desktopGeometry().width, OS::desktopGeometry().height);
+    gtk_widget_set_size_request(widget, Desktop::size().width, Desktop::size().height);
     gtk_window_set_resizable(GTK_WINDOW(widget), false);
   }
   gdk_display_sync(gtk_widget_get_display(widget));
@@ -273,6 +296,8 @@ void pWindow::constructor() {
   g_signal_connect(G_OBJECT(widget), "delete-event", G_CALLBACK(Window_close), (gpointer)&window);
   g_signal_connect(G_OBJECT(widget), "expose-event", G_CALLBACK(Window_expose), (gpointer)&window);
   g_signal_connect(G_OBJECT(widget), "configure-event", G_CALLBACK(Window_configure), (gpointer)&window);
+  g_signal_connect(G_OBJECT(widget), "key-press-event", G_CALLBACK(Window_keyPressEvent), (gpointer)&window);
+  g_signal_connect(G_OBJECT(widget), "key-release-event", G_CALLBACK(Window_keyPressEvent), (gpointer)&window);
 }
 
 unsigned pWindow::menuHeight() {

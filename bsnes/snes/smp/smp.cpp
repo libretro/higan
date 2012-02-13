@@ -3,12 +3,7 @@
 #define SMP_CPP
 namespace SNES {
 
-#if defined(DEBUGGER)
-  #include "debugger/debugger.cpp"
-  SMPDebugger smp;
-#else
-  SMP smp;
-#endif
+SMP smp;
 
 #include "serialization.cpp"
 #include "iplrom.cpp"
@@ -44,6 +39,7 @@ void SMP::enter() {
       scheduler.exit(Scheduler::ExitReason::SynchronizeEvent);
     }
 
+    debugger.op_exec(regs.pc);
     op_step();
   }
 }

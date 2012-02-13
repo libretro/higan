@@ -14,7 +14,7 @@ void pRadioItem::setChecked() {
   locked = false;
 }
 
-void pRadioItem::setGroup(const reference_array<RadioItem&> &group) {
+void pRadioItem::setGroup(const array<RadioItem&> &group) {
   for(unsigned n = 0; n < group.size(); n++) {
     if(n == 0) continue;
     GSList *currentGroup = gtk_radio_menu_item_get_group(GTK_RADIO_MENU_ITEM(group[0].p.widget));
@@ -25,12 +25,13 @@ void pRadioItem::setGroup(const reference_array<RadioItem&> &group) {
 }
 
 void pRadioItem::setText(const string &text) {
-  gtk_menu_item_set_label(GTK_MENU_ITEM(widget), text);
+  gtk_menu_item_set_label(GTK_MENU_ITEM(widget), mnemonic(text));
 }
 
 void pRadioItem::constructor() {
-  widget = gtk_radio_menu_item_new_with_label(0, radioItem.state.text);
+  widget = gtk_radio_menu_item_new_with_mnemonic(0, "");
   setGroup(radioItem.state.group);
+  setText(radioItem.state.text);
   for(auto &item : radioItem.state.group) {
     gtk_check_menu_item_set_active(GTK_CHECK_MENU_ITEM(item.p.widget), item.state.checked);
   }
