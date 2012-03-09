@@ -72,6 +72,7 @@ void System::init() {
   sa1.init();
   necdsp.init();
   hitachidsp.init();
+  armdsp.init();
   bsxsatellaview.init();
   bsxcartridge.init();
   bsxflash.init();
@@ -79,7 +80,6 @@ void System::init() {
   sdd1.init();
   spc7110.init();
   obc1.init();
-  st0018.init();
   msu1.init();
   link.init();
 
@@ -115,11 +115,11 @@ void System::load() {
   if(cartridge.has_sa1()) sa1.load();
   if(cartridge.has_necdsp()) necdsp.load();
   if(cartridge.has_hitachidsp()) hitachidsp.load();
+  if(cartridge.has_armdsp()) armdsp.load();
   if(cartridge.has_srtc()) srtc.load();
   if(cartridge.has_sdd1()) sdd1.load();
   if(cartridge.has_spc7110()) spc7110.load();
   if(cartridge.has_obc1()) obc1.load();
-  if(cartridge.has_st0018()) st0018.load();
   if(cartridge.has_msu1()) msu1.load();
   if(cartridge.has_link()) link.load();
 
@@ -141,11 +141,11 @@ void System::unload() {
   if(cartridge.has_sa1()) sa1.unload();
   if(cartridge.has_necdsp()) necdsp.unload();
   if(cartridge.has_hitachidsp()) hitachidsp.unload();
+  if(cartridge.has_armdsp()) armdsp.unload();
   if(cartridge.has_srtc()) srtc.unload();
   if(cartridge.has_sdd1()) sdd1.unload();
   if(cartridge.has_spc7110()) spc7110.unload();
   if(cartridge.has_obc1()) obc1.unload();
-  if(cartridge.has_st0018()) st0018.unload();
   if(cartridge.has_msu1()) msu1.unload();
   if(cartridge.has_link()) link.unload();
 }
@@ -179,11 +179,11 @@ void System::power() {
   if(cartridge.has_sa1()) sa1.power();
   if(cartridge.has_necdsp()) necdsp.power();
   if(cartridge.has_hitachidsp()) hitachidsp.power();
+  if(cartridge.has_armdsp()) armdsp.power();
   if(cartridge.has_srtc()) srtc.power();
   if(cartridge.has_sdd1()) sdd1.power();
   if(cartridge.has_spc7110()) spc7110.power();
   if(cartridge.has_obc1()) obc1.power();
-  if(cartridge.has_st0018()) st0018.power();
   if(cartridge.has_msu1()) msu1.power();
   if(cartridge.has_link()) link.power();
 
@@ -209,11 +209,11 @@ void System::reset() {
   if(cartridge.has_sa1()) sa1.reset();
   if(cartridge.has_necdsp()) necdsp.reset();
   if(cartridge.has_hitachidsp()) hitachidsp.reset();
+  if(cartridge.has_armdsp()) armdsp.reset();
   if(cartridge.has_srtc()) srtc.reset();
   if(cartridge.has_sdd1()) sdd1.reset();
   if(cartridge.has_spc7110()) spc7110.reset();
   if(cartridge.has_obc1()) obc1.reset();
-  if(cartridge.has_st0018()) st0018.reset();
   if(cartridge.has_msu1()) msu1.reset();
   if(cartridge.has_link()) link.reset();
 
@@ -224,6 +224,7 @@ void System::reset() {
   if(cartridge.has_sa1()) cpu.coprocessors.append(&sa1);
   if(cartridge.has_necdsp()) cpu.coprocessors.append(&necdsp);
   if(cartridge.has_hitachidsp()) cpu.coprocessors.append(&hitachidsp);
+  if(cartridge.has_armdsp()) cpu.coprocessors.append(&armdsp);
   if(cartridge.has_msu1()) cpu.coprocessors.append(&msu1);
   if(cartridge.has_link()) cpu.coprocessors.append(&link);
 

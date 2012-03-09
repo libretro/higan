@@ -22,12 +22,12 @@ void Cartridge::load(Mode cartridge_mode, const char *markup) {
   has_sa1        = false;
   has_necdsp     = false;
   has_hitachidsp = false;
+  has_armdsp     = false;
   has_srtc       = false;
   has_sdd1       = false;
   has_spc7110    = false;
   has_spc7110rtc = false;
   has_obc1       = false;
-  has_st0018     = false;
   has_msu1       = false;
   has_link       = false;
 
@@ -38,7 +38,7 @@ void Cartridge::load(Mode cartridge_mode, const char *markup) {
 
   if(ram_size > 0) {
     ram.map(allocate<uint8>(ram_size, 0xff), ram_size);
-    nvram.append({ ".srm", ram.data(), ram.size() });
+    nvram.append({ "program.ram", ram.data(), ram.size() });
   }
 
   rom.write_protect(true);
