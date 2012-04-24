@@ -1,5 +1,8 @@
 options += debugger
 
+processors := arm hg51b upd96050
+include processor/Makefile
+
 include $(snes)/Makefile
 name := laevateinn
 
@@ -58,24 +61,23 @@ obj/resource.o: $(ui)/resource.rc
 build: $(objects)
 ifeq ($(platform),osx)
 	test -d ../$(name).app || mkdir -p ../$(name).app/Contents/MacOS
-	$(strip $(cpp) -o ../$(name).app/Contents/MacOS/$(name) $(objects) $(link))
+	$(strip $(cpp) -o ../$(name).app/Contents/MacOS/$(name) $^ $(link))
 else
-	$(strip $(cpp) -o out/$(name) $(objects) $(link))
+	$(strip $(cpp) -o out/$(name) $^ $(link))
 endif
 
-install:
-ifeq ($(platform),x)
-	install -D -m 755 out/$(name) $(DESTDIR)$(prefix)/bin/$(name)
+install: build
+ifeq ($(USER),root)
+	@echo Please do not run make install as root.
+	@echo The installer needs to know your home directory to install important files.
+else ifeq ($(platform),x)
+	sudo install -D -m 755 out/$(name) $(DESTDIR)$(prefix)/bin/$(name)
 	mkdir -p ~/.config/$(name)
-#	install -D -m 644 data/$(name).png $(DESTDIR)$(prefix)/share/pixmaps/$(name).png
-#	install -D -m 644 data/$(name).desktop $(DESTDIR)$(prefix)/share/applications/$(name).desktop
+	cp -R profile/* ~/.config/$(name)
 	cp data/cheats.xml ~/.config/$(name)/cheats.xml
-	chmod 777 ~/.config/$(name) ~/.config/$(name)/cheats.xml
 endif
 
 uninstall:
 ifeq ($(platform),x)
-	rm $(DESTDIR)$(prefix)/bin/$(name)
-#	rm $(DESTDIR)$(prefix)/share/pixmaps/$(name).png
-#	rm $(DESTDIR)$(prefix)/share/applications/$(name).desktop
+	sudo rm $(DESTDIR)$(prefix)/bin/$(name)
 endif

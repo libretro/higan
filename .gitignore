@@ -1,1 +1,4 @@
 bsnes/phoenix/qt/platform.moc
+purify/*.o
+purify/purify
+purify/analyze-gba
