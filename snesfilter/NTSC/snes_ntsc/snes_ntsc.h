@@ -139,6 +139,10 @@ struct snes_ntsc_t {
 };
 enum { snes_ntsc_burst_size = snes_ntsc_entry_size / snes_ntsc_burst_count };
 
+#define SNES_NTSC_RGB30( ktable, n ) \
+	(snes_ntsc_rgb_t const*) (ktable + ((n >> 5 & 0x001E) | (n >> 10 & 0x03E0) | (n >> 16 & 0x3C00)) * \
+			(snes_ntsc_entry_size / 2 * sizeof (snes_ntsc_rgb_t)))
+
 #define SNES_NTSC_RGB24( ktable, n ) \
 	(snes_ntsc_rgb_t const*) (ktable + ((n >> 3 & 0x001E) | (n >> 6 & 0x03E0) | (n >> 10 & 0x3C00)) * \
 			(snes_ntsc_entry_size / 2 * sizeof (snes_ntsc_rgb_t)))
@@ -199,6 +203,8 @@ enum { snes_ntsc_burst_size = snes_ntsc_entry_size / snes_ntsc_burst_count };
 		rgb_out = (raw_>>(14-x)& 0x7C00)|(raw_>>(9-x)&0x03E0)|(raw_>>(4-x)&0x001F);\
 	if ( bits == 14 )\
 		rgb_out = (raw_>>(24-x)& 0x001F)|(raw_>>(9-x)&0x03E0)|(raw_<<(6+x)&0x7C00);\
+	if ( bits == 30 )\
+		rgb_out = raw_ << (1+x) & 0x3FCFF3FC;\
 	if ( bits == 0 )\
 		rgb_out = raw_ << x;\
 }
