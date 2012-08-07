@@ -4,11 +4,19 @@ namespace GameBoy {
 
 struct ID {
   enum : unsigned {
+    System,
+    GameBoy,
+    SuperGameBoy,
+    GameBoyColor,
+  };
+
+  enum : unsigned {
     GameBoyBootROM,
     SuperGameBoyBootROM,
     GameBoyColorBootROM,
     GameBoyROM,
     GameBoyColorROM,
+    ROM,
     RAM,
   };
 
@@ -32,7 +40,10 @@ struct Interface : Emulator::Interface {
 
   bool loaded();
   string sha256();
-  void load(unsigned id, const stream &stream, const string &markup = "");
+  unsigned group(unsigned id);
+  void load(unsigned id, const string &manifest);
+  void save();
+  void load(unsigned id, const stream &stream, const string &manifest = "");
   void save(unsigned id, const stream &stream);
   void unload();
 
@@ -45,7 +56,7 @@ struct Interface : Emulator::Interface {
 
   void cheatSet(const lstring&);
 
-  void updatePalette();
+  void paletteUpdate();
 
   Interface();
 

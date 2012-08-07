@@ -45,8 +45,9 @@ struct Presentation : Window {
       Item loadStateItem[5];
     Separator stateMenuSeparator;
     Item resizeWindow;
-    Item cheatEditor;
     Item stateManager;
+    Item cheatEditor;
+    Item synchronizeTime;
 
   void synchronize();
   void setSystemName(const string &name);

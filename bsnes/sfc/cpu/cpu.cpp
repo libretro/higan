@@ -86,13 +86,18 @@ void CPU::enter() {
 
 void CPU::op_step() {
   debugger.op_exec(regs.pc.d);
+  if(interface->tracer.open()) {
+    char text[4096];
+    disassemble_opcode(text, regs.pc.d);
+    interface->tracer.print(text, "\n");
+  }
 
   (this->*opcode_table[op_readpc()])();
 }
 
 void CPU::enable() {
-  function<uint8 (unsigned)> read = { &CPU::mmio_read, (CPU*)&cpu };
-  function<void (unsigned, uint8)> write = { &CPU::mmio_write, (CPU*)&cpu };
+  function<uint8 (unsigned)> read = {&CPU::mmio_read, (CPU*)&cpu};
+  function<void (unsigned, uint8)> write = {&CPU::mmio_write, (CPU*)&cpu};
 
   bus.map(Bus::MapMode::Direct, 0x00, 0x3f, 0x2140, 0x2183, read, write);
   bus.map(Bus::MapMode::Direct, 0x80, 0xbf, 0x2140, 0x2183, read, write);
@@ -116,7 +121,7 @@ void CPU::enable() {
 
 void CPU::power() {
   cpu_version = config.cpu.version;
-  for(auto &n : wram) n = random(config.cpu.wram_init_value);
+  for(auto &byte : wram) byte = random(config.cpu.wram_init_value);
 
   regs.a = regs.x = regs.y = 0x0000;
   regs.s = 0x01ff;
@@ -151,7 +156,7 @@ void CPU::reset() {
 }
 
 CPU::CPU() {
-  PPUcounter::scanline = { &CPU::scanline, this };
+  PPUcounter::scanline = {&CPU::scanline, this};
 }
 
 CPU::~CPU() {

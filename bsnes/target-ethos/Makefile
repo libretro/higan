@@ -5,6 +5,7 @@ include fc/Makefile
 include sfc/Makefile
 include gb/Makefile
 include gba/Makefile
+include nds/Makefile
 name := bsnes
 
 ui_objects := ui-ethos ui-configuration ui-interface ui-utility
@@ -63,8 +64,11 @@ obj/phoenix.o: phoenix/phoenix.cpp $(call rwildcard,phoenix/*)
 	$(call compile,$(phoenixflags))
 
 obj/resource.o: $(ui)/resource.rc
-#	windres --target=pe-i386 $(ui)/resource.rc obj/resource.o
+ifeq ($(arch),win32)
+	windres --target=pe-i386 $(ui)/resource.rc obj/resource.o
+else
 	windres $(ui)/resource.rc obj/resource.o
+endif
 
 # targets
 build: $(objects)
@@ -75,6 +79,9 @@ else
 	$(strip $(cpp) -o out/$(name) $^ $(link))
 endif
 
+resource:
+	sourcery $(ui)/resource/resource.xml $(ui)/resource/resource.cpp $(ui)/resource/resource.hpp
+
 install: build
 ifeq ($(USER),root)
 	@echo Please do not run make install as root.
@@ -84,6 +91,7 @@ else ifeq ($(platform),x)
 	sudo install -D -m 644 data/$(name).png $(DESTDIR)$(prefix)/share/pixmaps/$(name).png
 	sudo install -D -m 644 data/$(name).desktop $(DESTDIR)$(prefix)/share/applications/$(name).desktop
 	sudo install -D -m 644 data/$(name).6 $(DESTDIR)$(prefix)/share/man/man6/$(name).6
+
 	mkdir -p ~/.config/$(name)
 	cp -R profile/* ~/.config/$(name)
 	cp data/cheats.xml ~/.config/$(name)/cheats.xml

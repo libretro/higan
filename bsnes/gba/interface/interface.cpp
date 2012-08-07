@@ -16,15 +16,37 @@ bool Interface::loaded() {
   return cartridge.loaded();
 }
 
-void Interface::load(unsigned id, const stream &stream, const string &markup) {
+unsigned Interface::group(unsigned id) {
+  switch(id) {
+  case ID::BIOS:
+    return ID::System;
+  case ID::ROM:
+  case ID::RAM:
+  case ID::EEPROM:
+  case ID::FlashROM:
+    return ID::GameBoyAdvance;
+  }
+
+  throw;
+}
+
+void Interface::load(unsigned id, const string &manifest) {
+  cartridge.load(manifest);
+}
+
+void Interface::save() {
+  for(auto &memory : cartridge.memory) {
+    interface->saveRequest(memory.id, memory.name);
+  }
+}
+
+void Interface::load(unsigned id, const stream &stream, const string &manifest) {
   if(id == ID::BIOS) {
     stream.read(bios.data, min(bios.size, stream.size()));
   }
 
   if(id == ID::ROM) {
-    memory.reset();
-    cartridge.load(markup, stream);
-    system.power();
+    stream.read(cartridge.rom.data, min(cartridge.rom.size, stream.size()));
   }
 
   if(id == ID::RAM) {
@@ -55,6 +77,7 @@ void Interface::save(unsigned id, const stream &stream) {
 }
 
 void Interface::unload() {
+  save();
   cartridge.unload();
 }
 
@@ -79,7 +102,7 @@ bool Interface::unserialize(serializer &s) {
   return system.unserialize(s);
 }
 
-void Interface::updatePalette() {
+void Interface::paletteUpdate() {
   video.generate_palette();
 }
 
@@ -92,10 +115,10 @@ Interface::Interface() {
   information.overscan    = false;
   information.aspectRatio = 1.0;
   information.resettable  = false;
+  information.capability.states = true;
+  information.capability.cheats = false;
 
-  firmware.append({ID::BIOS, "Game Boy Advance", "sys", "bios.rom"});
-
-  media.append({ID::ROM, "Game Boy Advance", "sys", "program.rom", "gba"});
+  media.append({ID::GameBoyAdvance, "Game Boy Advance", "gba"});
 
   {
     Device device{0, ID::Device, "Controller"};

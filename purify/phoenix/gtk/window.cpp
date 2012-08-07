@@ -116,6 +116,12 @@ static void Window_sizeRequest(GtkWidget *widget, GtkRequisition *requisition, W
   requisition->height = window->state.geometry.height;
 }
 
+Window& pWindow::none() {
+  static Window *window = nullptr;
+  if(window == nullptr) window = new Window;
+  return *window;
+}
+
 void pWindow::append(Layout &layout) {
   Geometry geometry = this->geometry();
   geometry.x = geometry.y = 0;
@@ -231,6 +237,10 @@ void pWindow::setMenuFont(const string &font) {
 
 void pWindow::setMenuVisible(bool visible) {
   gtk_widget_set_visible(menu, visible);
+}
+
+void pWindow::setModal(bool modal) {
+  gtk_window_set_modal(GTK_WINDOW(widget), modal);
 }
 
 void pWindow::setResizable(bool resizable) {

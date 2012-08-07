@@ -1,3 +1,9 @@
+Window& pWindow::none() {
+  static Window *window = nullptr;
+  if(window == nullptr) window = new Window;
+  return *window;
+}
+
 void pWindow::append(Layout &layout) {
   Geometry geometry = window.state.geometry;
   geometry.x = geometry.y = 0;
@@ -119,6 +125,10 @@ void pWindow::setMenuFont(const string &font) {
 void pWindow::setMenuVisible(bool visible) {
   qtMenu->setVisible(visible);
   setGeometry(window.state.geometry);
+}
+
+void pWindow::setModal(bool modal) {
+  qtWindow->setWindowModality(modal ? Qt::ApplicationModal : Qt::NonModal);
 }
 
 void pWindow::setResizable(bool resizable) {

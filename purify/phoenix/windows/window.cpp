@@ -1,5 +1,22 @@
+vector<pWindow*> pWindow::modal;
+
+void pWindow::updateModality() {
+  for(auto &object : pObject::objects) {
+    if(dynamic_cast<pWindow*>(object) == nullptr) continue;
+    pWindow *p = (pWindow*)object;
+    if(modal.size() == 0) EnableWindow(p->hwnd, true);
+    else EnableWindow(p->hwnd, modal.find(p));
+  }
+}
+
 static const unsigned FixedStyle = WS_SYSMENU | WS_CAPTION | WS_MINIMIZEBOX | WS_BORDER;
 static const unsigned ResizableStyle = WS_SYSMENU | WS_CAPTION | WS_MINIMIZEBOX | WS_MAXIMIZEBOX | WS_THICKFRAME;
+
+Window& pWindow::none() {
+  static Window *window = nullptr;
+  if(window == nullptr) window = new Window;
+  return *window;
+}
 
 void pWindow::append(Layout &layout) {
   Geometry geom = window.state.geometry;
@@ -128,6 +145,15 @@ void pWindow::setMenuVisible(bool visible) {
   locked = false;
 }
 
+void pWindow::setModal(bool modality) {
+  if(modality == false) {
+    if(auto position = modal.find(this)) modal.remove(position());
+  } else {
+    modal.appendonce(this);
+  }
+  updateModality();
+}
+
 void pWindow::setResizable(bool resizable) {
   SetWindowLongPtr(hwnd, GWL_STYLE, window.state.resizable ? ResizableStyle : FixedStyle);
   setGeometry(window.state.geometry);
@@ -156,6 +182,7 @@ void pWindow::setTitle(const string &text) {
 
 void pWindow::setVisible(bool visible) {
   ShowWindow(hwnd, visible ? SW_SHOWNORMAL : SW_HIDE);
+  if(visible == false) setModal(false);
 }
 
 void pWindow::setWidgetFont(const string &font) {

@@ -28,7 +28,36 @@ string Interface::sha256() {
   return cartridge.sha256();
 }
 
-void Interface::load(unsigned id, const stream &stream, const string &markup) {
+unsigned Interface::group(unsigned id) {
+  switch(id) {
+  case ID::GameBoyBootROM:
+  case ID::SuperGameBoyBootROM:
+  case ID::GameBoyColorBootROM:
+    return 0;
+  case ID::ROM:
+  case ID::RAM:
+    if(system.revision() == System::Revision::GameBoy) return ID::GameBoy;
+    if(system.revision() == System::Revision::SuperGameBoy) return ID::SuperGameBoy;
+    if(system.revision() == System::Revision::GameBoyColor) return ID::GameBoyColor;
+    throw;
+  }
+
+  throw;
+}
+
+void Interface::load(unsigned id, const string &manifest) {
+  if(id == ID::GameBoy) cartridge.load(System::Revision::GameBoy, manifest);
+  if(id == ID::SuperGameBoy) cartridge.load(System::Revision::SuperGameBoy, manifest);
+  if(id == ID::GameBoyColor) cartridge.load(System::Revision::GameBoyColor, manifest);
+}
+
+void Interface::save() {
+  for(auto &memory : cartridge.memory) {
+    interface->saveRequest(memory.id, memory.name);
+  }
+}
+
+void Interface::load(unsigned id, const stream &stream, const string &manifest) {
   if(id == ID::GameBoyBootROM) {
     stream.read(system.bootROM.dmg, min( 256u, stream.size()));
   }
@@ -41,14 +70,8 @@ void Interface::load(unsigned id, const stream &stream, const string &markup) {
     stream.read(system.bootROM.cgb, min(2048u, stream.size()));
   }
 
-  if(id == ID::GameBoyROM) {
-    cartridge.load(System::Revision::GameBoy, markup, stream);
-    system.power();
-  }
-
-  if(id == ID::GameBoyColorROM) {
-    cartridge.load(System::Revision::GameBoyColor, markup, stream);
-    system.power();
+  if(id == ID::ROM) {
+    stream.read(cartridge.romdata, min(cartridge.romsize, stream.size()));
   }
 
   if(id == ID::RAM) {
@@ -63,6 +86,7 @@ void Interface::save(unsigned id, const stream &stream) {
 }
 
 void Interface::unload() {
+  save();
   cartridge.unload();
 }
 
@@ -99,7 +123,7 @@ void Interface::cheatSet(const lstring &list) {
   cheat.synchronize();
 }
 
-void Interface::updatePalette() {
+void Interface::paletteUpdate() {
   video.generate_palette();
 }
 
@@ -113,13 +137,11 @@ Interface::Interface() {
   information.overscan    = false;
   information.aspectRatio = 1.0;
   information.resettable  = false;
+  information.capability.states = true;
+  information.capability.cheats = true;
 
-  firmware.append({ID::GameBoyBootROM,      "Game Boy",       "sys", "boot.rom"});
-  firmware.append({ID::SuperGameBoyBootROM, "Super Game Boy", "sfc", "boot.rom"});
-  firmware.append({ID::GameBoyColorBootROM, "Game Boy Color", "sys", "boot.rom"});
-
-  media.append({ID::GameBoyROM,      "Game Boy",       "sys", "program.rom", "gb" });
-  media.append({ID::GameBoyColorROM, "Game Boy Color", "sys", "program.rom", "gbc"});
+  media.append({ID::GameBoy,      "Game Boy",       "gb" });
+  media.append({ID::GameBoyColor, "Game Boy Color", "gbc"});
 
   {
     Device device{0, ID::Device, "Controller"};

@@ -25,6 +25,7 @@ struct MappedRAM : Memory {
   inline void reset();
   inline void map(uint8*, unsigned);
   inline void copy(const stream &memory);
+  inline void read(const stream &memory);
 
   inline void write_protect(bool status);
   inline uint8* data();
@@ -42,7 +43,7 @@ private:
 };
 
 struct Bus {
-  unsigned mirror(unsigned addr, unsigned size);
+  alwaysinline static unsigned mirror(unsigned addr, unsigned size);
 
   alwaysinline uint8 read(unsigned addr);
   alwaysinline void write(unsigned addr, uint8 data);

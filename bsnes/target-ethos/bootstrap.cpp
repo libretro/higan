@@ -2,6 +2,7 @@
 #include <sfc/interface/interface.hpp>
 #include <gb/interface/interface.hpp>
 #include <gba/interface/interface.hpp>
+#include <nds/interface/interface.hpp>
 
 void Application::bootstrap() {
   interface = new Interface;
@@ -10,13 +11,7 @@ void Application::bootstrap() {
   emulator.append(new SuperFamicom::Interface);
   emulator.append(new GameBoy::Interface);
   emulator.append(new GameBoyAdvance::Interface);
+  emulator.append(new NintendoDS::Interface);
 
-  for(auto &system : emulator) {
-    system->bind = interface;
-
-    for(auto &firmware : system->firmware) {
-      filestream fs{application->path({firmware.name, ".", firmware.type, "/", firmware.path})};
-      system->load(firmware.id, fs);
-    }
-  }
+  for(auto &system : emulator) system->bind = interface;
 }

@@ -1,11 +1,12 @@
 struct Utility {
   void setInterface(Emulator::Interface *emulator);
+
   void loadMedia(Emulator::Interface *emulator, Emulator::Interface::Media &media);
   void loadMedia(Emulator::Interface *emulator, Emulator::Interface::Media &media, const string &pathname);
-  void loadMedia(unsigned id, const string &path);
-  void loadMedia(unsigned id, const string &name, const string &type, const string &path);
-  void loadMemory();
-  void saveMemory();
+
+  void loadRequest(unsigned id, const string &name, const string &type);
+  void loadRequest(unsigned id, const string &path);
+  void saveRequest(unsigned id, const string &path);
 
   void connect(unsigned port, unsigned device);
   void power();
@@ -15,6 +16,8 @@ struct Utility {
 
   void saveState(unsigned slot);
   void loadState(unsigned slot);
+
+  void tracerToggle();
 
   void synchronizeDSP();
   void synchronizeRuby();
@@ -32,6 +35,7 @@ struct Utility {
   lstring pathname;
 
 private:
+  bool tracerEnable;
   string statusText;
   string statusMessage;
   time_t statusTime;

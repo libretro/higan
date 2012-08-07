@@ -7,12 +7,16 @@ struct MSU1 : Coprocessor {
   void power();
   void reset();
 
+  void data_open();
+  void audio_open();
+
   uint8 mmio_read(unsigned addr);
   void mmio_write(unsigned addr, uint8 data);
 
   void serialize(serializer&);
 
 private:
+  bool boot;
   file datafile;
   file audiofile;
 
@@ -21,6 +25,7 @@ private:
     AudioBusy      = 0x40,
     AudioRepeating = 0x20,
     AudioPlaying   = 0x10,
+    AudioError     = 0x08,
     Revision       = 0x01,
   };
 
@@ -36,6 +41,7 @@ private:
     bool audio_busy;
     bool audio_repeat;
     bool audio_play;
+    bool audio_error;
   } mmio;
 };
 

@@ -67,7 +67,7 @@ void Browser::bootstrap() {
     for(auto &media : emulator->media) {
       bool found = false;
       for(auto &folder : folderList) {
-        if(folder.extension == media.extension) {
+        if(folder.extension == media.type) {
           found = true;
           break;
         }
@@ -75,7 +75,7 @@ void Browser::bootstrap() {
       if(found == true) continue;
 
       Folder folder;
-      folder.extension = media.extension;
+      folder.extension = media.type;
       folder.path = application->basepath;
       folder.selection = 0;
       folderList.append(folder);
@@ -163,9 +163,9 @@ void Browser::setPath(const string &path, unsigned selection) {
     if(!filename.wildcard(R"(*.??/)") && !filename.wildcard(R"(*.???/)")) {
       string name = filename;
       name.rtrim<1>("/");
-      name = {"[ ", name, " ]"};
-      filenameList.append(filename);
       fileList.append(name);
+      fileList.setImage(filenameList.size(), 0, image(resource::folder, sizeof resource::folder));
+      filenameList.append(filename);
     }
   }
 
@@ -175,8 +175,9 @@ void Browser::setPath(const string &path, unsigned selection) {
       if(filename.endswith(suffix)) {
         string name = filename;
         name.rtrim<1>(suffix);
-        filenameList.append(filename);
         fileList.append(name);
+        fileList.setImage(filenameList.size(), 0, image(resource::game, sizeof resource::game));
+        filenameList.append(filename);
       }
     }
   }

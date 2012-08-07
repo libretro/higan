@@ -1,5 +1,6 @@
 #include "ethos.hpp"
 #include "bootstrap.cpp"
+#include "resource/resource.cpp"
 
 Application *application = nullptr;
 DSP dspaudio;
@@ -7,6 +8,10 @@ DSP dspaudio;
 Emulator::Interface& system() {
   if(application->active == nullptr) throw;
   return *application->active;
+}
+
+bool Application::focused() {
+  return config->input.focusAllow || presentation->focused();
 }
 
 string Application::path(const string &filename) {
@@ -26,8 +31,8 @@ void Application::commandLineLoad(string pathname) {
 
   for(auto &emulator : this->emulator) {
     for(auto &media : emulator->media) {
-      if(media.type != "sys") continue;
-      if(type != media.extension) continue;
+      if(!media.load.empty()) continue;
+      if(type != media.type) continue;
       return utility->loadMedia(emulator, media, pathname);
     }
   }
@@ -53,13 +58,8 @@ Application::Application(int argc, char **argv) {
   pause = false;
   autopause = false;
 
-  char path[PATH_MAX];
-  auto unused = ::realpath(argv[0], path);
-  basepath = dir(path);
-  unused = ::userpath(path);
-  userpath = path;
-  if(Intrinsics::platform() != Intrinsics::Platform::Windows) userpath.append(".config/");
-  userpath.append("bsnes/");
+  basepath = dir(realpath(argv[0]));
+  userpath = {nall::configpath(), "bsnes/"};
   directory::create(userpath);
 
   bootstrap();
@@ -141,6 +141,13 @@ int main(int argc, char **argv) {
   #if defined(PLATFORM_WINDOWS)
   utf8_args(argc, argv);
   #endif
+
+  //convert file to game folder; purify will then invoke bsnes with game folder
+  if(argc == 2 && !directory::exists(argv[1]) && file::exists(argv[1])) {
+    invoke("purify", argv[1]);
+    return 0;
+  }
+
   new Application(argc, argv);
   delete application;
   return 0;

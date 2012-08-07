@@ -4,29 +4,61 @@ namespace SuperFamicom {
 
 struct ID {
   enum : unsigned {
+    //cartridges (folders)
+    System,
+    SuperFamicom,
+    SuperGameBoy,
+    Satellaview,
+    SufamiTurboSlotA,
+    SufamiTurboSlotB,
+
+    //memory (files)
     IPLROM,
+
+    ROM,
+    RAM,
+
+    SA1ROM,
+    SA1IRAM,
+    SA1BWRAM,
+
+    SuperFXROM,
+    SuperFXRAM,
+
+    ArmDSP,
+    HitachiDSP,
+    HitachiDSPROM,
     Nec7725DSP,
     Nec96050DSP,
-    HitachiDSP,
-    ArmDSP,
-    ROM,
-    SuperGameBoyROM,
-    BsxFlashROM,
-    SufamiTurboSlotAROM,
-    SufamiTurboSlotBROM,
-    RAM,
     NecDSPRAM,
-    RTC,
-    SPC7110RTC,
+
+    EpsonRTC,
+    SharpRTC,
+
+    SPC7110PROM,
+    SPC7110DROM,
+    SPC7110RAM,
+
+    SDD1ROM,
+    SDD1RAM,
+
+    OBC1RAM,
+
+    SuperGameBoyBootROM,
+    SuperGameBoyROM,
+    SuperGameBoyRAM,
+
+    BsxFlashROM,
+    BsxROM,
     BsxRAM,
     BsxPSRAM,
-    SuperGameBoyRAM,
-    SuperGameBoyRTC,
+
+    SufamiTurboSlotAROM,
+    SufamiTurboSlotBROM,
     SufamiTurboSlotARAM,
     SufamiTurboSlotBRAM,
-  };
 
-  enum : unsigned {
+    //controller ports
     Port1 = 1,
     Port2 = 2,
   };
@@ -39,6 +71,8 @@ struct Interface : Emulator::Interface {
   bool loaded();
   string sha256();
   unsigned group(unsigned id);
+  void load(unsigned id, const string &manifest);
+  void save();
   void load(unsigned id, const stream &stream, const string &markup = "");
   void save(unsigned id, const stream &stream);
   void unload();
@@ -48,16 +82,23 @@ struct Interface : Emulator::Interface {
   void reset();
   void run();
 
+  bool rtc();
+  void rtcsync();
+
   serializer serialize();
   bool unserialize(serializer&);
 
   void cheatSet(const lstring&);
 
-  void updatePalette();
+  void paletteUpdate();
+
+  //debugger functions
+  bool tracerEnable(bool);
+  void exportMemory();
 
   Interface();
 
-private:
+  file tracer;
   vector<Device> device;
 };
 

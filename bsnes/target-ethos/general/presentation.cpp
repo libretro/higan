@@ -28,8 +28,19 @@ void Presentation::synchronize() {
   synchronizeVideo.setChecked(config->video.synchronize);
   synchronizeAudio.setChecked(config->audio.synchronize);
   muteAudio.setChecked(config->audio.mute);
-  toolsMenu.setVisible(application->active);
-  resizeWindow.setVisible(config->video.scaleMode != 2);
+
+  if(application->active == nullptr) {
+    toolsMenu.setVisible(false);
+  } else {
+    toolsMenu.setVisible(true);
+    saveStateMenu.setVisible(system().information.capability.states);
+    loadStateMenu.setVisible(system().information.capability.states);
+    stateMenuSeparator.setVisible(system().information.capability.states);
+    resizeWindow.setVisible(config->video.scaleMode != 2);
+    stateManager.setVisible(system().information.capability.states);
+    cheatEditor.setVisible(system().information.capability.cheats);
+    synchronizeTime.setVisible(system().rtc());
+  }
 }
 
 void Presentation::setSystemName(const string &name) {
@@ -69,8 +80,9 @@ Presentation::Presentation() : active(nullptr) {
     loadStateMenu.setText("Load State");
       for(unsigned n = 0; n < 5; n++) loadStateItem[n].setText({"Slot ", 1 + n});
     resizeWindow.setText("Resize Window");
-    cheatEditor.setText("Cheat Editor");
     stateManager.setText("State Manager");
+    cheatEditor.setText("Cheat Editor");
+    synchronizeTime.setText("Synchronize Time");
 
   append(loadMenu);
   for(auto &item : loadListSystem) loadMenu.append(*item);
@@ -78,7 +90,7 @@ Presentation::Presentation() : active(nullptr) {
     loadMenu.append(*new Separator);
     for(auto &item : loadListSubsystem) loadMenu.append(*item);
   }
-  for(auto &system : emulatorList) append(system->menu);
+  for(auto &systemItem : emulatorList) append(systemItem->menu);
   append(settingsMenu);
     settingsMenu.append(videoMenu);
       videoMenu.append(centerVideo, scaleVideo, stretchVideo, *new Separator, aspectCorrection, maskOverscan);
@@ -96,7 +108,7 @@ Presentation::Presentation() : active(nullptr) {
     toolsMenu.append(loadStateMenu);
       for(unsigned n = 0; n < 5; n++) loadStateMenu.append(loadStateItem[n]);
     toolsMenu.append(stateMenuSeparator);
-    toolsMenu.append(resizeWindow, cheatEditor, stateManager);
+    toolsMenu.append(resizeWindow, stateManager, cheatEditor, synchronizeTime);
 
   append(layout);
   layout.append(viewport, {0, 0, 720, 480});
@@ -118,8 +130,9 @@ Presentation::Presentation() : active(nullptr) {
   for(unsigned n = 0; n < 5; n++) saveStateItem[n].onActivate = [=] { utility->saveState(1 + n); };
   for(unsigned n = 0; n < 5; n++) loadStateItem[n].onActivate = [=] { utility->loadState(1 + n); };
   resizeWindow.onActivate = [&] { utility->resize(true); };
-  cheatEditor.onActivate = [&] { ::cheatEditor->setVisible(); };
   stateManager.onActivate = [&] { ::stateManager->setVisible(); };
+  cheatEditor.onActivate = [&] { ::cheatEditor->setVisible(); };
+  synchronizeTime.onActivate = [&] { system().rtcsync(); };
 
   synchronize();
 }
@@ -131,12 +144,16 @@ void Presentation::bootstrap() {
 
     for(auto &media : emulator->media) {
       Item *item = new Item;
-      item->setText({media.name, " ..."});
       item->onActivate = [=, &media] {
         utility->loadMedia(iEmulator->interface, media);
       };
-      if(media.type == "sys") loadListSystem.append(item);
-      if(media.type != "sys") loadListSubsystem.append(item);
+      if(media.load.empty()) {
+        item->setText({media.name, " ..."});
+        loadListSystem.append(item);
+      } else {
+        item->setText({nall::basename(media.load), " ..."});
+        loadListSubsystem.append(item);
+      }
     }
 
     iEmulator->menu.setText(emulator->information.name);

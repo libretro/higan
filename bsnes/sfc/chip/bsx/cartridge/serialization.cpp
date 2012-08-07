@@ -1,4 +1,4 @@
 void BSXCartridge::serialize(serializer &s) {
-  s.array(sram.data(), sram.size());
+  s.array(ram.data(), ram.size());
   s.array(psram.data(), psram.size());
 }

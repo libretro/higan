@@ -1,20 +1,25 @@
 struct SDD1 {
+  MappedRAM rom;
+  MappedRAM ram;
+
   void init();
   void load();
   void unload();
   void power();
   void reset();
 
-  uint8 mmio_read(unsigned addr);
-  void mmio_write(unsigned addr, uint8 data);
+  uint8 read(unsigned addr);
+  void write(unsigned addr, uint8 data);
 
-  uint8 rom_read(unsigned addr);
-  uint8 mcu_read(unsigned addr);
-  void mcu_write(unsigned addr, uint8 data);
+  uint8 mmc_read(unsigned addr);
+
+  uint8 mcurom_read(unsigned addr);
+  void mcurom_write(unsigned addr, uint8 data);
+
+  uint8 mcuram_read(unsigned addr);
+  void mcuram_write(unsigned addr, uint8 data);
 
   void serialize(serializer&);
-  SDD1();
-  ~SDD1();
 
 private:
   uint8 sdd1_enable;  //channel bit-mask

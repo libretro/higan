@@ -120,6 +120,8 @@ public:
   QStatusBar *qtStatus;
   QWidget *qtContainer;
 
+  static Window& none();
+
   void append(Layout &layout);
   void append(Menu &menu);
   void append(Widget &widget);
@@ -357,6 +359,8 @@ public:
   QComboBox *qtComboBox;
 
   void append(const string &text);
+  void modify(unsigned row, const string &text);
+  void remove(unsigned row);
   Geometry minimumGeometry();
   void reset();
   unsigned selection();
@@ -489,6 +493,7 @@ public:
   void autoSizeColumns();
   bool checked(unsigned row);
   void modify(unsigned row, const lstring &text);
+  void remove(unsigned row);
   void reset();
   bool selected();
   unsigned selection();
@@ -496,6 +501,7 @@ public:
   void setChecked(unsigned row, bool checked);
   void setHeaderText(const lstring &text);
   void setHeaderVisible(bool visible);
+  void setImage(unsigned row, unsigned column, const nall::image &image);
   void setSelected(bool selected);
   void setSelection(unsigned row);
 

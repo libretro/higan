@@ -5,35 +5,31 @@ namespace SuperFamicom {
 
 #include "markup.cpp"
 #include "serialization.cpp"
-
 Cartridge cartridge;
 
-void Cartridge::load(const string &markup, const stream &stream) {
-  rom.copy(stream);
-
+void Cartridge::load(const string &manifest) {
   region = Region::NTSC;
-  ram_size = 0;
 
   has_gb_slot    = false;
   has_bs_cart    = false;
   has_bs_slot    = false;
   has_st_slots   = false;
   has_nss_dip    = false;
-  has_superfx    = false;
   has_sa1        = false;
-  has_necdsp     = false;
-  has_hitachidsp = false;
+  has_superfx    = false;
   has_armdsp     = false;
-  has_srtc       = false;
-  has_sdd1       = false;
+  has_hitachidsp = false;
+  has_necdsp     = false;
+  has_epsonrtc   = false;
+  has_sharprtc   = false;
   has_spc7110    = false;
-  has_spc7110rtc = false;
+  has_sdd1       = false;
   has_obc1       = false;
   has_msu1       = false;
-  has_link       = false;
 
-  parse_markup(markup);
-//print(markup, "\n\n");
+  this->manifest = manifest;
+  parse_markup(manifest);
+//print(manifest, "\n\n");
 
   //Super Game Boy
   if(cartridge.has_gb_slot()) {
@@ -52,12 +48,23 @@ void Cartridge::load(const string &markup, const stream &stream) {
 
   //Super Famicom
   else {
-    sha256 = nall::sha256(rom.data(), rom.size());
-  }
-
-  if(ram_size > 0) {
-    ram.map(allocate<uint8>(ram_size, 0xff), ram_size);
-    interface->memory.append({ID::RAM, "save.ram"});
+    sha256_ctx sha;
+    uint8_t hash[32];
+    sha256_init(&sha);
+    //hash each ROM image that exists; any with size() == 0 is ignored by sha256_chunk()
+    sha256_chunk(&sha, rom.data(), rom.size());
+    sha256_chunk(&sha, bsxcartridge.rom.data(), bsxcartridge.rom.size());
+    sha256_chunk(&sha, sa1.rom.data(), sa1.rom.size());
+    sha256_chunk(&sha, superfx.rom.data(), superfx.rom.size());
+    sha256_chunk(&sha, hitachidsp.rom.data(), hitachidsp.rom.size());
+    sha256_chunk(&sha, spc7110.prom.data(), spc7110.prom.size());
+    sha256_chunk(&sha, spc7110.drom.data(), spc7110.drom.size());
+    sha256_chunk(&sha, sdd1.rom.data(), sdd1.rom.size());
+    sha256_final(&sha);
+    sha256_hash(&sha, hash);
+    string result;
+    for(auto &byte : hash) result.append(hex<2>(byte));
+    sha256 = result;
   }
 
   rom.write_protect(true);
@@ -65,6 +72,71 @@ void Cartridge::load(const string &markup, const stream &stream) {
 
   system.load();
   loaded = true;
+}
+
+void Cartridge::load_super_game_boy(const string &manifest) {
+  XML::Document document(manifest);
+  auto &rom = document["cartridge"]["rom"];
+  auto &ram = document["cartridge"]["ram"];
+
+  GameBoy::cartridge.load(GameBoy::System::Revision::SuperGameBoy, manifest);
+
+  if(rom["name"].exists()) interface->loadRequest(ID::SuperGameBoyROM, rom["name"].data);
+  if(ram["name"].exists()) interface->loadRequest(ID::SuperGameBoyRAM, ram["name"].data);
+  if(ram["name"].exists()) memory.append({ID::SuperGameBoyRAM, ram["name"].data});
+}
+
+void Cartridge::load_satellaview(const string &manifest) {
+  XML::Document document(manifest);
+  auto &rom = document["cartridge"]["rom"];
+
+  if(rom["name"].exists()) {
+    unsigned size = numeral(rom["size"].data);
+    bsxflash.memory.map(allocate<uint8>(size, 0xff), size);
+    interface->loadRequest(ID::BsxFlashROM, rom["name"].data);
+  }
+}
+
+void Cartridge::load_sufami_turbo_a(const string &manifest) {
+  XML::Document document(manifest);
+  auto &rom = document["cartridge"]["rom"];
+  auto &ram = document["cartridge"]["ram"];
+
+  if(rom["name"].exists()) {
+    unsigned size = numeral(rom["size"].data);
+    sufamiturbo.slotA.rom.map(allocate<uint8>(size, 0xff), size);
+    interface->loadRequest(ID::SufamiTurboSlotAROM, rom["name"].data);
+  }
+
+  if(ram["name"].exists()) {
+    unsigned size = numeral(ram["size"].data);
+    sufamiturbo.slotA.ram.map(allocate<uint8>(size, 0xff), size);
+    interface->loadRequest(ID::SufamiTurboSlotARAM, ram["name"].data);
+    memory.append({ID::SufamiTurboSlotARAM, ram["name"].data});
+  }
+
+  if(document["cartridge"]["linkable"].data == "true") {
+    interface->loadRequest(ID::SufamiTurboSlotB, "Sufami Turbo - Slot B", "st");
+  }
+}
+
+void Cartridge::load_sufami_turbo_b(const string &manifest) {
+  XML::Document document(manifest);
+  auto &rom = document["cartridge"]["rom"];
+  auto &ram = document["cartridge"]["ram"];
+
+  if(rom["name"].exists()) {
+    unsigned size = numeral(rom["size"].data);
+    sufamiturbo.slotB.rom.map(allocate<uint8>(size, 0xff), size);
+    interface->loadRequest(ID::SufamiTurboSlotBROM, rom["name"].data);
+  }
+
+  if(ram["name"].exists()) {
+    unsigned size = numeral(ram["size"].data);
+    sufamiturbo.slotB.ram.map(allocate<uint8>(size, 0xff), size);
+    interface->loadRequest(ID::SufamiTurboSlotBRAM, ram["name"].data);
+    memory.append({ID::SufamiTurboSlotBRAM, ram["name"].data});
+  }
 }
 
 void Cartridge::unload() {
@@ -75,11 +147,11 @@ void Cartridge::unload() {
   ram.reset();
 
   loaded = false;
+  memory.reset();
 }
 
 Cartridge::Cartridge() {
   loaded = false;
-  unload();
 }
 
 Cartridge::~Cartridge() {
