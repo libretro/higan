@@ -177,11 +177,13 @@ void pListView::setImageList() {
   }
   if(found == false) return;
 
-  imageList = ImageList_Create(15, 15, ILC_COLOR32, 1, 0);
+  imageList = ImageList_Create(15, 15, ILC_COLOR32, 1, 20);
   nall::image image;
   image.allocate(15, 15);
   image.clear(GetSysColor(COLOR_WINDOW));
-  ImageList_Add(imageList, CreateBitmap(image), NULL);
+  HBITMAP bitmap = CreateBitmap(image);
+  ImageList_Add(imageList, bitmap, NULL);
+  DeleteObject(bitmap);
 
   for(unsigned row = 0; row < list.size(); row++) {
     for(unsigned column = 0; column < list(row).size(); column++) {
@@ -189,7 +191,9 @@ void pListView::setImageList() {
       if(image.empty()) continue;
       image.transform(0, 32, 255u << 24, 255u << 16, 255u << 8, 255u << 0);
       image.scale(15, 15, Interpolation::Linear);
-      ImageList_Add(imageList, CreateBitmap(image), NULL);
+      HBITMAP bitmap = CreateBitmap(image);
+      ImageList_Add(imageList, bitmap, NULL);
+      DeleteObject(bitmap);
     }
   }
 

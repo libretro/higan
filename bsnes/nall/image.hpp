@@ -110,6 +110,8 @@ image& image::operator=(const image &source) {
 }
 
 image& image::operator=(image &&source) {
+  free();
+
   width = source.width;
   height = source.height;
   pitch = source.pitch;
