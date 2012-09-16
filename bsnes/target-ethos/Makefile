@@ -57,10 +57,7 @@ obj/ui-tools.o: $(ui)/tools/tools.cpp $(call rwildcard,$(ui)/)
 obj/ruby.o: ruby/ruby.cpp $(call rwildcard,ruby/*)
 	$(call compile,$(rubyflags))
 
-%.moc: %.moc.hpp
-	moc $(phoenixflags) $< -o $@
-
-obj/phoenix.o: phoenix/phoenix.cpp $(call rwildcard,phoenix/*)
+obj/phoenix.o: phoenix/phoenix.cpp $(phoenixdep) $(call rwildcard,phoenix/*)
 	$(call compile,$(phoenixflags))
 
 obj/resource.o: $(ui)/resource.rc

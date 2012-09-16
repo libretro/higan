@@ -20,3 +20,6 @@ else
   phoenixflags := -DPHOENIX_REFERENCE
   phoenixlink :=
 endif
+
+%.moc: %.moc.hpp
+	moc $(phoenixflags) $< -o $@
