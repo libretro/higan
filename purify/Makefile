@@ -18,7 +18,7 @@ ifeq ($(platform),win)
 endif
 	$(cpp) -o $(application) phoenix.o $(application).o $(resource) $(link) $(phoenixlink)
 
-phoenix.o:
+phoenix.o: $(phoenixdep)
 	$(cpp) -c -o phoenix.o phoenix/phoenix.cpp $(flags) $(phoenixflags)
 
 $(application).o: $(application).cpp
