@@ -11,7 +11,7 @@ build:
   # before_script: 
   #   - apt update && apt -y install make autoconf 
   script:
-    - apt update && apt -y install build-essential libgtk2.0-dev libpulse-dev mesa-common-dev 
+    - apt update && apt -y install build-essential libgtk2.0-dev libpulse-dev mesa-common-dev libgtksourceview2.0-dev libcairo2-dev
     - cd icarus && make compiler=g++
     - cd higan && make compiler=g++
   artifacts:
