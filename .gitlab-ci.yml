@@ -14,13 +14,12 @@ build:
     - apt update && apt -y install build-essential libgtk2.0-dev libpulse-dev mesa-common-dev libgtksourceview2.0-dev libcairo2-dev libsdl1.2-dev libxv-dev libao-dev libopenal-dev libudev-dev
     - make -C icarus compiler=g++
     - make -C higan compiler=g++
+    - mkdir artifacts
+    - make -C icarus prefix=../artifacts install
+    - make -C higan prefix=../artifacts install
   artifacts:
     paths:
-      - icarus/out/icarus
-      - icarus/Database/*
-      - higan/out/higan
-      - higan/data/*
-      - higan/systems/*
+      - artifacts/*
   cache:
     paths:
       - icarus/obj/*.o
