@@ -41,3 +41,7 @@ windows-x86_64-binaries:
   artifacts:
     paths:
       - higan-nightly/*
+  cache:
+    paths:
+      - icarus/obj/*.o
+      - higan/obj/*.o
