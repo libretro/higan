@@ -6,13 +6,15 @@ linux-binaries:
     - make -C icarus compiler=g++
     - make -C higan compiler=g++
     - sed -i -e 's/id -un/echo not-root/' higan/target-tomoko/GNUmakefile
-    - mkdir -p artifacts/bin
-    - mkdir -p artifacts/share/applications
-    - make -C icarus prefix=../artifacts install
-    - make -C higan prefix=../artifacts install
+    - mkdir higan-nightly
+    - cp -a icarus/out/icarus higan-nightly/icarus
+    - cp -a icarus/Database higan-nightly/
+    - cp -a higan/out/higan higan-nightly/higan
+    - cp -a higan/data/cheats.bml higan-nightly/
+    - cp -a higan/systems/* higan-nightly/
   artifacts:
     paths:
-      - artifacts/*
+      - higan-nightly/*
   cache:
     paths:
       - icarus/obj/*.o
