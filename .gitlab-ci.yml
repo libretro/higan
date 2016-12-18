@@ -21,9 +21,15 @@ linux-x86_64-binaries:
       - higan/obj/*.o
 
 windows-x86_64-binaries:
+  # This is a normal Windows cross-compile process, except that stock
+  # higan does not support overriding the name of the windres executable,
+  # and also that nall::chrono tries to use clock_gettime on Windows even
+  # though it's a POSIX function, and for some weird reason mingw has
+  # clock_gettime() in the pthread library.
   script:
     - apt-get update && apt-get -y install build-essential mingw-w64
     - sed -i -e 's/windres/x86_64-w64-mingw32-windres/' icarus/GNUmakefile higan/target-tomoko/GNUmakefile
+    - sed -i -e 's/-lole32/& -lpthread/' nall/GNUmakefile
     - make -C icarus platform=windows compiler="x86_64-w64-mingw32-g++ -static-libgcc -static-libstdc++"
     - make -C higan platform=windows compiler="x86_64-w64-mingw32-g++ -static-libgcc -static-libstdc++"
     - mkdir higan-nightly
