@@ -2,7 +2,7 @@ image: debian:stable
 
 linux-binaries:
   script:
-    - apt update && apt -y install build-essential libgtk2.0-dev libpulse-dev mesa-common-dev libgtksourceview2.0-dev libcairo2-dev libsdl1.2-dev libxv-dev libao-dev libopenal-dev libudev-dev
+    - apt-get update && apt-get -y install build-essential libgtk2.0-dev libpulse-dev mesa-common-dev libgtksourceview2.0-dev libcairo2-dev libsdl1.2-dev libxv-dev libao-dev libopenal-dev libudev-dev
     - make -C icarus compiler=g++
     - make -C higan compiler=g++
     - sed -i -e 's/id -un/echo not-root/' higan/target-tomoko/GNUmakefile
@@ -22,7 +22,7 @@ linux-binaries:
 
 windows-binaries:
   script:
-    - apt update && apt -y install mingw-w64
+    - apt-get update && apt-get -y install mingw-w64
     - sed -i -e 's/windres/x86_64-w64-mingw32-windres/' icarus/GNUmakefile higan/target-tomoko/GNUmakefile
     - make -C icarus platform=windows compiler="x86_64-w64-mingw32-g++ -lstatic-libgcc -static-libstdc++"
     - make -C higan platform=windows compiler="x86_64-w64-mingw32-g++ -lstatic-libgcc -static-libstdc++"
