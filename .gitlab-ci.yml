@@ -19,3 +19,19 @@ linux-binaries:
     paths:
       - icarus/obj/*.o
       - higan/obj/*.o
+
+windows-binaries:
+  script:
+    - apt update && apt -i install mingw-w64
+    - sed -i -e 's/windres/x86_64-w64-mingw32-windres/' icarus/GNUmakefile higan/target-tomoko/GNUmakefile
+    - make -C icarus platform=windows compiler="x86_64-w64-mingw32-g++ -lstatic-libgcc -static-libstdc++"
+    - make -C higan platform=windows compiler="x86_64-w64-mingw32-g++ -lstatic-libgcc -static-libstdc++"
+    - mkdir higan-nightly
+    - cp -a icarus/out/icarus higan-nightly/icarus.exe
+    - cp -a icarus/Database higan-nightly/
+    - cp -a higan/out/higan higan-nightly/higan.exe
+    - cp -a higan/data/cheats.bml higan-nightly/
+    - cp -a higan/systems/* higan-nightly/
+  artifacts:
+    paths:
+      - higan-nightly/*
