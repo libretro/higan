@@ -22,7 +22,7 @@ linux-binaries:
 
 windows-binaries:
   script:
-    - apt update && apt -i install mingw-w64
+    - apt update && apt -y install mingw-w64
     - sed -i -e 's/windres/x86_64-w64-mingw32-windres/' icarus/GNUmakefile higan/target-tomoko/GNUmakefile
     - make -C icarus platform=windows compiler="x86_64-w64-mingw32-g++ -lstatic-libgcc -static-libstdc++"
     - make -C higan platform=windows compiler="x86_64-w64-mingw32-g++ -lstatic-libgcc -static-libstdc++"
