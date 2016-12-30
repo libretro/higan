@@ -1,5 +1,6 @@
 name := higan
 flags += -DSFC_SUPERGAMEBOY
+portable_dest := out/portable
 
 include fc/GNUmakefile
 include sfc/GNUmakefile
@@ -108,3 +109,13 @@ else ifneq ($(filter $(platform),linux bsd),)
 	if [ -f $(prefix)/share/applications/$(name).desktop ]; then rm $(prefix)/share/applications/$(name).desktop; fi
 	if [ -f $(prefix)/share/icons/$(name).png ]; then rm $(prefix)/share/icons/$(name).png; fi
 endif
+
+portable: build
+	mkdir -p $(portable_dest)
+ifeq ($(platform),windows)
+	cp out/$(name) $(portable_dest)/$(name).exe
+else
+	cp out/$(name) $(portable_dest)/$(name)
+endif
+	cp data/cheats.bml $(portable_dest)
+	cp -R systems/* $(portable_dest)

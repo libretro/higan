@@ -5,6 +5,8 @@ name := icarus
 flags += -I.. -O3
 link +=
 
+portable_dest := out/portable
+
 ifeq ($(platform),windows)
   link += -mwindows
 endif
@@ -53,3 +55,12 @@ ifeq ($(platform),macosx)
 else ifneq ($(filter $(platform),linux bsd),)
 	if [ -f $(prefix)/bin/$(name) ]; then rm $(prefix)/bin/$(name); fi
 endif
+
+portable: all
+	mkdir -p $(portable_dest)
+ifeq ($(platform),windows)
+	cp out/$(name) $(portable_dest)/$(name).exe
+else
+	cp out/$(name) $(portable_dest)/$(name)
+endif
+	cp -R Database $(portable_dest)
