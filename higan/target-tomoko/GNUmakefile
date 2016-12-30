@@ -62,7 +62,7 @@ obj/ui-tools.o: $(ui)/tools/tools.cpp $(call rwildcard,$(ui)/)
 obj/ui-presentation.o: $(ui)/presentation/presentation.cpp $(call rwildcard,$(ui)/)
 
 obj/ui-resource.o:
-	windres data/resource.rc obj/ui-resource.o
+	$(windres) data/resource.rc obj/ui-resource.o
 
 # targets
 build: $(objects)
