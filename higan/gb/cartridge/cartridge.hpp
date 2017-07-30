@@ -8,18 +8,42 @@ struct Cartridge : MMIO {
   auto save() -> void;
   auto unload() -> void;
 
-  auto readROM(uint addr) -> uint8;
-  auto writeROM(uint addr, uint8 data) -> void;
-
-  auto readRAM(uint addr) -> uint8;
-  auto writeRAM(uint addr, uint8 data) -> void;
-
-  auto readIO(uint16 addr) -> uint8;
-  auto writeIO(uint16 addr, uint8 data) -> void;
+  auto readIO(uint16 address) -> uint8;
+  auto writeIO(uint16 address, uint8 data) -> void;
 
   auto power() -> void;
+  auto second() -> void;
 
   auto serialize(serializer&) -> void;
+
+  struct Information {
+    uint pathID = 0;
+    string sha256;
+    string manifest;
+    string title;
+  } information;
+
+  struct Memory {
+    auto read(uint address) const -> uint8;
+    auto write(uint address, uint8 data) -> void;
+
+    uint8* data = nullptr;
+    uint size = 0;
+  } rom, ram, rtc;
+
+  bool bootromEnable = true;
+
+private:
+  struct Mapper {
+    virtual auto second() -> void {}
+    virtual auto read(uint16 address) -> uint8 = 0;
+    virtual auto write(uint16 address, uint8 data) -> void = 0;
+    virtual auto power() -> void = 0;
+    virtual auto serialize(serializer&) -> void = 0;
+  };
+  Mapper* mapper = nullptr;
+  bool accelerometer = false;
+  bool rumble = false;
 
   #include "mbc0/mbc0.hpp"
   #include "mbc1/mbc1.hpp"
@@ -27,43 +51,12 @@ struct Cartridge : MMIO {
   #include "mbc2/mbc2.hpp"
   #include "mbc3/mbc3.hpp"
   #include "mbc5/mbc5.hpp"
+  #include "mbc6/mbc6.hpp"
+  #include "mbc7/mbc7.hpp"
   #include "mmm01/mmm01.hpp"
   #include "huc1/huc1.hpp"
   #include "huc3/huc3.hpp"
-
-  enum Mapper : uint {
-    MBC0,
-    MBC1,
-    MBC1M,
-    MBC2,
-    MBC3,
-    MBC5,
-    MMM01,
-    HuC1,
-    HuC3,
-    Unknown,
-  };
-
-  struct Information {
-    uint pathID = 0;
-    string sha256;
-    string manifest;
-    string title;
-
-    Mapper mapper = Mapper::Unknown;
-    boolean ram;
-    boolean battery;
-    boolean rtc;
-    boolean rumble;
-  } information;
-
-  struct Memory {
-    uint8* data = nullptr;
-    uint size = 0;
-  } rom, ram;
-
-  MMIO* mapper = nullptr;
-  bool bootromEnable = true;
+  #include "tama/tama.hpp"
 };
 
 extern Cartridge cartridge;

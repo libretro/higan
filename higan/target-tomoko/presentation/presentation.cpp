@@ -169,12 +169,10 @@ Presentation::Presentation() {
   #endif
 
   #if defined(PLATFORM_MACOSX)
-  showConfigurationSeparator.setVisible(false);
-  showConfiguration.setVisible(false);
   about.setVisible(false);
   Application::Cocoa::onAbout([&] { about.doActivate(); });
   Application::Cocoa::onActivate([&] { setFocused(); });
-  Application::Cocoa::onPreferences([&] { showConfiguration.doActivate(); });
+  Application::Cocoa::onPreferences([&] { showInputSettings.doActivate(); });
   Application::Cocoa::onQuit([&] { doClose(); });
   #endif
 }
@@ -313,13 +311,15 @@ auto Presentation::resizeViewport(bool resizeWindow) -> void {
 
 auto Presentation::toggleFullScreen() -> void {
   if(!fullScreen()) {
-    menuBar.setVisible(false);
     statusBar.setVisible(false);
+    menuBar.setVisible(false);
     setFullScreen(true);
     video->setExclusive(settings["Video/Fullscreen/Exclusive"].boolean());
+    if(video->exclusive()) setVisible(false);
     if(!input->acquired()) input->acquire();
   } else {
     if(input->acquired()) input->release();
+    if(video->exclusive()) setVisible(true);
     video->setExclusive(false);
     setFullScreen(false);
     menuBar.setVisible(true);
