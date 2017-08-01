@@ -6,10 +6,19 @@ struct AudioALSA : Audio {
 
   auto ready() -> bool { return _ready; }
 
+  auto information() -> Information { return {queryDevices(), {48000.0}, {0}, {2}}; }
+
+  auto device() -> string { return _device; }
   auto blocking() -> bool { return _blocking; }
   auto channels() -> uint { return 2; }
   auto frequency() -> double { return _frequency; }
   auto latency() -> uint { return _latency; }
+
+  auto setDevice(string device) -> bool {
+    if(_device == device) return true;
+    _device = device;
+    return initialize();
+  }
 
   auto setBlocking(bool blocking) -> bool {
     if(_blocking == blocking) return true;
@@ -76,7 +85,9 @@ private:
   auto initialize() -> bool {
     terminate();
 
-    if(snd_pcm_open(&_interface, "default", SND_PCM_STREAM_PLAYBACK, SND_PCM_NONBLOCK) < 0) return terminate(), false;
+  if(!queryDevices().find(_device)) _device = "default";
+
+    if(snd_pcm_open(&_interface, _device, SND_PCM_STREAM_PLAYBACK, SND_PCM_NONBLOCK) < 0) return terminate(), false;
 
     uint rate = (uint)_frequency;
     uint bufferTime = _latency * 1000;
@@ -125,7 +136,26 @@ private:
 	}
   }
 
+  auto queryDevices() -> string_vector {
+    string_vector result;
+
+    const char** list;
+    if(snd_device_name_hint(-1,"pcm",(void***)&list) == 0) {
+      int i=0;
+      while(list[i] != nullptr){
+        char* name = snd_device_name_get_hint(list[i],"NAME");
+        if(name) result.append(name);
+        free(name);
+        ++i;
+      }
+    }
+
+    snd_device_name_free_hint((void**)list);
+    return result;
+  }
+
   bool _ready = false;
+  string _device;
   bool _blocking = true;
   double _frequency = 48000.0;
   uint _latency = 40;
