@@ -18,6 +18,14 @@ else
   name := higan_$(corename)_libretro.so
 endif
 
+# Avoid polluting the resulting binary with symbols that aren't part
+# of the libretro API.
+ifeq ($(platform),macos)
+  link += -Wl,-exported_symbol,retro_*
+else
+  link += -Wl,--version-script=target-libretro/link.T -Wl,--no-undefined
+endif
+
 #include fc/GNUmakefile
 #include ms/GNUmakefile
 #include md/GNUmakefile
