@@ -1,5 +1,7 @@
 #pragma once
 
+#include <cstdio>
+
 #include <nall/arithmetic.hpp>
 #include <nall/chrono.hpp>
 #include <nall/range.hpp>
@@ -7,9 +9,7 @@
 #include <nall/stdint.hpp>
 #include <nall/cipher/chacha20.hpp>
 
-#if defined(PLATFORM_LINUX)
-  #include <sys/random.h>
-#elif defined(PLATFORM_WINDOWS)
+#if defined(PLATFORM_WINDOWS)
   #include <wincrypt.h>
 #endif
 
@@ -37,8 +37,6 @@ protected:
     uint256_t seed = 0;
     #if defined(PLATFORM_BSD) || defined(PLATFORM_MACOS)
     for(uint n : range(8)) seed = seed << 32 | (uint32_t)arc4random();
-    #elif defined(PLATFORM_LINUX)
-    getrandom(&seed, 32, GRND_NONBLOCK);
     #elif defined(PLATFORM_WINDOWS)
     HCRYPTPROV provider;
     if(CryptAcquireContext(&provider, nullptr, MS_STRONG_PROV, PROV_RSA_FULL, CRYPT_VERIFYCONTEXT)) {
@@ -46,9 +44,15 @@ protected:
       CryptReleaseContext(provider, 0);
     }
     #else
-    //it's ... better than nothing ...
-    srand(time(nullptr));
-    for(uint n : range(32)) seed = seed << 8 | (uint8_t)rand();
+    //maybe we've got a /dev/urandom we can read from?
+    FILE *f = fopen("/dev/urandom", "rb");
+    if (f && fread(&seed, 32, 1, f) == 32) {
+      fclose(f);
+    } else {
+      //it's ... better than nothing ...
+      srand(time(nullptr));
+      for(uint n : range(32)) seed = seed << 8 | (uint8_t)rand();
+    }
     #endif
     return seed;
   }
